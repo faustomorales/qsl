@@ -1,0 +1,12 @@
+{
+  "python.pythonPath": ".venv/bin/python",
+  "python.formatting.provider": "black",
+  "python.linting.mypyEnabled": true,
+  "python.linting.mypyArgs": [
+    "--config-file pyproject.toml"
+  ],
+  "[typescript]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}

@@ -21,6 +21,10 @@ develop: ## Start local development on frontend and backend
 lab:  ## Launch a jupyter lab instance 
 	@$(PYTHON_EXEC) jupyter lab
 
+format:
+	@$(PYTHON_EXEC) black .
+	cd frontend && yarn format
+
 check-frontend:  ## Check frontend code
 	cd frontend && yarn format-check
 

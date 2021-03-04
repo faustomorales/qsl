@@ -314,15 +314,19 @@ const LabelPanel = (props: {
   labels?: sharedTypes.LabelGroup;
   setLabelGroup?: (labels: sharedTypes.LabelGroup) => void;
   setConfigGroup?: (configGroup: sharedTypes.LabelConfigurationGroup) => void;
+  onShiftEnter?: () => void;
   onEnter?: () => void;
   onEsc?: () => void;
   onDel?: () => void;
+  onCtrlEnter?: () => void;
 }) => {
   const {
     configGroup,
     labels,
     setLabelGroup,
     onEnter,
+    onShiftEnter,
+    onCtrlEnter,
     onEsc,
     onDel,
     setConfigGroup,
@@ -406,8 +410,27 @@ const LabelPanel = (props: {
       ) {
         const { type, configName, optionName } = shortcuts[event.key];
         handleLabelChange(configName, type, optionName);
-      } else if (onEnter && event.key === "Enter") {
+      } else if (
+        onEnter &&
+        event.key === "Enter" &&
+        !event.shiftKey &&
+        !event.ctrlKey
+      ) {
         onEnter();
+      } else if (
+        onShiftEnter &&
+        event.key === "Enter" &&
+        event.shiftKey &&
+        !event.ctrlKey
+      ) {
+        onShiftEnter();
+      } else if (
+        onCtrlEnter &&
+        event.key === "Enter" &&
+        !event.shiftKey &&
+        event.ctrlKey
+      ) {
+        onCtrlEnter();
       } else if (onEsc && event.key === "Escape") {
         onEsc();
       } else if (onDel && event.key === "Delete") {

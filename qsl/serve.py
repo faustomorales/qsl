@@ -559,6 +559,25 @@ def get_labels(
     return labels
 
 
+@app.delete("/api/v1/projects/{project_id}/images/{image_id}/labels")
+def delete_labels(
+    project_id: int,
+    image_id: int,
+    user: web.User = fastapi.Depends(get_current_user),
+    session: sa.orm.Session = fastapi.Depends(get_session),
+) -> web.ImageLabels:
+    """Delete user labels for an image."""
+    # Delete existing labels for this user.
+    session.query(orm.UserImageLabelCollection).filter(
+        (orm.UserImageLabelCollection.image_id == image_id)
+        & (orm.UserImageLabelCollection.user_id == user.id)
+    ).delete(synchronize_session=False)
+    session.commit()
+    return get_labels(
+        image_id=image_id, project_id=project_id, user=user, session=session
+    )
+
+
 @app.post("/api/v1/projects/{project_id}/images/{image_id}/labels")
 def set_labels(
     project_id: int,
@@ -603,6 +622,7 @@ def set_labels(
     # Add the new label collection.
     session.add(collection)
     session.commit()
+    labels.default = False
     return labels
 
 

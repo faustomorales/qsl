@@ -3,8 +3,8 @@ import { Context } from "./Context";
 import * as common from "./common";
 import * as sharedTypes from "./sharedTypes";
 import * as react from "react";
-import * as muic from "@material-ui/icons";
 import * as mui from "@material-ui/core";
+import * as muic from "@material-ui/icons";
 import * as muis from "@material-ui/styles";
 import _ from "lodash";
 import LabelPanel from "./LabelPanel";
@@ -12,12 +12,12 @@ import LabelPanel from "./LabelPanel";
 const useStyles = muis.makeStyles((theme) => ({
   box: {
     position: "absolute",
-    border: "5px solid black",
+    border: "2px solid black",
     backgroundColor: "rgba(255,255,255,0.5)",
     color: "black",
   },
   selectedBox: {
-    border: "5px solid red",
+    border: "2px solid red",
     color: "red",
   },
 }));
@@ -135,7 +135,9 @@ const Image = (props: {
             style={draftBox2styles(props.draftBox)}
             onClick={onClick}
           >
-            {labels2string(props.draftBox.labels)}
+            <mui.Typography variant={"caption"}>
+              {labels2string(props.draftBox.labels)}
+            </mui.Typography>
           </div>
         ) : null}
         {props.boxes.map((box, index) => (
@@ -148,7 +150,9 @@ const Image = (props: {
             }}
             key={index}
           >
-            {labels2string(box.labels)}
+            <mui.Typography variant={"caption"}>
+              {labels2string(box.labels)}
+            </mui.Typography>
           </div>
         ))}
       </div>
@@ -174,7 +178,18 @@ export const SingleImageLabel = () => {
   const [status, setStatus] = react.useState(
     "initializing" as "initializing" | "waiting" | "saving" | "redirecting"
   );
-  const [nextImageId, setNextImageId] = react.useState(imageId);
+  const [desiredImageId, setDesiredImageId] = react.useState(imageId);
+  const [dirty, setDirty] = react.useState(false);
+  const [notice, setNotice] = react.useState<string>(null);
+
+  // Create calculated variables
+  const boxMode = draftBox && draftBox.fixed;
+  const configGroup = project
+    ? boxMode
+      ? project.labelingConfiguration.box
+      : project.labelingConfiguration.image
+    : null;
+  const labelGroup = labels ? (boxMode ? draftBox.labels : labels.image) : null;
 
   // Implement UI event handlers
   const click = react.useCallback(
@@ -252,7 +267,7 @@ export const SingleImageLabel = () => {
         .concat(imageId ? [{ id: parseInt(imageId) }] : [])
         .map((image) => `exclude=${image.id}`)
         .join("&");
-      const desired = queueSize - existing.length + (nextImageId ? 0 : 1);
+      const desired = queueSize - existing.length + (desiredImageId ? 0 : 1);
       fetch(
         `${apiUrl}/api/v1/projects/${projectId}/images?labeling_mode=1&limit=${desired}&max_labels=0&${exclusionString}`,
         { ...getHeaders }
@@ -262,11 +277,11 @@ export const SingleImageLabel = () => {
           if (imageId) {
             setQueue(existing.concat(q));
           } else if (q.length > 0) {
-            setNextImageId(q[0].id.toString());
+            setDesiredImageId(q[0].id.toString());
             setQueue(existing.concat(q.slice(1)));
             setStatus("redirecting");
           } else {
-            setNextImageId(null);
+            setDesiredImageId(null);
           }
           setStatus("waiting");
         });
@@ -288,94 +303,198 @@ export const SingleImageLabel = () => {
       });
   }, [imageId, populate]);
 
-  const save = react.useCallback(() => {
-    setStatus("saving");
-    fetch(`${apiUrl}/api/v1/projects/${projectId}/images/${imageId}/labels`, {
-      ...postHeaders,
-      body: JSON.stringify(labels),
-    }).then(() => {
-      setNextImageId(queue.length > 0 ? queue[0].id.toString() : null);
-      populate();
-      setStatus("redirecting");
-    });
-  }, [labels, queue, populate]);
-
-  const saveBox = react.useCallback(() => {
-    setLabels({
-      ...labels,
-      boxes: labels.boxes.concat([draftBox2box(draftBox)]),
-    });
-    setDraftBox(null);
-  }, [draftBox, labels]);
-
-  const boxMode = draftBox && draftBox.fixed;
-  let button: JSX.Element = null;
-  if (status === "waiting" && imageId && nextImageId === imageId) {
+  // Create callbacks
+  const onDel = react.useCallback(() => {
     if (boxMode) {
-      button = (
-        <mui.Button onClick={save} startIcon={<muic.KeyboardReturn />}>
-          Save Box
-        </mui.Button>
-      );
-    } else {
-      button = (
-        <mui.Button onClick={save} startIcon={<muic.KeyboardReturn />}>
-          Save
-        </mui.Button>
-      );
+      setDraftBox(null);
+    } else if (!labels.default) {
+      fetch(`${apiUrl}/api/v1/projects/${projectId}/images/${imageId}/labels`, {
+        ...getHeaders,
+        method: "DELETE",
+      })
+        .then((r) => r.json())
+        .then((updated) => {
+          setLabels(updated);
+          setDirty(false);
+          setNotice("Deleted");
+        });
     }
-  } else if (status === "saving") {
-    button = <mui.Button disabled={true}>Saving</mui.Button>;
-  } else if (
+  }, [boxMode, labels]);
+
+  const closeNotice = react.useCallback(() => setNotice(null), []);
+
+  const advance = react.useCallback(() => {
+    setDesiredImageId(queue.length > 0 ? queue[0].id.toString() : null);
+    populate();
+    setStatus("redirecting");
+  }, [queue]);
+
+  const onCtrlEnter = react.useCallback(() => {
+    if (!boxMode) {
+      setNotice("Advancing without saving.");
+      advance();
+    }
+  }, [advance, boxMode]);
+
+  const save = react.useCallback(() => {
+    return fetch(
+      `${apiUrl}/api/v1/projects/${projectId}/images/${imageId}/labels`,
+      {
+        ...postHeaders,
+        body: JSON.stringify(labels),
+      }
+    )
+      .then((r) => r.json())
+      .then((updated) => {
+        setLabels(updated);
+        setDirty(false);
+        setNotice("Saved");
+      });
+  }, [labels]);
+
+  const onEnter = react.useCallback(() => {
+    if (boxMode) {
+      setLabels({
+        ...labels,
+        boxes: labels.boxes.concat([draftBox2box(draftBox)]),
+      });
+      setDraftBox(null);
+      setDirty(true);
+    } else {
+      save().then(() => advance());
+    }
+  }, [draftBox, labels, queue, populate]);
+
+  const onShiftEnter = react.useCallback(() => {
+    if (boxMode) {
+      return;
+    }
+    save();
+  }, [save, boxMode]);
+
+  const setLabelGroup = react.useCallback(
+    (updated) => {
+      if (boxMode) {
+        setDraftBox({ ...draftBox, labels: updated });
+      } else {
+        setLabels({ ...labels, image: updated });
+      }
+      setDirty(true);
+    },
+    [draftBox, labels]
+  );
+  if (
     status === "redirecting" &&
-    nextImageId &&
-    nextImageId !== imageId
+    desiredImageId &&
+    desiredImageId !== imageId
   ) {
-    button = (
+    return (
       <rrd.Redirect
-        to={`/projects/${projectId}/images/${nextImageId}`}
+        to={`/projects/${projectId}/images/${desiredImageId}`}
         push={true}
       />
     );
-  } else if (status === "waiting" && !nextImageId) {
-    button = <rrd.Redirect to={`/projects/${projectId}`} push={true} />;
+  } else if (status === "waiting" && !desiredImageId) {
+    return <rrd.Redirect to={`/projects/${projectId}`} push={true} />;
+  }
+
+  if (!labels || !project) {
+    return null;
+  }
+
+  let actions: JSX.Element = null;
+  if (boxMode) {
+    actions = (
+      <mui.ButtonGroup
+        size="medium"
+        color="primary"
+        aria-label="acton button group"
+      >
+        <mui.Button onClick={onEnter}>{"\u23CE Set Box Label"}</mui.Button>
+        <mui.Button onClick={onDel}>{"\u232B Delete Box"}</mui.Button>
+      </mui.ButtonGroup>
+    );
+  } else {
+    actions = (
+      <mui.ButtonGroup
+        size="medium"
+        color="primary"
+        aria-label="acton button group"
+      >
+        <mui.Button disabled={!labels.default && !dirty} onClick={onShiftEnter}>
+          {labels.default && !dirty
+            ? "\u21E7\u23CE Confirm Defaults"
+            : "\u21E7 \u23CE Save"}
+        </mui.Button>
+        <mui.Button disabled={!labels.default && !dirty} onClick={onEnter}>
+          {labels.default && !dirty
+            ? "\u23CE Confirm and Advance"
+            : "\u23CE Save and Advance"}
+        </mui.Button>
+        <mui.Button onClick={onCtrlEnter}>
+          {dirty
+            ? "^\u23CE Advance without Saving"
+            : labels.default
+            ? "^\u23CE Skip"
+            : "^\u23CE Next"}
+        </mui.Button>
+        {labels.default ? null : (
+          <mui.Button onClick={onDel}>{"\u232B Delete Labels"}</mui.Button>
+        )}
+      </mui.ButtonGroup>
+    );
   }
   return (
     <div>
-      <rrd.Link to={`/projects/${projectId}`}>
-        <mui.Typography variant="subtitle1">
-          Back to project menu
-        </mui.Typography>
-      </rrd.Link>
-      {labels ? (
-        <Image
-          onClick={
-            common.hasBoxLabels(project.labelingConfiguration) ? click : null
-          }
-          onHover={hover}
-          onSelectBox={selectBox}
-          boxes={labels.boxes}
-          draftBox={draftBox}
-        />
-      ) : null}
-      {project && labels ? (
-        <LabelPanel
-          configGroup={
-            boxMode
-              ? project.labelingConfiguration.box
-              : project.labelingConfiguration.image
-          }
-          labels={boxMode ? draftBox.labels : labels.image}
-          onEnter={boxMode ? saveBox : save}
-          onDel={() => (boxMode ? setDraftBox(null) : null)}
-          setLabelGroup={(updated) => {
-            boxMode
-              ? setDraftBox({ ...draftBox, labels: updated })
-              : setLabels({ ...labels, image: updated });
-          }}
-        />
-      ) : null}
-      {button}
+      <Image
+        onClick={
+          common.hasBoxLabels(project.labelingConfiguration) ? click : null
+        }
+        onHover={hover}
+        onSelectBox={selectBox}
+        boxes={labels.boxes}
+        draftBox={draftBox}
+      />
+      <LabelPanel
+        configGroup={configGroup}
+        labels={labelGroup}
+        onEnter={onEnter}
+        onShiftEnter={onShiftEnter}
+        onCtrlEnter={onCtrlEnter}
+        onDel={onDel}
+        setLabelGroup={setLabelGroup}
+      />
+      {actions}
+      <mui.Link
+        style={{ marginLeft: "10px" }}
+        component={rrd.Link}
+        variant={"body1"}
+        to={`/projects/${projectId}`}
+      >
+        Return to Project Menu
+      </mui.Link>
+      <mui.Snackbar
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "left",
+        }}
+        open={notice !== null}
+        autoHideDuration={1000}
+        onClose={closeNotice}
+        message={notice}
+        action={
+          <react.Fragment>
+            <mui.IconButton
+              size="small"
+              aria-label="close"
+              color="inherit"
+              onClick={closeNotice}
+            >
+              <muic.Close fontSize="small" />
+            </mui.IconButton>
+          </react.Fragment>
+        }
+      />
       {queue && queue.length
         ? queue.map((image) => (
             <img

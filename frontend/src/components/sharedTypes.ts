@@ -18,6 +18,7 @@ export interface Box {
 export interface ImageLabels {
   image: LabelGroup;
   boxes: Box[];
+  default?: boolean;
 }
 
 export interface LabelOption {

@@ -20,6 +20,13 @@ const useStyles = muis.makeStyles((theme) => ({
     border: "2px solid red",
     color: "red",
   },
+  startIcon: {
+    position: "absolute",
+    left: "8px",
+  },
+  iconButtonSpan: {
+    paddingLeft: "40px",
+  },
 }));
 
 interface DraftBox {
@@ -117,13 +124,16 @@ const Image = (props: {
   return (
     <div>
       <div style={{ position: "relative", display: "inline-block" }}>
-        <img
-          ref={ref}
-          src={`${apiUrl}/api/v1/projects/${projectId}/images/${imageId}/file`}
-          alt={`ID: ${imageId}`}
-          onMouseMove={onMouseMove}
-          onClick={onClick}
-        />
+        <mui.Paper>
+          <img
+            ref={ref}
+            src={`${apiUrl}/api/v1/projects/${projectId}/images/${imageId}/file`}
+            alt={`ID: ${imageId}`}
+            onMouseMove={onMouseMove}
+            onClick={onClick}
+            style={{ display: "block" }}
+          />
+        </mui.Paper>
         {props.draftBox &&
         props.draftBox.x1 &&
         props.draftBox.y1 &&
@@ -161,6 +171,8 @@ const Image = (props: {
 };
 
 export const SingleImageLabel = () => {
+  const classes = useStyles();
+
   // Get context variables.
   const { apiUrl, postHeaders, getHeaders, queueSize } = react.useContext(
     Context
@@ -402,109 +414,144 @@ export const SingleImageLabel = () => {
     return null;
   }
 
+  const actionButtonClasses = {
+    startIcon: classes.startIcon,
+    label: classes.iconButtonSpan,
+  };
+
   let actions: JSX.Element = null;
   if (boxMode) {
     actions = (
       <mui.ButtonGroup
-        size="medium"
+        size="small"
+        orientation="vertical"
         color="primary"
         aria-label="acton button group"
       >
-        <mui.Button onClick={onEnter}>{"\u23CE Set Box Label"}</mui.Button>
-        <mui.Button onClick={onDel}>{"\u232B Delete Box"}</mui.Button>
+        <mui.Button
+          startIcon={"\u23CE"}
+          classes={actionButtonClasses}
+          onClick={onEnter}
+        >
+          {"Set Box Label"}
+        </mui.Button>
+        <mui.Button
+          startIcon={"\u232B"}
+          classes={actionButtonClasses}
+          onClick={onDel}
+        >
+          {"Delete Box"}
+        </mui.Button>
       </mui.ButtonGroup>
     );
   } else {
     actions = (
       <mui.ButtonGroup
-        size="medium"
+        orientation="vertical"
+        size="small"
         color="primary"
         aria-label="acton button group"
       >
-        <mui.Button disabled={!labels.default && !dirty} onClick={onShiftEnter}>
-          {labels.default && !dirty
-            ? "\u21E7\u23CE Confirm Defaults"
-            : "\u21E7 \u23CE Save"}
+        <mui.Button
+          classes={actionButtonClasses}
+          startIcon={"\u21E7\u23CE"}
+          disabled={!labels.default && !dirty}
+          onClick={onShiftEnter}
+        >
+          {labels.default && !dirty ? "Confirm Default" : "Save"}
         </mui.Button>
-        <mui.Button disabled={!labels.default && !dirty} onClick={onEnter}>
-          {labels.default && !dirty
-            ? "\u23CE Confirm and Advance"
-            : "\u23CE Save and Advance"}
+        <mui.Button
+          classes={actionButtonClasses}
+          startIcon={"\u23CE"}
+          disabled={!labels.default && !dirty}
+          onClick={onEnter}
+        >
+          {labels.default && !dirty ? "Confirm & Advance" : "Save & Advance"}
         </mui.Button>
-        <mui.Button onClick={onCtrlEnter}>
-          {dirty
-            ? "^\u23CE Advance without Saving"
-            : labels.default
-            ? "^\u23CE Skip"
-            : "^\u23CE Next"}
+        <mui.Button
+          classes={actionButtonClasses}
+          startIcon={"^\u23CE"}
+          onClick={onCtrlEnter}
+        >
+          {dirty ? "Advance without Saving" : labels.default ? "Skip" : "Next"}
         </mui.Button>
         {labels.default ? null : (
-          <mui.Button onClick={onDel}>{"\u232B Delete Labels"}</mui.Button>
+          <mui.Button classes={actionButtonClasses} onClick={onDel}>
+            {"\u232B Delete Labels"}
+          </mui.Button>
         )}
       </mui.ButtonGroup>
     );
   }
   return (
-    <div>
-      <Image
-        onClick={
-          common.hasBoxLabels(project.labelingConfiguration) ? click : null
-        }
-        onHover={hover}
-        onSelectBox={selectBox}
-        boxes={labels.boxes}
-        draftBox={draftBox}
-      />
-      <LabelPanel
-        configGroup={configGroup}
-        labels={labelGroup}
-        onEnter={onEnter}
-        onShiftEnter={onShiftEnter}
-        onCtrlEnter={onCtrlEnter}
-        onDel={onDel}
-        setLabelGroup={setLabelGroup}
-      />
-      {actions}
-      <mui.Link
-        style={{ marginLeft: "10px" }}
-        component={rrd.Link}
-        variant={"body1"}
-        to={`/projects/${projectId}`}
-      >
-        Return to Project Menu
-      </mui.Link>
-      <mui.Snackbar
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "left",
-        }}
-        open={notice !== null}
-        autoHideDuration={1000}
-        onClose={closeNotice}
-        message={notice}
-        action={
-          <react.Fragment>
-            <mui.IconButton
-              size="small"
-              aria-label="close"
-              color="inherit"
-              onClick={closeNotice}
-            >
-              <muic.Close fontSize="small" />
-            </mui.IconButton>
-          </react.Fragment>
-        }
-      />
-      {queue && queue.length
-        ? queue.map((image) => (
-            <img
-              key={image.id}
-              alt={`Background Load: ${image.id}`}
-              src={`${apiUrl}/api/v1/projects/${projectId}/images/${image.id}/file`}
-              style={{ width: 0, height: 0 }}
-            />
-          ))
-        : null}
-    </div>
+    <mui.Grid container spacing={2}>
+      <mui.Grid container item xs={12} sm={2} direction="column" spacing={2}>
+        <mui.Grid item>
+          <LabelPanel
+            configGroup={configGroup}
+            labels={labelGroup}
+            onEnter={onEnter}
+            onShiftEnter={onShiftEnter}
+            onCtrlEnter={onCtrlEnter}
+            onDel={onDel}
+            setLabelGroup={setLabelGroup}
+          />
+        </mui.Grid>
+        <mui.Grid item>{actions}</mui.Grid>
+        <mui.Grid item>
+          <mui.Link
+            component={rrd.Link}
+            variant={"body1"}
+            to={`/projects/${projectId}`}
+          >
+            Return to Project Menu
+          </mui.Link>
+        </mui.Grid>
+      </mui.Grid>
+      <mui.Grid item xs={12} sm={10}>
+        <Image
+          onClick={
+            common.hasBoxLabels(project.labelingConfiguration) ? click : null
+          }
+          onHover={hover}
+          onSelectBox={selectBox}
+          boxes={labels.boxes}
+          draftBox={draftBox}
+        />
+
+        <mui.Snackbar
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "left",
+          }}
+          open={notice !== null}
+          autoHideDuration={1000}
+          onClose={closeNotice}
+          message={notice}
+          action={
+            <react.Fragment>
+              <mui.IconButton
+                size="small"
+                aria-label="close"
+                color="inherit"
+                onClick={closeNotice}
+              >
+                <muic.Close fontSize="small" />
+              </mui.IconButton>
+            </react.Fragment>
+          }
+        />
+        {queue && queue.length
+          ? queue.map((image) => (
+              <img
+                key={image.id}
+                alt={`Background Load: ${image.id}`}
+                src={`${apiUrl}/api/v1/projects/${projectId}/images/${image.id}/file`}
+                style={{ width: 0, height: 0 }}
+              />
+            ))
+          : null}
+      </mui.Grid>
+    </mui.Grid>
   );
 };

@@ -10,20 +10,6 @@ import * as muis from "@material-ui/core/styles";
 import * as common from "./common";
 
 const useStyles = muis.makeStyles((theme) => ({
-  image: {
-    maxWidth: "100%",
-    maxHeight: "100%",
-    height: "100%",
-    width: "100%",
-    objectFit: "contain",
-    transform: "none",
-    margin: "auto",
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
   checkbox: {
     left: "50%",
     top: "50%",
@@ -80,7 +66,20 @@ const BatchImageGrid = (props: {
       {props.images.map((image, imageIdx) => (
         <mui.ImageListItem key={image.id} cols={1}>
           <img
-            className={classes.image}
+            style={{
+              maxWidth: "100%",
+              maxHeight: "100%",
+              height: "100%",
+              width: "100%",
+              objectFit: "contain",
+              transform: "none",
+              margin: "auto",
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: 0,
+              right: 0,
+            }}
             src={`${apiUrl}/api/v1/projects/${props.projectId}/images/${image.id}/file`}
             alt={`ID: ${image.id}`}
             onClick={() => toggleImage(image.id)}

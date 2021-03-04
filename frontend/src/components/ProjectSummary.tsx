@@ -119,7 +119,7 @@ export const ProjectSummary = () => {
             {
               field: "filepath",
               headerName: "Path",
-              flex: 10,
+              flex: 5,
             },
             {
               field: "nUserLabels",

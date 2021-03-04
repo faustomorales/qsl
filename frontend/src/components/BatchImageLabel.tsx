@@ -221,7 +221,7 @@ export const BatchImageLabel = () => {
     return () => {
       document.removeEventListener("keydown", handler, false);
     };
-  }, []);
+  }, [selectNone, selectAll]);
 
   const save = react.useCallback(() => {
     const filtered = queue.filter((image) => selected.indexOf(image.id) < 0);

@@ -210,7 +210,6 @@ export const BatchImageLabel = () => {
 
   react.useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      console.log(event.ctrlKey, event.shiftKey, event.key);
       if (event.ctrlKey && event.shiftKey && event.key === "A") {
         selectNone();
       } else if (event.ctrlKey && !event.shiftKey && event.key === "a") {

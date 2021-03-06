@@ -122,11 +122,19 @@ export const ProjectSummary = () => {
               flex: 5,
             },
             {
-              field: "nUserLabels",
-              headerName: "Labeled",
+              field: "labels",
+              headerName: "# Labels",
               flex: 1,
-              valueFormatter: (params: muidg.ValueFormatterParams) =>
-                params.value > 0 ? "Yes" : "No",
+            },
+            {
+              field: "status",
+              headerName: "Status",
+              renderCell: (params: muidg.CellParams) => (
+                <span style={{ textTransform: "capitalize" }}>
+                  {params.value}
+                </span>
+              ),
+              flex: 1,
             },
           ]}
           pagination

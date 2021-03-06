@@ -25,6 +25,7 @@ class ImageLabels(BaseModel):
     image: LabelGroup
     boxes: typing.List[Box]
     default: typing.Optional[bool]
+    ignored: typing.Optional[bool]
 
 
 class LabelOption(BaseModel):
@@ -90,8 +91,8 @@ class User(BaseModel):
 class Image(BaseModel):
     id: int
     filepath: str
-    nUserLabels: typing.Optional[int]
-    hasDefaults: typing.Optional[bool]
+    labels: typing.Optional[int]
+    status: typing.Optional[tx.Literal["ignored", "labeled", "unlabeled"]]
 
 
 class ImageGroup(BaseModel):
@@ -114,6 +115,7 @@ class Project(BaseModel):
     id: typing.Optional[int]
     name: str
     nImages: typing.Optional[int]
+    nLabeled: typing.Optional[int]
     labelingConfiguration: typing.Optional[LabelingConfiguration]
     labels: typing.Optional[typing.List[ExportedImageLabels]]
 

@@ -6,8 +6,24 @@ import * as react from "react";
 import * as mui from "@material-ui/core";
 import * as muic from "@material-ui/icons";
 import * as muis from "@material-ui/styles";
+import * as muidg from "@material-ui/data-grid";
 import _ from "lodash";
 import LabelPanel from "./LabelPanel";
+
+interface HistoryEntry {
+  id: number;
+  status: "Ignored" | "Unlabeled" | "Labeled";
+}
+
+const ShortcutButton = muis.withStyles({
+  startIcon: {
+    position: "absolute",
+    left: "8px",
+  },
+  label: {
+    paddingLeft: "40px",
+  },
+})(mui.Button);
 
 const useStyles = muis.makeStyles((theme) => ({
   box: {
@@ -74,6 +90,27 @@ const draftBox2styles = (box: DraftBox) => {
   };
 };
 
+const draftBox2indicatorStyles = (box: DraftBox): react.CSSProperties => {
+  const invertedY = box.y1 > box.y2;
+  const invertedX = box.x1 > box.x2;
+  const top = (box.next === 1 && !invertedY) || (box.next === 2 && invertedY);
+  const left = (box.next === 1 && !invertedX) || (box.next === 2 && invertedX);
+  return {
+    left: left ? "0%" : "auto",
+    top: top ? "0%" : "auto",
+    right: left ? "auto" : "0%",
+    bottom: top ? "auto" : "0%",
+    width: "10px",
+    height: "10px",
+    position: "absolute",
+    backgroundColor: "red",
+    marginLeft: left ? "-5px" : "0",
+    marginRight: left ? "0" : "-5px",
+    marginTop: top ? "-5px" : "0",
+    marginBottom: top ? "0" : "-5px",
+  };
+};
+
 const box2draftBox = (box: sharedTypes.Box): DraftBox => {
   return {
     x1: box.x,
@@ -90,17 +127,22 @@ const box2draftBox = (box: sharedTypes.Box): DraftBox => {
 const labels2string = (labels: sharedTypes.LabelGroup): string =>
   Object.values(labels.single).join(", ");
 
-const click2xy = (event: react.MouseEvent, img: HTMLImageElement) => {
+const click2xy = (
+  event: react.MouseEvent,
+  img: HTMLImageElement,
+  zoom: number
+) => {
   const { x, y, width, height } = img.getBoundingClientRect();
   return {
-    x: (event.nativeEvent.pageX - x) / width,
-    y: (event.nativeEvent.pageY - y) / height,
+    x: (event.nativeEvent.pageX - window.scrollX - x * zoom) / (width * zoom),
+    y: (event.nativeEvent.pageY - window.scrollY - y * zoom) / (height * zoom),
   };
 };
 
 const Image = (props: {
   boxes: sharedTypes.Box[];
   draftBox: DraftBox;
+  zoom: number;
   onClick?: (event: MousePosition) => void;
   onHover: (event: MousePosition) => void;
   onSelectBox: (boxIdx: number, event: MousePosition) => void;
@@ -113,13 +155,13 @@ const Image = (props: {
   }>().params;
   const ref = react.useRef<HTMLImageElement>();
   const onMouseMove = _.debounce((event: react.MouseEvent) => {
-    props.onHover(click2xy(event, ref.current));
-  }, 10);
+    props.onHover(click2xy(event, ref.current, props.zoom));
+  }, 5);
   const onClick = (event: react.MouseEvent) => {
     if (!props.onClick) {
       return;
     }
-    props.onClick(click2xy(event, ref.current));
+    props.onClick(click2xy(event, ref.current, props.zoom));
   };
   return (
     <div>
@@ -131,7 +173,7 @@ const Image = (props: {
             alt={`ID: ${imageId}`}
             onMouseMove={onMouseMove}
             onClick={onClick}
-            style={{ display: "block" }}
+            style={{ display: "block", zoom: props.zoom }}
           />
         </mui.Paper>
         {props.draftBox &&
@@ -148,6 +190,9 @@ const Image = (props: {
             <mui.Typography variant={"caption"}>
               {labels2string(props.draftBox.labels)}
             </mui.Typography>
+            {props.draftBox.fixed ? (
+              <div style={draftBox2indicatorStyles(props.draftBox)} />
+            ) : null}
           </div>
         ) : null}
         {props.boxes.map((box, index) => (
@@ -156,7 +201,10 @@ const Image = (props: {
             className={classes.box}
             style={box2styles(box)}
             onClick={(event) => {
-              props.onSelectBox(index, click2xy(event, ref.current));
+              props.onSelectBox(
+                index,
+                click2xy(event, ref.current, props.zoom)
+              );
             }}
             key={index}
           >
@@ -170,29 +218,58 @@ const Image = (props: {
   );
 };
 
-export const SingleImageLabel = () => {
-  const classes = useStyles();
+const getNextDesiredImageId = (queue: sharedTypes.Image[]): string => {
+  return queue.length > 0 ? queue[0].id.toString() : null;
+};
 
+const updateHistory = (
+  imageId: string,
+  status: "Ignored" | "Unlabeled" | "Labeled",
+  current: HistoryEntry[]
+): HistoryEntry[] => {
+  return [
+    {
+      id: parseInt(imageId),
+      status,
+    },
+  ]
+    .concat(current.filter((entry) => entry.id !== parseInt(imageId)))
+    .slice(0, 10);
+};
+
+export const SingleImageLabel = () => {
   // Get context variables.
-  const { apiUrl, postHeaders, getHeaders, queueSize } = react.useContext(
-    Context
-  );
+  const { apiUrl, getHeaders, queueSize } = react.useContext(Context);
   const { projectId, imageId } = rrd.useRouteMatch<{
     projectId: string;
     imageId: string;
   }>().params;
 
   // Create state variables
+  const nextButton = react.useRef<HTMLButtonElement>();
+  const prevButton = react.useRef<HTMLButtonElement>();
+  const saveButton = react.useRef<HTMLButtonElement>();
+  const ignoreButton = react.useRef<HTMLButtonElement>();
+  const deleteButton = react.useRef<HTMLButtonElement>();
+  const setBoxButton = react.useRef<HTMLButtonElement>();
+  const deleteBoxButton = react.useRef<HTMLButtonElement>();
   const [draftBox, setDraftBox] = react.useState<DraftBox>(null);
-  const [labels, setLabels] = react.useState(null as sharedTypes.ImageLabels);
   const [project, setProject] = react.useState(null as sharedTypes.Project);
-  const [queue, setQueue] = react.useState([] as sharedTypes.Image[]);
-  const [status, setStatus] = react.useState(
-    "initializing" as "initializing" | "waiting" | "saving" | "redirecting"
-  );
-  const [desiredImageId, setDesiredImageId] = react.useState(imageId);
-  const [dirty, setDirty] = react.useState(false);
-  const [notice, setNotice] = react.useState<string>(null);
+  const [navState, setNavState] = react.useState({
+    desiredImageId: imageId,
+    status: "initializing" as
+      | "initializing"
+      | "waiting"
+      | "saving"
+      | "redirecting",
+    labels: null as sharedTypes.ImageLabels,
+    advanceOnSave: false,
+    dirty: false,
+    notice: null as string,
+    history: [] as HistoryEntry[],
+    queue: [] as sharedTypes.Image[],
+  });
+  const [zoom, setZoom] = react.useState<number>(1);
 
   // Create calculated variables
   const boxMode = draftBox && draftBox.fixed;
@@ -201,7 +278,14 @@ export const SingleImageLabel = () => {
       ? project.labelingConfiguration.box
       : project.labelingConfiguration.image
     : null;
-  const labelGroup = labels ? (boxMode ? draftBox.labels : labels.image) : null;
+  const labelGroup = navState.labels
+    ? boxMode
+      ? draftBox.labels
+      : navState.labels.image
+    : null;
+  const progress = project
+    ? Math.round((100 * project.nLabeled) / project.nImages)
+    : null;
 
   // Implement UI event handlers
   const click = react.useCallback(
@@ -219,21 +303,15 @@ export const SingleImageLabel = () => {
           fixed: false,
           next: 2,
         });
-      } else if (draftBox.next === 2) {
+      } else {
         setDraftBox({
           ...draftBox,
-          x2: pos.x,
-          y2: pos.y,
+          x1: draftBox.next === 1 ? pos.x : draftBox.x1,
+          y1: draftBox.next === 1 ? pos.y : draftBox.y1,
+          x2: draftBox.next === 2 ? pos.x : draftBox.x2,
+          y2: draftBox.next === 2 ? pos.y : draftBox.y2,
           fixed: true,
-          next: 1,
-        });
-      } else if (draftBox.next === 1) {
-        setDraftBox({
-          ...draftBox,
-          x1: pos.x,
-          y1: pos.y,
-          fixed: true,
-          next: 2,
+          next: draftBox.next === 1 ? 2 : 1,
         });
       }
     },
@@ -252,252 +330,459 @@ export const SingleImageLabel = () => {
   const selectBox = react.useCallback(
     (boxIdx: number, pos: MousePosition) => {
       if (!draftBox) {
-        const selected = labels.boxes.splice(boxIdx, 1)[0];
+        const selected = navState.labels.boxes.splice(boxIdx, 1)[0];
         setDraftBox(box2draftBox(selected));
-        setLabels({ ...labels, boxes: labels.boxes });
+        setNavState({
+          ...navState,
+          labels: {
+            ...navState.labels,
+            boxes: navState.labels.boxes,
+            default: false,
+          },
+        });
       } else {
         click(pos);
       }
     },
-    [labels, draftBox]
+    [navState, draftBox]
   );
 
   // Implement backend API operations
   react.useEffect(() => {
-    fetch(`${apiUrl}/api/v1/projects/${projectId}`, { ...getHeaders })
-      .then((r) => r.json())
-      .then(setProject);
-  }, [projectId]);
+    common.getProject(apiUrl, projectId).then(setProject);
+  }, [projectId, imageId]);
 
-  const populate = react.useCallback(() => {
-    const existing = queue.filter((image) => image.id.toString() !== imageId);
-    if (queueSize === existing.length) {
-      setQueue(existing);
-      setStatus("waiting");
-    } else {
-      const exclusionString = existing
-        .concat(imageId ? [{ id: parseInt(imageId) }] : [])
-        .map((image) => `exclude=${image.id}`)
-        .join("&");
-      const desired = queueSize - existing.length + (desiredImageId ? 0 : 1);
-      fetch(
-        `${apiUrl}/api/v1/projects/${projectId}/images?labeling_mode=1&limit=${desired}&max_labels=0&${exclusionString}`,
-        { ...getHeaders }
-      )
-        .then((r) => r.json())
-        .then((q) => {
-          if (imageId) {
-            setQueue(existing.concat(q));
-          } else if (q.length > 0) {
-            setDesiredImageId(q[0].id.toString());
-            setQueue(existing.concat(q.slice(1)));
-            setStatus("redirecting");
-          } else {
-            setDesiredImageId(null);
-          }
-          setStatus("waiting");
-        });
-    }
+  // This runs any time the imageId changes in the URL, which is also the
+  // only time that the queue needs updating.
+  react.useEffect(() => {
+    const existing = navState.queue.filter(
+      (image) => image.id.toString() !== imageId
+    );
+    const excludedIds = existing
+      .map((image) => image.id)
+      .concat(imageId ? [parseInt(imageId)] : []);
+    Promise.all([
+      imageId
+        ? common.getImageLabels(apiUrl, projectId, imageId)
+        : Promise.resolve(null),
+      queueSize <= existing.length
+        ? Promise.resolve([])
+        : common.getImages(
+            apiUrl,
+            projectId,
+            excludedIds,
+            queueSize - existing.length
+          ),
+    ]).then(([labels, additions]) => {
+      const updated = existing.concat(additions);
+      setNavState({
+        ...navState,
+        labels,
+        queue: updated,
+        status: imageId ? "waiting" : "redirecting",
+        desiredImageId: imageId ? imageId : getNextDesiredImageId(updated),
+      });
+    });
   }, [imageId]);
 
-  react.useEffect(() => {
-    populate();
-    if (!imageId) {
-      return;
-    }
-    fetch(`${apiUrl}/api/v1/projects/${projectId}/images/${imageId}/labels`, {
-      ...getHeaders,
-    })
-      .then((r) => r.json())
-      .then((labels) => {
-        setLabels(labels);
-        setStatus("waiting");
-      });
-  }, [imageId, populate]);
-
   // Create callbacks
-  const onDel = react.useCallback(() => {
-    if (boxMode) {
-      setDraftBox(null);
-    } else if (!labels.default) {
+  const onDeleteBox = react.useCallback(() => {
+    setDraftBox(null);
+  }, []);
+
+  const onDelete = react.useCallback(() => {
+    if (!navState.labels.default) {
       fetch(`${apiUrl}/api/v1/projects/${projectId}/images/${imageId}/labels`, {
         ...getHeaders,
         method: "DELETE",
       })
         .then((r) => r.json())
         .then((updated) => {
-          setLabels(updated);
-          setDirty(false);
-          setNotice("Deleted");
+          setNavState({
+            ...navState,
+            labels: updated,
+            dirty: false,
+            history: updateHistory(imageId, "Unlabeled", navState.history),
+            notice: "Deleted your label and reverted to default.",
+          });
         });
     }
-  }, [boxMode, labels]);
+  }, [imageId, navState]);
 
-  const closeNotice = react.useCallback(() => setNotice(null), []);
+  const closeNotice = react.useCallback(
+    () => setNavState({ ...navState, notice: null }),
+    [navState]
+  );
 
-  const advance = react.useCallback(() => {
-    setDesiredImageId(queue.length > 0 ? queue[0].id.toString() : null);
-    populate();
-    setStatus("redirecting");
-  }, [queue]);
-
-  const onCtrlEnter = react.useCallback(() => {
-    if (!boxMode) {
-      setNotice("Advancing without saving.");
-      advance();
-    }
-  }, [advance, boxMode]);
-
-  const save = react.useCallback(() => {
-    return fetch(
-      `${apiUrl}/api/v1/projects/${projectId}/images/${imageId}/labels`,
-      {
-        ...postHeaders,
-        body: JSON.stringify(labels),
-      }
-    )
-      .then((r) => r.json())
+  const onClickSaveButton = react.useCallback(() => {
+    common
+      .setLabels(apiUrl, projectId, imageId, {
+        ...navState.labels,
+        ignored: false,
+      })
       .then((updated) => {
-        setLabels(updated);
-        setDirty(false);
-        setNotice("Saved");
+        setNavState({
+          ...navState,
+          labels: updated,
+          dirty: false,
+          history: updateHistory(imageId, "Labeled", navState.history),
+          notice: "Saved your labels.",
+        });
       });
-  }, [labels]);
+  }, [navState]);
 
-  const onEnter = react.useCallback(() => {
+  const onClickSetBoxButton = react.useCallback(() => {
+    setDraftBox(null);
+    setNavState({
+      ...navState,
+      dirty: true,
+      labels: {
+        ...navState.labels,
+        boxes: navState.labels.boxes.concat([draftBox2box(draftBox)]),
+      },
+    });
+  }, [draftBox, navState]);
+
+  const onIgnore = react.useCallback(() => {
     if (boxMode) {
-      setLabels({
-        ...labels,
-        boxes: labels.boxes.concat([draftBox2box(draftBox)]),
-      });
-      setDraftBox(null);
-      setDirty(true);
+      return;
     } else {
-      save().then(() => advance());
+      common
+        .setLabels(apiUrl, projectId, imageId, {
+          ...navState.labels,
+          ignored: true,
+        })
+        .then((updated) => {
+          setNavState({
+            ...navState,
+            labels: updated,
+            dirty: false,
+            history: updateHistory(imageId, "Ignored", navState.history),
+            notice: "Ignored this image.",
+          });
+        });
     }
-  }, [draftBox, labels, queue, populate]);
+  }, [navState, boxMode]);
 
-  const onShiftEnter = react.useCallback(() => {
+  const onForward = react.useCallback(() => {
     if (boxMode) {
       return;
     }
-    save();
-  }, [save, boxMode]);
+    setNavState({
+      ...navState,
+      desiredImageId: getNextDesiredImageId(navState.queue),
+      history: updateHistory(
+        imageId,
+        navState.labels.ignored
+          ? "Ignored"
+          : navState.labels.default
+          ? "Unlabeled"
+          : "Labeled",
+        navState.history
+      ),
+      notice: "Advancing to next image.",
+      status: "redirecting",
+    });
+  }, [imageId, navState.labels, navState]);
+
+  const onBackward = react.useCallback(() => {
+    if (boxMode || navState.history.length === 0) {
+      return;
+    }
+    setNavState({
+      ...navState,
+      desiredImageId:
+        navState.history.length > 0 ? navState.history[0].id.toString() : null,
+      history: navState.history.slice(1),
+      queue: [{ id: parseInt(imageId) }].concat(navState.queue),
+      status: "redirecting",
+    });
+  }, [imageId, navState]);
 
   const setLabelGroup = react.useCallback(
     (updated) => {
       if (boxMode) {
         setDraftBox({ ...draftBox, labels: updated });
+        setNavState({ ...navState, dirty: true });
       } else {
-        setLabels({ ...labels, image: updated });
+        setNavState({
+          ...navState,
+          dirty: true,
+          labels: { ...navState.labels, image: updated, default: false },
+        });
       }
-      setDirty(true);
     },
-    [draftBox, labels]
+    [navState, draftBox]
   );
-  if (
-    status === "redirecting" &&
-    desiredImageId &&
-    desiredImageId !== imageId
-  ) {
-    return (
+
+  react.useEffect(() => {
+    const handler = async (event: KeyboardEvent) => {
+      let targets: react.MutableRefObject<HTMLButtonElement>[] = null;
+      switch (event.key) {
+        case "ArrowRight":
+          targets = [nextButton];
+          break;
+        case "ArrowLeft":
+          targets = [prevButton];
+          break;
+        case "Enter":
+          if (!boxMode) {
+            targets = [event.shiftKey ? ignoreButton : saveButton];
+            if (navState.advanceOnSave) {
+              targets = targets.concat([nextButton]);
+            }
+          } else {
+            targets = [setBoxButton];
+          }
+          break;
+        case "Backspace":
+        case "Delete":
+          targets = boxMode ? [deleteBoxButton] : [deleteButton];
+          break;
+        default:
+        // code block
+      }
+      if (targets) {
+        for (let i = 0; i < targets.length; i++) {
+          targets[i].current?.focus();
+          await common.delay(200);
+          targets[i].current?.blur();
+          targets[i].current?.click();
+        }
+      }
+    };
+    document.addEventListener("keydown", handler, false);
+    return () => {
+      document.removeEventListener("keydown", handler, false);
+    };
+  }, [
+    navState,
+    boxMode,
+    setBoxButton,
+    deleteBoxButton,
+    nextButton,
+    prevButton,
+    saveButton,
+    ignoreButton,
+    deleteButton,
+  ]);
+  const redirect =
+    navState.status === "redirecting" ? (
       <rrd.Redirect
-        to={`/projects/${projectId}/images/${desiredImageId}`}
+        to={
+          navState.desiredImageId
+            ? `/projects/${projectId}/images/${navState.desiredImageId}`
+            : `/projects/${projectId}`
+        }
         push={true}
       />
-    );
-  } else if (status === "waiting" && !desiredImageId) {
-    return <rrd.Redirect to={`/projects/${projectId}`} push={true} />;
-  }
+    ) : null;
 
-  if (!labels || !project) {
-    return null;
-  }
-
-  const actionButtonClasses = {
-    startIcon: classes.startIcon,
-    label: classes.iconButtonSpan,
-  };
-
-  let actions: JSX.Element = null;
-  if (boxMode) {
-    actions = (
-      <mui.ButtonGroup
-        size="small"
-        orientation="vertical"
-        color="primary"
-        aria-label="acton button group"
-      >
-        <mui.Button
-          startIcon={"\u23CE"}
-          classes={actionButtonClasses}
-          onClick={onEnter}
-        >
-          {"Set Box Label"}
-        </mui.Button>
-        <mui.Button
-          startIcon={"\u232B"}
-          classes={actionButtonClasses}
-          onClick={onDel}
-        >
-          {"Delete Box"}
-        </mui.Button>
-      </mui.ButtonGroup>
-    );
-  } else {
-    actions = (
-      <mui.ButtonGroup
-        orientation="vertical"
-        size="small"
-        color="primary"
-        aria-label="acton button group"
-      >
-        <mui.Button
-          classes={actionButtonClasses}
-          startIcon={"\u21E7\u23CE"}
-          disabled={!labels.default && !dirty}
-          onClick={onShiftEnter}
-        >
-          {labels.default && !dirty ? "Confirm Default" : "Save"}
-        </mui.Button>
-        <mui.Button
-          classes={actionButtonClasses}
-          startIcon={"\u23CE"}
-          disabled={!labels.default && !dirty}
-          onClick={onEnter}
-        >
-          {labels.default && !dirty ? "Confirm & Advance" : "Save & Advance"}
-        </mui.Button>
-        <mui.Button
-          classes={actionButtonClasses}
-          startIcon={"^\u23CE"}
-          onClick={onCtrlEnter}
-        >
-          {dirty ? "Advance without Saving" : labels.default ? "Skip" : "Next"}
-        </mui.Button>
-        {labels.default ? null : (
-          <mui.Button classes={actionButtonClasses} onClick={onDel}>
-            {"\u232B Delete Labels"}
-          </mui.Button>
-        )}
-      </mui.ButtonGroup>
-    );
+  if (!navState.labels || !project) {
+    return redirect;
   }
   return (
     <mui.Grid container spacing={2}>
-      <mui.Grid container item xs={12} sm={2} direction="column" spacing={2}>
+      <mui.Grid item xs={12}>
+        <mui.AppBar position="static">
+          <mui.Toolbar>
+            <mui.Box position="relative" display="inline-flex">
+              <mui.CircularProgress
+                style={{ color: "white" }}
+                variant="determinate"
+                size={40}
+                color="secondary"
+                value={progress}
+              />
+              <mui.Box
+                top={0}
+                left={0}
+                bottom={0}
+                right={0}
+                position="absolute"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <mui.Typography
+                  variant="caption"
+                  component="div"
+                  style={{ color: "white" }}
+                >{`${progress}%`}</mui.Typography>
+              </mui.Box>
+            </mui.Box>
+            <mui.Typography variant="h6" style={{ marginLeft: "10px" }}>
+              {project.name} / Images / {imageId}
+            </mui.Typography>
+          </mui.Toolbar>
+        </mui.AppBar>
+      </mui.Grid>
+      <mui.Grid container item xs={12} sm={3} direction="column" spacing={2}>
         <mui.Grid item>
+          {redirect}
+          <mui.Typography style={{ marginBottom: "10px" }} variant={"h6"}>
+            {boxMode ? "Box-Level Labels" : "Image-Level Labels"}
+          </mui.Typography>
           <LabelPanel
             configGroup={configGroup}
             labels={labelGroup}
-            onEnter={onEnter}
-            onShiftEnter={onShiftEnter}
-            onCtrlEnter={onCtrlEnter}
-            onDel={onDel}
             setLabelGroup={setLabelGroup}
           />
+          <mui.Divider />
         </mui.Grid>
-        <mui.Grid item>{actions}</mui.Grid>
+        <mui.Grid item>
+          <mui.Typography variant={"h6"}>View Settings</mui.Typography>
+          <mui.FormControl
+            style={{ width: "100%", margin: "10px 0px" }}
+            component="fieldset"
+          >
+            <mui.FormLabel component="legend">Zoom</mui.FormLabel>
+            <mui.Slider
+              style={{ margin: "0 5px" }}
+              valueLabelDisplay="auto"
+              aria-labelledby="zoom-slider"
+              value={zoom}
+              min={1}
+              max={5}
+              onChange={(event, value) => setZoom(value as number)}
+            />
+          </mui.FormControl>
+          <mui.Divider />
+        </mui.Grid>
+        <mui.Grid item>
+          <mui.Typography style={{ marginBottom: "10px" }} variant={"h6"}>
+            Label Actions
+          </mui.Typography>
+          <mui.ButtonGroup
+            size="small"
+            orientation="vertical"
+            color="primary"
+            style={{ width: "100%" }}
+            aria-label="acton button group"
+          >
+            {boxMode ? (
+              <ShortcutButton
+                startIcon={"\u23CE"}
+                onClick={onClickSetBoxButton}
+                ref={setBoxButton}
+              >
+                Set Box Label
+              </ShortcutButton>
+            ) : null}
+            {boxMode ? (
+              <ShortcutButton
+                startIcon={"\u232B"}
+                onClick={onDeleteBox}
+                ref={deleteBoxButton}
+              >
+                Delete Box
+              </ShortcutButton>
+            ) : null}
+            {boxMode ? null : (
+              <ShortcutButton
+                startIcon={"\u23CE"}
+                disabled={!navState.labels.default && !navState.dirty}
+                onClick={onClickSaveButton}
+                ref={saveButton}
+              >
+                Save
+              </ShortcutButton>
+            )}
+            {boxMode ? null : (
+              <ShortcutButton
+                startIcon={"\u21E7\u23CE"}
+                disabled={navState.labels.ignored}
+                onClick={onIgnore}
+                ref={ignoreButton}
+              >
+                Ignore
+              </ShortcutButton>
+            )}
+            {boxMode ? null : (
+              <ShortcutButton
+                startIcon={<muic.KeyboardArrowRight />}
+                ref={nextButton}
+                onClick={onForward}
+              >
+                Next
+              </ShortcutButton>
+            )}
+            {boxMode ? null : (
+              <ShortcutButton
+                startIcon={<muic.KeyboardArrowLeft />}
+                onClick={onBackward}
+                ref={prevButton}
+                disabled={
+                  navState.history.filter(
+                    (entry) => entry.id !== parseInt(imageId)
+                  ).length === 0
+                }
+              >
+                Previous
+              </ShortcutButton>
+            )}
+            {boxMode ? null : (
+              <ShortcutButton
+                disabled={navState.labels.default}
+                startIcon={"\u232B"}
+                ref={deleteButton}
+                onClick={onDelete}
+              >
+                {navState.labels.ignored ? "Unignore" : "Remove Label"}
+              </ShortcutButton>
+            )}
+          </mui.ButtonGroup>
+          <mui.FormControlLabel
+            control={
+              <mui.Checkbox
+                checked={navState.advanceOnSave}
+                onChange={(event, advanceOnSave) =>
+                  setNavState({ ...navState, advanceOnSave })
+                }
+                name="advanceOnSave"
+              />
+            }
+            label="Advance on saving?"
+          />
+        </mui.Grid>
+        <mui.Grid item>
+          <mui.Divider style={{ marginBottom: "10px" }} />
+          <mui.Typography variant={"h6"}>History</mui.Typography>
+          <mui.Typography variant={"caption"}>
+            Ten most recently reviewed images.
+          </mui.Typography>
+          <muidg.DataGrid
+            rows={navState.history}
+            hideFooterPagination
+            disableColumnSelector
+            disableSelectionOnClick
+            disableColumnMenu
+            hideFooter
+            disableColumnReorder
+            disableColumnFilter
+            autoHeight
+            columns={[
+              {
+                field: "id",
+                headerName: "ID",
+                flex: 1,
+                renderCell: (params: muidg.CellParams) => (
+                  <rrd.Link
+                    to={`/projects/${projectId}/images/${params.value}`}
+                  >
+                    {params.value}
+                  </rrd.Link>
+                ),
+              },
+
+              {
+                field: "status",
+                headerName: "Status",
+                flex: 3,
+              },
+            ]}
+          />
+        </mui.Grid>
         <mui.Grid item>
           <mui.Link
             component={rrd.Link}
@@ -508,15 +793,16 @@ export const SingleImageLabel = () => {
           </mui.Link>
         </mui.Grid>
       </mui.Grid>
-      <mui.Grid item xs={12} sm={10}>
+      <mui.Grid item xs={12} sm={9}>
         <Image
           onClick={
             common.hasBoxLabels(project.labelingConfiguration) ? click : null
           }
           onHover={hover}
           onSelectBox={selectBox}
-          boxes={labels.boxes}
+          boxes={navState.labels.boxes}
           draftBox={draftBox}
+          zoom={zoom}
         />
 
         <mui.Snackbar
@@ -524,10 +810,10 @@ export const SingleImageLabel = () => {
             vertical: "bottom",
             horizontal: "left",
           }}
-          open={notice !== null}
-          autoHideDuration={1000}
+          open={navState.notice !== null}
+          autoHideDuration={1500}
           onClose={closeNotice}
-          message={notice}
+          message={navState.notice}
           action={
             <react.Fragment>
               <mui.IconButton
@@ -541,10 +827,10 @@ export const SingleImageLabel = () => {
             </react.Fragment>
           }
         />
-        {queue && queue.length
-          ? queue.map((image) => (
+        {navState.queue && navState.queue.length
+          ? navState.queue.map((image, index) => (
               <img
-                key={image.id}
+                key={index}
                 alt={`Background Load: ${image.id}`}
                 src={`${apiUrl}/api/v1/projects/${projectId}/images/${image.id}/file`}
                 style={{ width: 0, height: 0 }}

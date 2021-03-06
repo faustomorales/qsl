@@ -180,7 +180,7 @@ export const BatchImageLabel = () => {
       .map((image) => `exclude=${image.id}`)
       .join("&");
     fetch(
-      `${apiUrl}/api/v1/projects/${projectId}/images?labeling_mode=1&limit=${querySize}&max_labels=0&${exclusionString}`,
+      `${apiUrl}/api/v1/projects/${projectId}/images?shuffle=1&limit=${querySize}&max_labels=0&${exclusionString}`,
       { ...getHeaders }
     )
       .then((r) => r.json())
@@ -242,14 +242,13 @@ export const BatchImageLabel = () => {
       setStatus("redirecting");
     });
   }, [labels, projectId, selected, queue]);
-
   let redirect: JSX.Element = null;
   const expectedImageIds = queue
     ? queue.map((image) => image.id).join(",")
     : null;
   if (!queue) {
     // There are no remaining images to label.
-    redirect = <rrd.Redirect to={`/projects/${projectId}`} push={true} />;
+    return <rrd.Redirect to={`/projects/${projectId}`} push={true} />;
   } else if (queue.length === 0) {
     // The queue hasn't been initialized.
     populateQueue();
@@ -332,7 +331,14 @@ export const BatchImageLabel = () => {
             configGroup={project.labelingConfiguration.image}
             labels={labels.image}
             onEnter={save}
-            setLabelGroup={(labels) => setLabels({ boxes: [], image: labels })}
+            setLabelGroup={(labels) =>
+              setLabels({
+                boxes: [],
+                image: labels,
+                default: false,
+                ignored: false,
+              })
+            }
           />
         ) : null}
       </mui.Grid>

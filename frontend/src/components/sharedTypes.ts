@@ -18,7 +18,8 @@ export interface Box {
 export interface ImageLabels {
   image: LabelGroup;
   boxes: Box[];
-  default?: boolean;
+  default: boolean;
+  ignored: boolean;
 }
 
 export interface LabelOption {
@@ -51,6 +52,7 @@ export interface Project {
   id: number;
   name: string;
   nImages?: number;
+  nLabeled?: number;
   labelingConfiguration: LabelingConfiguration;
 }
 
@@ -62,9 +64,9 @@ export interface User {
 
 export interface Image {
   id: number;
-  nUserLabels?: number;
-  hasDefaults?: boolean;
   filepath?: string;
+  labels?: number;
+  status?: "ignored" | "labeled" | "unlabeled";
 }
 
 export interface ImageGroup {

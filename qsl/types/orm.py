@@ -195,6 +195,7 @@ class UserImageLabelCollection(BaseModel):
     image_id = sa.Column(
         sa.Integer, sa.ForeignKey("images.id", ondelete="CASCADE"), nullable=False
     )
+    ignored = sa.Column(sa.Boolean, nullable=False)
     user = sa.orm.relationship("User", back_populates="image_label_collections")
     image_level_labels = sa.orm.relationship(
         "ImageLevelLabel",

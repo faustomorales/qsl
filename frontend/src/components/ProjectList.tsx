@@ -66,6 +66,11 @@ export const ProjectList = () => {
               headerName: "Number of Images",
               flex: 1,
             },
+            {
+              field: "nLabeled",
+              headerName: "Labeled Images",
+              flex: 1,
+            },
           ]}
         />
       </mui.Grid>

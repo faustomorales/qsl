@@ -72,7 +72,7 @@ def test_project_creation():
             client.get(f"/api/v1/projects/{project_y.id}/images/10/labels").json()
         )
         assert labels_2x.image.single["Size"] is None
-        assert labels_2x.default is None
+        assert labels_1x.default
 
         # Change default label
         labels_1y = labels_1x.copy(deep=True)
@@ -88,6 +88,7 @@ def test_project_creation():
             client.get(f"/api/v1/projects/{project_y.id}/images/1/labels").json()
         )
         assert labels_1z.image == labels_1y.image
+        assert not labels_1z.default
 
         labels_2y = labels_2x.copy(deep=True)
         box_key, box_config = list(

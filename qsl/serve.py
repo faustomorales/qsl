@@ -212,6 +212,25 @@ def convert_label_group_to_labels(
     return labels
 
 
+# pylint: disable=singleton-comparison
+def build_images_query(session: sa.orm.Session, project_id=None):
+    """Get a query for images that accounts for labeled and unlabeled images."""
+    query = (
+        session.query(
+            orm.Image.id.label("image_id"),
+            orm.Image.project_id.label("project_id"),
+            sa.cast(
+                sa.func.sum(orm.UserImageLabelCollection.id != None) > 0, sa.Integer
+            ).label("labeled"),
+        )
+        .join(orm.UserImageLabelCollection, isouter=True)
+        .group_by(orm.Image.id)
+    )
+    if project_id is not None:
+        query = query.filter(orm.Image.project_id == project_id)
+    return query
+
+
 @app.get("/api/v1/projects/{project_id}")
 def get_project(
     project_id: int,
@@ -219,20 +238,27 @@ def get_project(
     user_id: web.User = fastapi.Depends(get_current_user),
 ) -> web.Project:
     """Get the project configuration."""
+    project = session.query(orm.Project).filter(orm.Project.id == project_id).first()
+    if project is None:
+        raise fastapi.HTTPException(status_code=404, detail="Project not found.")
     configs = (
         session.query(orm.LabelConfig, orm.LabelOption)
         .join(orm.LabelOption, isouter=True)
         .filter(orm.LabelConfig.project_id == project_id)
         .all()
     )
-    project, n_images = (
-        session.query(orm.Project, sa.func.count(orm.Image.id))
-        .join(orm.Image, isouter=True)
-        .group_by(orm.Project.id)
-        .filter(orm.Project.id == project_id)
-        .first()
+    images = (
+        build_images_query(session=session, project_id=project_id)
+        .subquery()
+        .alias("images")
     )
-
+    image_summary = session.query(
+        sa.func.count(images.c.image_id), sa.func.sum(images.c.labeled)
+    ).first()
+    if image_summary is None:
+        n_images, n_labeled = 0, 0
+    else:
+        n_images, n_labeled = image_summary
     labeling = web.LabelingConfiguration(
         image=web.LabelGroup(single={}, multiple={}, text={}),
         box=web.LabelGroup(single={}, multiple={}, text={}),
@@ -258,6 +284,7 @@ def get_project(
         id=project_id,
         name=project.name,
         nImages=n_images,
+        nLabeled=n_labeled,
     )
 
 
@@ -328,10 +355,15 @@ def list_projects(
     user: web.User = fastapi.Depends(get_current_user),
 ) -> typing.List[web.Project]:
     """List available projects."""
+    images = build_images_query(session=session).subquery().alias("images")
     return [
-        web.Project(id=project.id, name=project.name, nImages=n_images)
-        for project, n_images in session.query(orm.Project, sa.func.count(orm.Image.id))
-        .join(orm.Image, isouter=True)
+        web.Project(
+            id=project.id, name=project.name, nImages=n_images, nLabeled=n_labeled
+        )
+        for project, n_images, n_labeled in session.query(
+            orm.Project, sa.func.count(images.c.image_id), sa.func.sum(images.c.labeled)
+        )
+        .join(images, images.c.project_id == orm.Project.id, isouter=True)
         .group_by(orm.Project.id)
         .all()
     ]
@@ -392,7 +424,8 @@ def list_images(
     project_id: int = None,
     exclude: typing.Optional[typing.List[int]] = fastapi.Query(None),
     session: sa.orm.Session = fastapi.Depends(get_session),
-    labeling_mode: bool = False,
+    shuffle: bool = False,
+    exclude_ignored: bool = False,
     user: web.User = fastapi.Depends(get_current_user),
 ) -> typing.List[web.Image]:
     """Get a list of images.
@@ -403,7 +436,7 @@ def list_images(
             users having labeled them.
         exclude: A list of image IDs to exclude from the list.
     """
-    if labeling_mode:
+    if shuffle:
         order_by = [
             orm.Image.default_image_label_collection_id.desc(),
             orm.Image.last_access.asc(),
@@ -411,37 +444,56 @@ def list_images(
         ]
     else:
         order_by = [orm.Image.id]
-    user_label_count = sa.func.count(orm.UserImageLabelCollection.user_id)
+    unignored_user_labels = sa.orm.aliased(orm.UserImageLabelCollection)
+    current_user_labels = sa.orm.aliased(orm.UserImageLabelCollection)
+    user_label_count = sa.func.count(unignored_user_labels.user_id)
+    status = sa.sql.expression.case(
+        [
+            (
+                sa.func.max(current_user_labels.ignored) == 1,
+                "ignored",
+            ),
+            (sa.func.count(current_user_labels.user_id) == 1, "labeled"),
+        ],
+        else_="unlabeled",
+    )
     query = (
-        session.query(orm.Image, user_label_count, orm.DefaultImageLabelCollection.id)
+        session.query(orm.Image, user_label_count, status)
         .select_from(orm.Image)
         .filter(orm.Image.project_id == project_id)
         .order_by(*order_by)
-        .join(orm.UserImageLabelCollection, isouter=True)
-        .join(orm.DefaultImageLabelCollection, isouter=True)
+        .join(
+            unignored_user_labels,
+            (unignored_user_labels.image_id == orm.Image.id)
+            & (~unignored_user_labels.ignored),
+            isouter=True,
+        )
+        .join(
+            current_user_labels,
+            (current_user_labels.image_id == orm.Image.id)
+            & (current_user_labels.user_id == user.id),
+            isouter=True,
+        )
         .group_by(orm.Image.id)
     )
     if max_labels is not None:
         query = query.having(user_label_count <= max_labels)
     if exclude is not None:
         query = query.filter(orm.Image.id.notin_(exclude))
-
+    if exclude_ignored:
+        query = query.having(status != "ignored")
     if limit is not None:
         query = query.limit(limit)
     entries = paginate(query, page=page, page_size=limit)
-    now = time.time()
-    for image, _, _ in entries:
-        image.last_access = now
+    if shuffle:
+        now = time.time()
+        for image, _, _ in entries:
+            image.last_access = now
     session.commit()
 
     return [
-        web.Image(
-            id=image.id,
-            filepath=image.filepath,
-            nUserLabels=label_count,
-            hasDefaults=defaults is not None,
-        )
-        for image, label_count, defaults in entries
+        web.Image(id=image.id, filepath=image.filepath, labels=labels, status=status)
+        for image, labels, status in entries
     ]
 
 
@@ -507,7 +559,10 @@ def get_labels(
 ) -> web.ImageLabels:
     """Get the labels for an image."""
     labels = web.ImageLabels(
-        image=web.LabelGroup(single={}, multiple={}, text={}), default=None, boxes=[]
+        image=web.LabelGroup(single={}, multiple={}, text={}),
+        default=True,
+        boxes=[],
+        ignored=False,
     )
     box_lookup: typing.Dict[int, web.Box] = {}
 
@@ -516,7 +571,8 @@ def get_labels(
         _,
         _,
         user_collection,
-        default_collection,
+        user_ignored,
+        _,
         config,
         image_label,
         image_label_option,
@@ -526,9 +582,11 @@ def get_labels(
     ) in query_labels(
         session=session, project_id=project_id, image_id=image_id, user_id=user.id
     ):
-        if user_collection is not None or default_collection is not None:
-            # We have at least some collection.
-            labels.default = user_collection is None
+        if user_collection is not None:
+            # We have a user collection.
+            labels.default = False
+        if user_collection is not None:
+            labels.ignored = user_ignored
         if config.level == orm.Level.image:
             update_label_group_with_label(
                 label_group=labels.image,
@@ -592,33 +650,41 @@ def set_labels(
         (orm.UserImageLabelCollection.image_id == image_id)
         & (orm.UserImageLabelCollection.user_id == user.id)
     ).delete(synchronize_session=False)
-    config = get_project(project_id=project_id, session=session).labelingConfiguration
-    assert config is not None, "No configuration found for project."
-    assert user.id is not None, "No user found."
-    collection = orm.UserImageLabelCollection(
-        user_id=user.id,
-        image_id=image_id,
-        image_level_labels=convert_label_group_to_labels(
-            config_group=config.image,
-            label_class=orm.ImageLevelLabel,
-            label_group=labels.image,
-        ),
-        box_level_labels=[
-            orm.Box(
-                x=typing.cast(decimal.Decimal, box.x),
-                y=typing.cast(decimal.Decimal, box.y),
-                w=typing.cast(decimal.Decimal, box.w),
-                h=typing.cast(decimal.Decimal, box.h),
-                labels=convert_label_group_to_labels(
-                    config_group=config.box,
-                    label_class=orm.BoxLabel,
-                    label_group=box.labels,
-                ),
-            )
-            for box in labels.boxes
-        ],
-    )
-
+    if labels.ignored:
+        assert user.id is not None, "User data is incomplete."
+        collection = orm.UserImageLabelCollection(
+            user_id=user.id, image_id=image_id, ignored=True
+        )
+    else:
+        config = get_project(
+            project_id=project_id, session=session
+        ).labelingConfiguration
+        assert config is not None, "No configuration found for project."
+        assert user.id is not None, "No user found."
+        collection = orm.UserImageLabelCollection(
+            user_id=user.id,
+            image_id=image_id,
+            ignored=False,
+            image_level_labels=convert_label_group_to_labels(
+                config_group=config.image,
+                label_class=orm.ImageLevelLabel,
+                label_group=labels.image,
+            ),
+            box_level_labels=[
+                orm.Box(
+                    x=typing.cast(decimal.Decimal, box.x),
+                    y=typing.cast(decimal.Decimal, box.y),
+                    w=typing.cast(decimal.Decimal, box.w),
+                    h=typing.cast(decimal.Decimal, box.h),
+                    labels=convert_label_group_to_labels(
+                        config_group=config.box,
+                        label_class=orm.BoxLabel,
+                        label_group=box.labels,
+                    ),
+                )
+                for box in labels.boxes
+            ],
+        )
     # Add the new label collection.
     session.add(collection)
     session.commit()
@@ -650,6 +716,7 @@ def query_labels(
             orm.Image.id.label("image_id"),
             orm.Image.filepath.label("filepath"),
             orm.UserImageLabelCollection.user_id.label("user_id"),
+            orm.UserImageLabelCollection.ignored.label("ignored"),
             orm.Image.project_id.label("project_id"),
             orm.DefaultImageLabelCollection.id.label("default_collection"),
             orm.UserImageLabelCollection.id.label("user_collection"),
@@ -671,6 +738,7 @@ def query_labels(
             collections.c.filepath,
             collections.c.user_id,
             collections.c.user_collection,
+            collections.c.ignored,
             collections.c.default_collection,
             orm.LabelConfig,
             orm.ImageLevelLabel,
@@ -751,6 +819,7 @@ def export_project(
         image_filepath,
         user_id,
         _,
+        user_ignored,
         _,
         config,
         image_label,
@@ -765,6 +834,8 @@ def export_project(
         if not user_id:
             if image_id not in label_mapping:
                 label_mapping[image_id] = {}
+        elif user_id and user_ignored:
+            continue
         else:
             labels, box_lookup = label_mapping.get(image_id, {}).get(
                 user_id,

@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import os
 import uuid
 import time
@@ -15,10 +16,10 @@ import pkg_resources
 import fastapi
 import fastapi.staticfiles
 import fastapi.middleware.cors
+from authlib.integrations import starlette_client  # type: ignore
 from starlette.config import Config
 from starlette.requests import Request
 from starlette.middleware.sessions import SessionMiddleware
-from authlib.integrations import starlette_client  # type: ignore
 import sqlalchemy as sa
 
 from .types import web, orm
@@ -26,18 +27,24 @@ from .types import web, orm
 LOGGER = logging.getLogger(__name__)
 FRONTEND_DIRECTORY = pkg_resources.resource_filename("qsl", "frontend")
 CONFIG = Config(".env")
+
+
+class OAuthConfig(typing.NamedTuple):
+    name: str
+    client: starlette_client.OAuth
+    userinfo_query_key: str
+    username_key: str
+
+
 Context = tx.TypedDict(
     "Context",
     {
         "engine": typing.Any,
         "s3": typing.Any,
-        "oauth": typing.Optional[starlette_client.OAuth],
-        "oauth_provider": typing.Optional[tx.Literal["github"]],
-        "oauth_user_key": typing.Optional[str],
+        "oauth": typing.Optional[OAuthConfig],
         "frontend_port": typing.Optional[str],
     },
 )
-
 
 tls = threading.local()
 app = fastapi.FastAPI()
@@ -45,8 +52,6 @@ context: Context = {
     "engine": None,
     "s3": typing.Any,
     "oauth": None,
-    "oauth_provider": None,
-    "oauth_user_key": None,
     "frontend_port": None,
 }
 
@@ -126,6 +131,46 @@ def startup():
         connect_args={"check_same_thread": False},
     )
     context["s3"] = boto3.client("s3")
+    provider_name = CONFIG("OAUTH_PROVIDER", str, None)
+    initial_user = CONFIG("OAUTH_INITIAL_USER", str, "Default User")
+    if provider_name is None:
+        LOGGER.warning("Starting application with no authentication.")
+    elif provider_name == "github":
+        client = starlette_client.OAuth()
+        client.register(
+            name="provider",
+            client_id=CONFIG("OAUTH_CLIENT_ID", str),
+            client_secret=CONFIG("OAUTH_CLIENT_SECRET", str),
+            api_base_url="https://api.github.com/",
+            access_token_url="https://github.com/login/oauth/access_token",
+            authorize_url="https://github.com/login/oauth/authorize",
+            userinfo_endpoint="https://api.github.com/user",
+            client_kwargs={"scope": "user:email"},
+        )
+        context["oauth"] = OAuthConfig(
+            client=client,
+            name=provider_name,
+            userinfo_query_key="user",
+            username_key="login",
+        )
+    elif provider_name == "google":
+        client = starlette_client.OAuth()
+        client.register(
+            name="provider",
+            client_id=CONFIG("OAUTH_CLIENT_ID", str),
+            client_secret=CONFIG("OAUTH_CLIENT_SECRET", str),
+            api_base_url="https://openidconnect.googleapis.com/v1/",
+            server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+            client_kwargs={"scope": "email"},
+        )
+        context["oauth"] = OAuthConfig(
+            client=client,
+            name=provider_name,
+            userinfo_query_key="userinfo",
+            username_key="email",
+        )
+    else:
+        raise NotImplementedError(f"Unsupported Oauth provider: {provider_name}.")
     app.add_middleware(
         SessionMiddleware,
         secret_key=CONFIG("SESSION_SECRET_KEY", str, str(uuid.uuid4())),
@@ -133,26 +178,7 @@ def startup():
     )
     orm.BaseModel.metadata.create_all(context["engine"])
     with build_session(context["engine"]) as session:
-        oauth_provider = CONFIG("OAUTH_PROVIDER", str, None)
-        if oauth_provider is None:
-            LOGGER.warning("Starting application with no authentication.")
-            initial_user = "Default User"
-        elif oauth_provider == "github":
-            context["oauth"] = starlette_client.OAuth()
-            context["oauth_provider"] = "github"
-            # Taken from https://github.com/authlib/loginpass/blob/master/loginpass/github.py
-            context["oauth"].register(
-                name="provider",
-                client_id=CONFIG("OAUTH_CLIENT_ID", str),
-                client_secret=CONFIG("OAUTH_CLIENT_SECRET", str),
-                api_base_url="https://api.github.com/",
-                access_token_url="https://github.com/login/oauth/access_token",
-                authorize_url="https://github.com/login/oauth/authorize",
-                client_kwargs={"scope": "user:email"},
-                userinfo_endpoint="https://api.github.com/user",
-            )
-            context["oauth_user_key"] = "login"
-            initial_user = CONFIG("OAUTH_INITIAL_USER", str)
+
         if CONFIG("DEVELOPMENT_MODE", bool, False):
             # We're in development mode and need to let the live frontend
             # access the backend.
@@ -934,23 +960,27 @@ app.mount(
 )
 
 
-@app.get("/login")
+@app.get("/auth/login")
 async def login(request: Request):
     """Log a user in."""
     redirect_uri = request.url_for("auth")
     if context["oauth"] is not None:
-        return await context["oauth"].provider.authorize_redirect(request, redirect_uri)
+        return await context["oauth"].client.provider.authorize_redirect(
+            request, redirect_uri
+        )
     # Authentication is disabled, skip to the auth callback.
-    return fastapi.responses.RedirectResponse(url="/auth")
+    return fastapi.responses.RedirectResponse(url="/auth/callback")
 
 
 @app.get("/api/v1/auth/config")
 def auth_config(user: web.User = fastapi.Depends(get_current_user)) -> web.AuthConfig:
     """Get the authentication configuration for the application."""
-    return web.AuthConfig(provider=context["oauth_provider"])
+    return web.AuthConfig(
+        provider=context["oauth"].name if context["oauth"] is not None else None
+    )
 
 
-@app.get("/auth")
+@app.get("/auth/callback")
 async def auth(
     request: Request,
     session: sa.orm.Session = fastapi.Depends(get_session),
@@ -960,9 +990,12 @@ async def auth(
         # Authentication is disabled, so we just assume we're using the first user.
         user = session.query(orm.User).first()
     else:
-        token = await context["oauth"].provider.authorize_access_token(request)
-        resp = await context["oauth"].provider.get("user", token=token)
-        name = resp.json()[context["oauth_user_key"]]
+        token = await context["oauth"].client.provider.authorize_access_token(request)
+        resp = await context["oauth"].client.provider.get(
+            context["oauth"].userinfo_query_key, token=token
+        )
+        resp.raise_for_status()
+        name = resp.json()[context["oauth"].username_key]
         user = session.query(orm.User).filter(orm.User.name == name).first()
     if user is None:
         raise fastapi.HTTPException(401, "Could not find user.")

@@ -131,4 +131,4 @@ class InitializationConfiguration(BaseModel):
 
 
 class AuthConfig(BaseModel):
-    provider: typing.Optional[tx.Literal["github"]]
+    provider: typing.Optional[tx.Literal["github", "google"]]

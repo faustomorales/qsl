@@ -80,5 +80,5 @@ export interface InitializationConfiguration {
 }
 
 export interface AuthConfig {
-  provider: "github" | null;
+  provider: "github" | "google" | null;
 }

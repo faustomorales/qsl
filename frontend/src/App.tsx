@@ -62,7 +62,7 @@ const App = () => {
   if (context.user === undefined) {
     return null;
   } else if (context.user === null) {
-    window.location.href = `${context.apiUrl}/login`;
+    window.location.href = `${context.apiUrl}/auth/login`;
     return null;
   }
   return (

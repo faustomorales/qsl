@@ -61,6 +61,9 @@ export const UserCreator = () => {
           {authConfig.provider === "github"
             ? "You are using GitHub as the authentication provider. Usernames should match GitHub usernames."
             : null}
+          {authConfig.provider === "google"
+            ? "You are using Google as the authentication provider. Usernames should match email addresses."
+            : null}
           {authConfig.provider === null
             ? "You are not using an authentication provider. You will always be logged in as the first user."
             : null}

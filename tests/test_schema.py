@@ -13,7 +13,7 @@ def test_project_creation():
     os.environ["DB_CONNECTION_STRING"] = f"sqlite:///{filename}"
     with fastapi.testclient.TestClient(serve.app) as client:
         serve.context["oauth"] = None
-        client.get("/login")
+        client.get("/auth/login")
         user = web.User.parse_obj(
             client.post(
                 "/api/v1/users",

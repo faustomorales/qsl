@@ -126,7 +126,6 @@ const SingleLabelPanel = (props: {
         <mui.RadioGroup
           aria-label={props.configName}
           name={props.configName}
-          onChange={props.onChange}
           value={props.selected}
         >
           <mui.FormLabel component="legend">{props.configName}</mui.FormLabel>
@@ -136,7 +135,7 @@ const SingleLabelPanel = (props: {
                 key={optionName}
                 optionName={optionName}
                 optionConfig={optionConfig}
-                control={<mui.Radio disabled={!props.onChange} />}
+                control={<mui.Radio disabled={!props.onChange} onClick={(event: any) => props.onChange(event, event.target.value)} />}
               />
             )
           )}
@@ -372,9 +371,16 @@ const LabelPanel = (props: {
       }
       let updated: sharedTypes.LabelGroup;
       if (configType === "single" || configType === "text") {
+        let newValue: string
+        if (configType === "single" && labels[configType][configName] === value) {
+          // We're unsetting this label.
+          newValue = null
+        } else {
+          newValue = value
+        }
         updated = {
           ...labels,
-          [configType]: { ...labels[configType], [configName]: value },
+          [configType]: { ...labels[configType], [configName]: newValue },
         };
       } else if (configType === "multiple") {
         const currentSelections = [...labels[configType][configName]];

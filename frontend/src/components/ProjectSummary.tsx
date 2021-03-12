@@ -1,20 +1,19 @@
-import { Context } from "./Context";
 import * as sharedTypes from "./sharedTypes";
+import * as common from "./common";
 
 import * as react from "react";
 import * as rrd from "react-router-dom";
 import * as mui from "@material-ui/core";
 import * as muidg from "@material-ui/data-grid";
-import * as common from "./common";
 
 export const ProjectSummary = () => {
   // Get context variables.
-  const { apiUrl, getHeaders } = react.useContext(Context);
   const { projectId } = rrd.useRouteMatch<{
     projectId: string;
   }>().params;
 
   // Set state variables.
+  const [queue, setQueue] = react.useState<sharedTypes.Image[]>([]);
   const [project, setProject] = react.useState<sharedTypes.Project>(null);
   const [page, setPage] = react.useState(0);
   const [images, setImages] = react.useState<sharedTypes.Image[]>([]);
@@ -23,20 +22,16 @@ export const ProjectSummary = () => {
 
   // Implement backend API operations
   react.useEffect(() => {
-    fetch(`${apiUrl}/api/v1/projects/${projectId}`, { ...getHeaders })
-      .then((r) => r.json())
-      .then(setProject);
+    common.getProject(projectId).then(setProject);
   }, []);
 
   react.useEffect(() => {
+    common.getImages(projectId, [], 10, false, true, 0).then(setQueue);
+  }, [projectId]);
+  react.useEffect(() => {
     setLoading(true);
-    fetch(
-      `${apiUrl}/api/v1/projects/${projectId}/images?page=${
-        page + 1
-      }&limit=${pageSize}`,
-      { ...getHeaders }
-    )
-      .then((r) => r.json())
+    common
+      .getImages(projectId, [], pageSize, false, false, -1, page + 1)
       .then((images) => {
         setImages(images);
         setLoading(false);
@@ -64,22 +59,34 @@ export const ProjectSummary = () => {
         <ul>
           {projectConfigured && images.length > 0 ? (
             <li>
-              <rrd.Link to={`/projects/${projectId}/images`}>
+              {queue.length > 0 ? (
+                <rrd.Link to={`/projects/${projectId}/images/${queue[0].id}`}>
+                  <mui.Typography variant={"body1"}>
+                    Start labeling individual images
+                  </mui.Typography>
+                </rrd.Link>
+              ) : (
                 <mui.Typography variant={"body1"}>
-                  Start labeling individual images
+                  No images remain for labeling.
                 </mui.Typography>
-              </rrd.Link>
+              )}
             </li>
           ) : null}
-          {projectConfigured && images.length > 0 ? (
+          {!projectConfigured ||
+          images.length === 0 ||
+          queue.length === 0 ? null : (
             <li>
-              <rrd.Link to={`/projects/${projectId}/batches`}>
+              <rrd.Link
+                to={`/projects/${projectId}/batches/${queue
+                  .map((image) => image.id)
+                  .join(",")}`}
+              >
                 <mui.Typography variant={"body1"}>
                   Start labeling image batches
                 </mui.Typography>
               </rrd.Link>
             </li>
-          ) : null}
+          )}
           <li>
             <rrd.Link to={`/projects/${projectId}/edit-project`}>
               <mui.Typography variant={"body1"}>
@@ -90,7 +97,7 @@ export const ProjectSummary = () => {
             </rrd.Link>
           </li>
           <li>
-            <a href={`${apiUrl}/api/v1/projects/${projectId}/export`}>
+            <a href={common.getExportUrl(projectId)}>
               <mui.Typography variant={"body1"}>Export project</mui.Typography>
             </a>
           </li>

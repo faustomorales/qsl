@@ -1,5 +1,9 @@
 import * as sharedTypes from "./sharedTypes";
 
+import * as react from "react";
+
+const apiUrl = process.env.REACT_APP_API_URL || "";
+
 export const buildEmptyLabelGroup = (
   configGroup: sharedTypes.LabelConfigurationGroup
 ): sharedTypes.LabelGroup => {
@@ -66,7 +70,7 @@ const postRequestInit = {
   credentials: "include" as RequestCredentials,
 };
 
-export const getProject = (apiUrl: string, projectId: number | string) => {
+export const getProject = (projectId: number | string) => {
   return fetch(
     `${apiUrl}/api/v1/projects/${projectId}`,
     getRequestInit
@@ -74,7 +78,6 @@ export const getProject = (apiUrl: string, projectId: number | string) => {
 };
 
 export const getImageLabels = (
-  apiUrl: string,
   projectId: number | string,
   imageId: number | string
 ) => {
@@ -85,20 +88,23 @@ export const getImageLabels = (
 };
 
 export const getImages = (
-  apiUrl: string,
   projectId: number | string,
-  excludedIds: number[],
-  limit: number
+  excludedIds: number[] = [],
+  limit: number = 1,
+  shuffle: boolean = true,
+  excludeIgnored: boolean = true,
+  maxLabels: number = 0,
+  page: number = null
 ) => {
   const exclusionString = excludedIds.map((id) => `exclude=${id}`).join("&");
-  return fetch(
-    `${apiUrl}/api/v1/projects/${projectId}/images?shuffle=1&limit=${limit}&exclude_ignored=1&max_labels=0&${exclusionString}`,
-    getRequestInit
-  ).then((r) => r.json());
+  let url = `${apiUrl}/api/v1/projects/${projectId}/images?shuffle=${shuffle}&limit=${limit}&exclude_ignored=${excludeIgnored}&max_labels=${maxLabels}&${exclusionString}`;
+  if (page) {
+    url += `&page=${page}`;
+  }
+  return fetch(url, getRequestInit).then((r) => r.json());
 };
 
 export const setLabels = (
-  apiUrl: string,
   projectId: number | string,
   imageId: number | string,
   labels: sharedTypes.ImageLabels
@@ -112,5 +118,31 @@ export const setLabels = (
   ).then((r) => r.json());
 };
 
+export const deleteLabels = (
+  projectId: number | string,
+  imageId: number | string
+) =>
+  fetch(`${apiUrl}/api/v1/projects/${projectId}/images/${imageId}/labels`, {
+    ...getRequestInit,
+    method: "DELETE",
+  }).then((r) => r.json());
+
+export const getImageUrl = (
+  projectId: number | string,
+  imageId: number | string
+) => `${apiUrl}/api/v1/projects/${projectId}/images/${imageId}/file`;
+
+export const getExportUrl = (projectId: number | string) =>
+  `${apiUrl}/api/v1/projects/${projectId}/export`;
+
 export const delay = (amount: number) =>
   new Promise((resolve) => setTimeout(resolve, amount));
+
+export const simulateClick = async (
+  target: react.MutableRefObject<HTMLButtonElement>
+) => {
+  target.current?.focus();
+  await delay(200);
+  target.current?.blur();
+  target.current?.click();
+};

@@ -1,13 +1,44 @@
 import * as sharedTypes from "./sharedTypes";
 import LabelPanel from "./LabelPanel";
-import { Context } from "./Context";
+import ShortcutButton from "./ShortcutButton";
 
 import * as react from "react";
 import * as rrd from "react-router-dom";
 import * as mui from "@material-ui/core";
 import * as muic from "@material-ui/icons";
+import * as muidg from "@material-ui/data-grid";
 import * as muis from "@material-ui/core/styles";
 import * as common from "./common";
+
+type LabelAction = "ignore" | "save" | "delete";
+type ChangedRemoteStatus = "ignored" | "labeled";
+type RemoteStatus = ChangedRemoteStatus | "unknown";
+interface Status {
+  selected: boolean;
+  remoteStatus: RemoteStatus;
+}
+interface GridItem {
+  image: sharedTypes.Image;
+  selected: boolean;
+}
+
+interface BatchStatuses {
+  [key: number]: Status;
+}
+
+interface HistoryEntry {
+  images: sharedTypes.Image[];
+  status: BatchStatuses;
+}
+
+const statusesFromBatch = (images: sharedTypes.Image[]): BatchStatuses => {
+  return Object.fromEntries(
+    images.map((image) => [
+      image.id,
+      { selected: true, remoteStatus: "unknown" as RemoteStatus },
+    ])
+  );
+};
 
 const useStyles = muis.makeStyles((theme) => ({
   checkbox: {
@@ -24,37 +55,23 @@ const useStyles = muis.makeStyles((theme) => ({
 }));
 
 const BatchImageGrid = (props: {
-  images: sharedTypes.Image[];
+  items: GridItem[];
   projectId: string;
-  selected: number[];
   thumbnailSize: number;
-  setSelected: (selected: number[]) => void;
+  toggleSelected: (id: number) => void;
 }) => {
-  const { apiUrl } = react.useContext(Context);
-  const { selected, setSelected } = props;
   const classes = useStyles();
-  const toggleImage = react.useCallback(
-    (id) => {
-      if (selected.indexOf(id) >= 0) {
-        setSelected(selected.filter((currentId) => currentId !== id));
-      } else {
-        setSelected(selected.concat([id]));
-      }
-    },
-    [selected, setSelected]
-  );
 
-  const getIcon = (image: sharedTypes.Image) => {
-    const isSelected = props.selected.indexOf(image.id) >= 0;
+  const getIcon = (item: GridItem) => {
     return (
       <mui.IconButton
         className={`${classes.checkbox} ${
-          isSelected ? classes.checked : classes.unchecked
+          item.selected ? classes.checked : classes.unchecked
         }`}
-        onClick={() => toggleImage(image.id)}
-        aria-label={`selected ${image.id}`}
+        onClick={() => props.toggleSelected(item.image.id)}
+        aria-label={`selected ${item.image.id}`}
       >
-        {isSelected ? <muic.CheckBox /> : <muic.CheckBoxOutlineBlank />}
+        {item.selected ? <muic.CheckBox /> : <muic.CheckBoxOutlineBlank />}
       </mui.IconButton>
     );
   };
@@ -63,8 +80,8 @@ const BatchImageGrid = (props: {
       rowHeight={props.thumbnailSize}
       cols={Math.ceil(800 / props.thumbnailSize)}
     >
-      {props.images.map((image, imageIdx) => (
-        <mui.ImageListItem key={image.id} cols={1}>
+      {props.items.map((item) => (
+        <mui.ImageListItem key={item.image.id} cols={1}>
           <img
             style={{
               maxWidth: "100%",
@@ -80,11 +97,11 @@ const BatchImageGrid = (props: {
               left: 0,
               right: 0,
             }}
-            src={`${apiUrl}/api/v1/projects/${props.projectId}/images/${image.id}/file`}
-            alt={`ID: ${image.id}`}
-            onClick={() => toggleImage(image.id)}
+            src={common.getImageUrl(props.projectId, item.image.id)}
+            alt={`ID: ${item.image.id}`}
+            onClick={() => props.toggleSelected(item.image.id)}
           />
-          {getIcon(image)}
+          {getIcon(item)}
         </mui.ImageListItem>
       ))}
     </mui.ImageList>
@@ -93,273 +110,544 @@ const BatchImageGrid = (props: {
 
 export const BatchImageLabel = () => {
   // Get context variables.
-  const { apiUrl, postHeaders, getHeaders } = react.useContext(Context);
   const { projectId, imageIds } = rrd.useRouteMatch<{
     projectId: string;
     imageIds: string;
   }>().params;
 
   // Set state variables.
-  const [queueSize, setQueueSize] = react.useState(20);
-  const [thumbnailSize, setThumbnailSize] = react.useState(160);
-  const [project, setProject] = react.useState<sharedTypes.Project>(null);
-  const [labels, setLabels] = react.useState<sharedTypes.ImageLabels>(null);
-  const [queue, setQueue] = react.useState<sharedTypes.Image[]>(
-    imageIds
-      ? imageIds.split(",").map((id) => {
-          return { id: parseInt(id) };
-        })
-      : []
+  const [navState, setNavState] = react.useState({
+    labels: null as sharedTypes.ImageLabels,
+    dirty: false,
+    saved: [],
+    batches: [] as sharedTypes.Image[][],
+    batchSize: 10,
+    thumbnailSize: 160,
+    redirecting: false,
+    advanceOnSave: false,
+    history: [] as HistoryEntry[],
+    project: null as sharedTypes.Project,
+    currentBatchStatus: {} as BatchStatuses,
+    currentBatch: [] as sharedTypes.Image[],
+  });
+
+  const saveButton = react.useRef();
+  const nextButton = react.useRef();
+  const prevButton = react.useRef();
+  const ignoreButton = react.useRef();
+  const deleteButton = react.useRef();
+  const selectAllButton = react.useRef();
+  const selectNoneButton = react.useRef();
+
+  const getFilteredHistory = react.useCallback(
+    () =>
+      navState.history.filter(
+        (entry) => entry.images.map((image) => image.id).join(",") !== imageIds
+      ),
+    [navState, imageIds]
   );
-  const [nextQueue, setNextQueue] = react.useState<sharedTypes.Image[]>([]);
-  const [selected, setSelected] = react.useState<number[]>(
-    imageIds ? imageIds.split(",").map((id) => parseInt(id)) : []
-  );
-  const [status, setStatus] = react.useState<
-    "waiting" | "redirecting" | "populating"
-  >("waiting");
 
-  // Implement backend API operations.
-  react.useEffect(() => {
-    fetch(`${apiUrl}/api/v1/projects/${projectId}`, { ...getHeaders })
-      .then((r) => r.json())
-      .then(setProject);
-  }, [projectId]);
-
-  react.useEffect(() => {
-    if (!queue || queue.length === 0) {
-      return;
-    }
-    fetch(
-      `${apiUrl}/api/v1/projects/${projectId}/images/${queue[0].id}/labels`,
-      { ...getHeaders }
-    )
-      .then((r) => r.json())
-      .then((labels) => {
-        setLabels(labels);
-        setStatus("waiting");
-      });
-  }, [queue]);
-
-  react.useEffect(() => {
-    // This effect accounts for the user navigating
-    // back and forth in the browser.
-    const expectedImageIds = queue
-      ? queue.map((image) => image.id).join(",")
-      : null;
-    if (imageIds && expectedImageIds && expectedImageIds !== imageIds) {
-      const ids = imageIds.split(",");
-      setQueue(
-        ids.map((id) => {
-          return { id: parseInt(id) };
-        })
+  const onIgnoreDeleteSave = react.useCallback(
+    (action: LabelAction) => {
+      const changing = navState.currentBatch.filter(
+        (image) => navState.currentBatchStatus[image.id].selected
       );
-      setSelected(ids.map((id) => parseInt(id)));
-    }
-  }, [imageIds]);
-
-  const selectAll = react.useCallback(() => {
-    setSelected(queue.map((image) => image.id));
-  }, [queue]);
-
-  const selectNone = react.useCallback(() => setSelected([]), []);
-
-  const populateQueue = react.useCallback(() => {
-    if (nextQueue === null) {
-      setQueue(nextQueue);
-      setStatus("redirecting");
-      return;
-    }
-    if (status === "populating") {
-      return;
-    }
-    setStatus("populating");
-    const querySize = nextQueue.length > 0 ? queueSize : 2 * queueSize;
-    const exclusionString = (nextQueue ? nextQueue : [])
-      .concat(queue ? queue : [])
-      .map((image) => `exclude=${image.id}`)
-      .join("&");
-    fetch(
-      `${apiUrl}/api/v1/projects/${projectId}/images?shuffle=1&limit=${querySize}&max_labels=0&${exclusionString}`,
-      { ...getHeaders }
-    )
-      .then((r) => r.json())
-      .then((response: sharedTypes.Image[]) => {
-        if (nextQueue.length === 0) {
-          const responseQueue = response.slice(0, queueSize);
-          const responseNextQueue = response.slice(queueSize);
-          setQueue(responseQueue);
-          setNextQueue(responseNextQueue.length > 0 ? responseNextQueue : null);
-          setSelected(
-            responseQueue.length > 0
-              ? responseQueue.map((image) => image.id)
-              : null
+      let promises: Promise<sharedTypes.ImageLabels>[];
+      let remoteStatus: RemoteStatus;
+      switch (action) {
+        case "ignore":
+          remoteStatus = "ignored";
+          promises = changing.map((image) =>
+            common.setLabels(projectId, image.id, {
+              ...navState.labels,
+              ignored: true,
+            })
           );
-          setStatus("redirecting");
-        } else {
-          setQueue(nextQueue);
-          setSelected(
-            nextQueue.length > 0 ? nextQueue.map((image) => image.id) : null
+          break;
+        case "delete":
+          remoteStatus = "unknown";
+          promises = changing.map((image) =>
+            common.deleteLabels(projectId, image.id)
           );
-          setNextQueue(response.length > 0 ? response : null);
-          setStatus("redirecting");
+          break;
+        case "save":
+          remoteStatus = "labeled";
+          promises = changing.map((image) =>
+            common.setLabels(projectId, image.id, navState.labels)
+          );
+          break;
+      }
+      Promise.all(promises).then(() => {
+        const updated = {
+          ...navState,
+          currentBatchStatus: {
+            ...navState.currentBatchStatus,
+            ...Object.fromEntries(
+              changing.map((image) => [
+                image.id,
+                { selected: false, remoteStatus: remoteStatus },
+              ])
+            ),
+          },
+        };
+        setNavState(updated);
+        if (
+          navState.advanceOnSave &&
+          Object.entries(updated.currentBatchStatus).filter(
+            ([id, status]) => (status as Status).remoteStatus !== "unknown"
+          ).length === updated.currentBatch.length
+        ) {
+          common.simulateClick(nextButton);
         }
       });
-  }, [queueSize, status, projectId, nextQueue]);
+    },
+    [navState, nextButton]
+  );
+  const onForward = react.useCallback(() => {
+    // Stepping forward means replacing the current batch
+    // with the next batch and then populating the images
+    // in the next batch if there isn't already another one there.
+    console.log("Get length", navState.batches.length)
+    const history = [
+      {
+        images: navState.currentBatch,
+        status: navState.currentBatchStatus,
+      },
+    ].concat(getFilteredHistory());
+    setNavState({
+      ...navState,
+      currentBatch: navState.batches[0],
+      currentBatchStatus: statusesFromBatch(navState.batches[0]),
+      batches: navState.batches.slice(1),
+      history,
+      redirecting: true,
+    });
+  }, [navState, getFilteredHistory]);
+  const onBackward = react.useCallback(() => {
+    setNavState({
+      ...navState,
+      history: navState.history.slice(1),
+      currentBatch: navState.history[0].images,
+      currentBatchStatus: navState.history[0].status,
+      batches: [navState.currentBatch].concat(navState.batches),
+      redirecting: true,
+    });
+  }, [navState]);
+  const onReset = react.useCallback(
+    () =>
+      setNavState({
+        ...navState,
+        currentBatchStatus: statusesFromBatch(navState.currentBatch),
+      }),
+    [navState]
+  );
+
+  const selectAll = react.useCallback(
+    () =>
+      setNavState({
+        ...navState,
+        currentBatchStatus: Object.fromEntries(
+          Object.entries(navState.currentBatchStatus).map(([id, status]) => [
+            id,
+            {
+              ...status,
+              selected: status.remoteStatus === "unknown" ? true : false,
+            },
+          ])
+        ),
+      }),
+    [navState]
+  );
+
+  const selectNone = react.useCallback(
+    () =>
+      setNavState({
+        ...navState,
+        currentBatchStatus: Object.fromEntries(
+          Object.entries(navState.currentBatchStatus).map(([id, status]) => [
+            id,
+            { ...status, selected: false },
+          ])
+        ),
+      }),
+    [navState]
+  );
 
   react.useEffect(() => {
-    const handler = (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.shiftKey && event.key === "A") {
-        selectNone();
-      } else if (event.ctrlKey && !event.shiftKey && event.key === "a") {
-        selectAll();
+    // Runs whenever the image IDs or project ID in the URL change.
+    const currentBatch = imageIds.split(",").map((id) => {
+      return { id: parseInt(id) };
+    });
+    const currentBatchStatus = statusesFromBatch(currentBatch);
+    const nextBatchesQuery =
+      navState.batches.length > 0
+        ? Promise.resolve(navState.batches)
+        : common
+            .getImages(
+              projectId,
+              currentBatch.map((image) => image.id),
+              navState.batchSize,
+              true,
+              true,
+              0
+            )
+            .then((batch) => Promise.resolve([batch]));
+    Promise.all([
+      common.getProject(projectId),
+      common.getImageLabels(projectId, currentBatch[0].id),
+      nextBatchesQuery,
+    ]).then(([project, labels, batches]) =>
+      setNavState({
+        ...navState,
+        labels,
+        batches,
+        project,
+        currentBatchStatus,
+        currentBatch,
+        redirecting: false,
+      })
+    );
+  }, [projectId, imageIds]);
+
+  react.useEffect(() => {
+    const handler = async (event: KeyboardEvent) => {
+      let target: react.MutableRefObject<HTMLButtonElement> = null;
+      switch (event.key) {
+        case "A":
+          target = event.ctrlKey && event.shiftKey ? selectNoneButton : null;
+          break;
+        case "a":
+          target = event.ctrlKey && !event.shiftKey ? selectAllButton : null;
+          break;
+        case "ArrowRight":
+          target = nextButton;
+          break;
+        case "ArrowLeft":
+          target = prevButton;
+          break;
+        case "Enter":
+          target = event.shiftKey ? ignoreButton : saveButton;
+          break;
+        case "Backspace":
+        case "Delete":
+          target = deleteButton;
+          break;
+        default:
+        // code block
+      }
+      if (target) {
+        common.simulateClick(target);
       }
     };
     document.addEventListener("keydown", handler, false);
     return () => {
       document.removeEventListener("keydown", handler, false);
     };
-  }, [selectNone, selectAll]);
+  }, [
+    navState,
+    nextButton,
+    prevButton,
+    saveButton,
+    ignoreButton,
+    deleteButton,
+    selectAllButton,
+    selectNoneButton,
+  ]);
 
-  const save = react.useCallback(() => {
-    const filtered = queue.filter((image) => selected.indexOf(image.id) < 0);
-    Promise.all(
-      queue
-        .filter((image) => selected.indexOf(image.id) >= 0)
-        .map((image) =>
-          fetch(
-            `${apiUrl}/api/v1/projects/${projectId}/images/${image.id}/labels`,
-            { ...postHeaders, body: JSON.stringify(labels) }
-          ).then((r) => r.json())
-        )
-    ).then(() => {
-      if (filtered.length > 0) {
-        setQueue(filtered);
-        setSelected([]);
-      } else {
-        populateQueue();
-      }
-      setStatus("redirecting");
-    });
-  }, [labels, projectId, selected, queue]);
   let redirect: JSX.Element = null;
-  const expectedImageIds = queue
-    ? queue.map((image) => image.id).join(",")
-    : null;
-  if (!queue) {
-    // There are no remaining images to label.
-    return <rrd.Redirect to={`/projects/${projectId}`} push={true} />;
-  } else if (queue.length === 0) {
-    // The queue hasn't been initialized.
-    populateQueue();
-  } else if (expectedImageIds !== imageIds && status === "redirecting") {
-    // We're not at the right URL.
-    redirect = (
-      <rrd.Redirect
-        to={`/projects/${projectId}/batches/${expectedImageIds}`}
-        push={true}
-      />
-    );
+  if (navState.redirecting) {
+    const expectedImageIds = navState.currentBatch
+      .map((image) => image.id)
+      .join(",");
+    if (!expectedImageIds) {
+      redirect = <rrd.Redirect to={`/projects/${projectId}`} push={true} />;
+    } else if (expectedImageIds !== imageIds) {
+      // We're not at the right URL.
+      redirect = (
+        <rrd.Redirect
+          to={`/projects/${projectId}/batches/${expectedImageIds}`}
+          push={true}
+        />
+      );
+    }
   }
-  if (!project) {
+
+  if (!navState.project || !navState.labels) {
     return null;
   }
+
+  const nLabeled = Object.entries(navState.currentBatchStatus).reduce(
+    (memo, [id, status]) => memo + (status.remoteStatus === "labeled" ? 1 : 0),
+    0
+  );
+  const nIgnored = Object.entries(navState.currentBatchStatus).reduce(
+    (memo, [id, status]) => memo + (status.remoteStatus === "ignored" ? 1 : 0),
+    0
+  );
+  const nSelected = Object.entries(navState.currentBatchStatus).reduce(
+    (memo, [id, status]) => memo + status.selected,
+    0
+  );
   return (
     <mui.Grid container spacing={2}>
-      <mui.Grid item xs={12}>
-        <rrd.Link to={`/projects/${projectId}`}>
-          <mui.Typography variant="subtitle1">
-            Back to project menu
+      <mui.Grid item xs={3}>
+        <mui.Grid item>
+          {redirect}
+          <mui.Typography style={{ marginBottom: "10px" }} variant={"h6"}>
+            Image-Level Labels
           </mui.Typography>
-        </rrd.Link>
-        {common.hasBoxLabels(project.labelingConfiguration) ? (
-          <mui.Grid container direction="row" alignItems="center" spacing={1}>
-            <mui.Grid item>
-              <muic.Warning />
-            </mui.Grid>
-            <mui.Grid item>
-              <mui.Typography variant="body1">
-                This project has box-level labels which will be overwritten in
-                batch mode.
-              </mui.Typography>
-            </mui.Grid>
-          </mui.Grid>
-        ) : null}
-      </mui.Grid>
-      <mui.Grid item xs={6}>
-        <mui.Typography id="batch-size-selector" gutterBottom>
-          Target Batch Size
-        </mui.Typography>
-        <mui.Slider
-          value={queueSize}
-          aria-labelledby="batch-size-selector"
-          valueLabelDisplay="auto"
-          onChange={(event, value) => setQueueSize(value as number)}
-          step={10}
-          marks
-          min={10}
-          max={110}
-        />
-      </mui.Grid>
-      <mui.Grid item xs={6}>
-        <mui.Typography id="batch-size-selector" gutterBottom>
-          Thumbnail Size
-        </mui.Typography>
-        <mui.Slider
-          value={thumbnailSize}
-          aria-labelledby="batch-size-selector"
-          valueLabelDisplay="auto"
-          onChange={(event, value) => setThumbnailSize(value as number)}
-          step={20}
-          marks
-          min={160}
-          max={500}
-        />
-      </mui.Grid>
-      <mui.Grid item xs={12}>
-        {selected && queue ? (
-          <BatchImageGrid
-            images={queue}
-            thumbnailSize={thumbnailSize}
-            projectId={projectId}
-            setSelected={setSelected}
-            selected={selected}
-          />
-        ) : null}
-        {labels && project ? (
-          <LabelPanel
-            configGroup={project.labelingConfiguration.image}
-            labels={labels.image}
-            onEnter={save}
-            setLabelGroup={(labels) =>
-              setLabels({
-                boxes: [],
-                image: labels,
-                default: false,
-                ignored: false,
-              })
+          {navState.labels && navState.project ? (
+            <LabelPanel
+              configGroup={navState.project.labelingConfiguration.image}
+              labels={navState.labels.image}
+              setLabelGroup={(labels) =>
+                setNavState({
+                  ...navState,
+                  labels: {
+                    boxes: [],
+                    image: labels,
+                    default: false,
+                    ignored: false,
+                  },
+                })
+              }
+            />
+          ) : null}
+          <mui.Divider />
+        </mui.Grid>
+        <mui.Grid item>
+          <mui.Typography variant={"h6"}>View Settings</mui.Typography>
+          <mui.Typography id="batch-size-selector" gutterBottom>
+            Target Batch Size
+          </mui.Typography>
+          <mui.Slider
+            value={navState.batchSize}
+            aria-labelledby="batch-size-selector"
+            valueLabelDisplay="auto"
+            onChange={(event, value) =>
+              setNavState({ ...navState, batchSize: value as number })
             }
+            step={10}
+            marks
+            min={10}
+            max={110}
           />
-        ) : null}
-      </mui.Grid>
-      <mui.Grid item>
-        <mui.Button
-          disabled={selected.length === 0}
-          onClick={save}
-          startIcon={<muic.KeyboardReturn />}
-        >
-          Save
-        </mui.Button>
-        <mui.Button
-          disabled={selected.length === queue.length}
-          onClick={selectAll}
-        >
-          Select All (Ctrl+A)
-        </mui.Button>
-        <mui.Button disabled={selected.length === 0} onClick={selectNone}>
-          Select None (Ctrl+Shift+A)
-        </mui.Button>
+          <mui.Typography id="batch-size-selector" gutterBottom>
+            Thumbnail Size
+          </mui.Typography>
+          <mui.Slider
+            value={navState.thumbnailSize}
+            aria-labelledby="batch-size-selector"
+            valueLabelDisplay="auto"
+            onChange={(event, value) =>
+              setNavState({ ...navState, thumbnailSize: value as number })
+            }
+            step={20}
+            marks
+            min={160}
+            max={500}
+          />
+          <mui.Divider />
+        </mui.Grid>
+        <mui.Grid item>
+          <mui.Typography style={{ marginBottom: "10px" }} variant={"h6"}>
+            Label Actions
+          </mui.Typography>
+          <mui.ButtonGroup
+            size="small"
+            orientation="vertical"
+            color="primary"
+            style={{ width: "100%" }}
+            aria-label="acton button group"
+          >
+            <ShortcutButton
+              startIcon={"\u23CE"}
+              disabled={
+                nLabeled + nIgnored === navState.currentBatch.length ||
+                nSelected === 0
+              }
+              onClick={() => onIgnoreDeleteSave("save")}
+              ref={saveButton}
+            >
+              Save
+            </ShortcutButton>
+            <ShortcutButton
+              startIcon={"\u21E7\u23CE"}
+              disabled={
+                nLabeled + nIgnored === navState.currentBatch.length ||
+                nSelected === 0
+              }
+              onClick={() => onIgnoreDeleteSave("ignore")}
+              ref={ignoreButton}
+            >
+              Ignore
+            </ShortcutButton>
+            <ShortcutButton
+              startIcon={"\u232B"}
+              ref={deleteButton}
+              disabled={
+                nLabeled + nIgnored === navState.currentBatch.length ||
+                nSelected === 0
+              }
+              onClick={() => onIgnoreDeleteSave("delete")}
+            >
+              Remove Labels
+            </ShortcutButton>
+            <ShortcutButton
+              startIcon={<muic.KeyboardArrowRight />}
+              ref={nextButton}
+              onClick={onForward}
+              disabled={navState.batches.length == 0}
+            >
+              Next
+            </ShortcutButton>
+            <ShortcutButton
+              startIcon={<muic.KeyboardArrowLeft />}
+              onClick={onBackward}
+              ref={prevButton}
+              disabled={getFilteredHistory().length === 0}
+            >
+              Previous
+            </ShortcutButton>
+            <ShortcutButton
+              disabled={nSelected === navState.currentBatch.length - nLabeled}
+              onClick={selectAll}
+              startIcon={"\u2303A"}
+              ref={selectAllButton}
+            >
+              Select All
+            </ShortcutButton>
+            <ShortcutButton
+              startIcon={"\u2303\u21E7A"}
+              disabled={nSelected === 0}
+              onClick={selectNone}
+              ref={selectNoneButton}
+            >
+              Select None
+            </ShortcutButton>
+          </mui.ButtonGroup>
+          <mui.FormControlLabel
+            control={
+              <mui.Checkbox
+                checked={navState.advanceOnSave}
+                onChange={(event, advanceOnSave) =>
+                  setNavState({ ...navState, advanceOnSave })
+                }
+                name="advanceOnSave"
+              />
+            }
+            label="Advance when batch complete?"
+          />
+          {common.hasBoxLabels(navState.project.labelingConfiguration) ? (
+            <mui.Typography variant="body1">
+              This project has box-level labels which will be overwritten in
+              batch mode.
+            </mui.Typography>
+          ) : null}
+        </mui.Grid>
+        <mui.Grid item>
+          <mui.Divider style={{ marginBottom: "10px" }} />
+          <mui.Typography variant={"h6"}>History</mui.Typography>
+          <mui.Typography variant={"caption"}>
+            Ten most recently reviewed batches.
+          </mui.Typography>
+          <muidg.DataGrid
+            rows={navState.history.map((entry) => {
+              return {
+                ...entry,
+                id: entry.images.map((image) => image.id).join(","),
+              };
+            })}
+            hideFooterPagination
+            disableColumnSelector
+            disableSelectionOnClick
+            disableColumnMenu
+            hideFooter
+            disableColumnReorder
+            disableColumnFilter
+            autoHeight
+            columns={[
+              {
+                field: "images",
+                headerName: "ID",
+                flex: 1,
+                renderCell: (params: muidg.CellParams) => {
+                  const ids = (params.value as sharedTypes.Image[]).map(
+                    (image) => image.id
+                  );
+                  return (
+                    <rrd.Link
+                      to={`/projects/${projectId}/images/${ids.join(",")}`}
+                    >
+                      {ids.slice(0, 5).join(", ") +
+                        (ids.length > 5 ? ", ..." : "")}
+                    </rrd.Link>
+                  );
+                },
+              },
+            ]}
+          />
         {redirect}
+        <mui.Divider style={{marginBottom: "10px"}} />
+        <mui.Link
+          component={rrd.Link}
+          variant={"body1"}
+          to={`/projects/${projectId}`}
+        >
+          Return to Project Menu
+        </mui.Link>
+        </mui.Grid>
+      </mui.Grid>
+      <mui.Grid item xs={9}>
+        {nLabeled + nIgnored < navState.currentBatch.length ? (
+          <mui.Box>
+            <BatchImageGrid
+              items={navState.currentBatch
+                .filter(
+                  (image) =>
+                    navState.currentBatchStatus[image.id].remoteStatus ===
+                    "unknown"
+                )
+                .map((image) => {
+                  return {
+                    image,
+                    selected: navState.currentBatchStatus[image.id].selected,
+                  };
+                })}
+              thumbnailSize={navState.thumbnailSize}
+              projectId={projectId}
+              toggleSelected={(id) =>
+                setNavState({
+                  ...navState,
+                  currentBatchStatus: {
+                    ...navState.currentBatchStatus,
+                    [id]: {
+                      ...navState.currentBatchStatus[id],
+                      selected: !navState.currentBatchStatus[id].selected,
+                    },
+                  },
+                })
+              }
+            />
+            <mui.Divider style={{ marginBottom: "10px" }} />
+          </mui.Box>
+        ) : null}
+        <mui.Grid container direction={"row"} alignItems="center" spacing={1}>
+          <mui.Grid item>
+            <mui.Button
+              onClick={onReset}
+              disabled={nLabeled === 0 && nIgnored === 0}
+              variant="contained"
+            >
+              Reset
+            </mui.Button>
+          </mui.Grid>
+          <mui.Grid item>
+            <mui.Typography variant={"body1"}>
+              Hiding {nLabeled} labeled and {nIgnored} ignored images.
+            </mui.Typography>
+          </mui.Grid>
+        </mui.Grid>
       </mui.Grid>
     </mui.Grid>
   );

@@ -70,10 +70,10 @@ const App = () => {
       <mui.ThemeProvider theme={theme}>
         <rrd.BrowserRouter>
           <rrd.Switch>
-            <rrd.Route path="/projects/:projectId/images/:imageId?">
+            <rrd.Route path="/projects/:projectId/images/:imageId">
               <components.SingleImageLabel />
             </rrd.Route>
-            <rrd.Route path="/projects/:projectId/batches/:imageIds?">
+            <rrd.Route path="/projects/:projectId/batches/:imageIds">
               <components.BatchImageLabel />
             </rrd.Route>
             <rrd.Route path="/projects/:projectId/edit-project">

@@ -135,7 +135,14 @@ const SingleLabelPanel = (props: {
                 key={optionName}
                 optionName={optionName}
                 optionConfig={optionConfig}
-                control={<mui.Radio disabled={!props.onChange} onClick={(event: any) => props.onChange(event, event.target.value)} />}
+                control={
+                  <mui.Radio
+                    disabled={!props.onChange}
+                    onClick={(event: any) =>
+                      props.onChange(event, event.target.value)
+                    }
+                  />
+                }
               />
             )
           )}
@@ -371,12 +378,15 @@ const LabelPanel = (props: {
       }
       let updated: sharedTypes.LabelGroup;
       if (configType === "single" || configType === "text") {
-        let newValue: string
-        if (configType === "single" && labels[configType][configName] === value) {
+        let newValue: string;
+        if (
+          configType === "single" &&
+          labels[configType][configName] === value
+        ) {
           // We're unsetting this label.
-          newValue = null
+          newValue = null;
         } else {
-          newValue = value
+          newValue = value;
         }
         updated = {
           ...labels,

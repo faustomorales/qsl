@@ -502,7 +502,7 @@ def list_images(
         )
         .group_by(orm.Image.id)
     )
-    if max_labels is not None:
+    if max_labels is not None and max_labels > -1:
         query = query.having(user_label_count <= max_labels)
     if exclude is not None:
         query = query.filter(orm.Image.id.notin_(exclude))

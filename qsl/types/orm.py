@@ -79,7 +79,7 @@ class LabelOption(BaseModel):
 
 class Image(BaseModel):
     __tablename__ = "images"
-
+    __table_args__ = (sa.UniqueConstraint("project_id", "filepath"),)
     id = sa.Column(sa.Integer, primary_key=True)
     default_image_label_collection_id = sa.Column(
         sa.Integer,
@@ -144,10 +144,11 @@ class ImageLevelLabel(BaseModel):
 class Box(BaseModel):
     __tablename__ = "boxes"
     id = sa.Column(sa.Integer, primary_key=True)
-    x = sa.Column(sa.Float, nullable=False)
-    y = sa.Column(sa.Float, nullable=False)
-    w = sa.Column(sa.Float, nullable=False)
-    h = sa.Column(sa.Float, nullable=False)
+    x = sa.Column(sa.Float)
+    y = sa.Column(sa.Float)
+    w = sa.Column(sa.Float)
+    h = sa.Column(sa.Float)
+    points = sa.Column(sa.String)
     labels = sa.orm.relationship(
         "BoxLabel",
         back_populates="box",

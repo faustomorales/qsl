@@ -1,5 +1,3 @@
-import * as rrd from "react-router-dom";
-import { Context } from "./Context";
 import * as common from "./common";
 import * as sharedTypes from "./sharedTypes";
 import * as react from "react";
@@ -7,23 +5,15 @@ import * as mui from "@material-ui/core";
 import * as muic from "@material-ui/icons";
 import * as muis from "@material-ui/styles";
 import * as muidg from "@material-ui/data-grid";
+import * as rrd from "react-router-dom";
 import _ from "lodash";
 import LabelPanel from "./LabelPanel";
+import ShortcutButton from "./ShortcutButton";
 
 interface HistoryEntry {
   id: number;
   status: "Ignored" | "Unlabeled" | "Labeled";
 }
-
-const ShortcutButton = muis.withStyles({
-  startIcon: {
-    position: "absolute",
-    left: "8px",
-  },
-  label: {
-    paddingLeft: "40px",
-  },
-})(mui.Button);
 
 const useStyles = muis.makeStyles((theme) => ({
   box: {
@@ -148,7 +138,6 @@ const Image = (props: {
   onSelectBox: (boxIdx: number, event: MousePosition) => void;
 }) => {
   const classes = useStyles();
-  const { apiUrl } = react.useContext(Context);
   const { projectId, imageId } = rrd.useRouteMatch<{
     projectId: string;
     imageId: string;
@@ -169,7 +158,7 @@ const Image = (props: {
         <mui.Paper>
           <img
             ref={ref}
-            src={`${apiUrl}/api/v1/projects/${projectId}/images/${imageId}/file`}
+            src={common.getImageUrl(projectId, imageId)}
             alt={`ID: ${imageId}`}
             onMouseMove={onMouseMove}
             onClick={onClick}
@@ -239,7 +228,6 @@ const updateHistory = (
 
 export const SingleImageLabel = () => {
   // Get context variables.
-  const { apiUrl, getHeaders, queueSize } = react.useContext(Context);
   const { projectId, imageId } = rrd.useRouteMatch<{
     projectId: string;
     imageId: string;
@@ -256,6 +244,7 @@ export const SingleImageLabel = () => {
   const [draftBox, setDraftBox] = react.useState<DraftBox>(null);
   const [project, setProject] = react.useState(null as sharedTypes.Project);
   const [navState, setNavState] = react.useState({
+    queueSize: 20,
     desiredImageId: imageId,
     status: "initializing" as
       | "initializing"
@@ -349,7 +338,7 @@ export const SingleImageLabel = () => {
 
   // Implement backend API operations
   react.useEffect(() => {
-    common.getProject(apiUrl, projectId).then(setProject);
+    common.getProject(projectId).then(setProject);
   }, [projectId, imageId]);
 
   // This runs any time the imageId changes in the URL, which is also the
@@ -363,15 +352,14 @@ export const SingleImageLabel = () => {
       .concat(imageId ? [parseInt(imageId)] : []);
     Promise.all([
       imageId
-        ? common.getImageLabels(apiUrl, projectId, imageId)
+        ? common.getImageLabels(projectId, imageId)
         : Promise.resolve(null),
-      queueSize <= existing.length
+      navState.queueSize <= existing.length
         ? Promise.resolve([])
         : common.getImages(
-            apiUrl,
             projectId,
             excludedIds,
-            queueSize - existing.length
+            navState.queueSize - existing.length
           ),
     ]).then(([labels, additions]) => {
       const updated = existing.concat(additions);
@@ -392,20 +380,15 @@ export const SingleImageLabel = () => {
 
   const onDelete = react.useCallback(() => {
     if (!navState.labels.default) {
-      fetch(`${apiUrl}/api/v1/projects/${projectId}/images/${imageId}/labels`, {
-        ...getHeaders,
-        method: "DELETE",
-      })
-        .then((r) => r.json())
-        .then((updated) => {
-          setNavState({
-            ...navState,
-            labels: updated,
-            dirty: false,
-            history: updateHistory(imageId, "Unlabeled", navState.history),
-            notice: "Deleted your label and reverted to default.",
-          });
+      common.deleteLabels(projectId, imageId).then((updated) => {
+        setNavState({
+          ...navState,
+          labels: updated,
+          dirty: false,
+          history: updateHistory(imageId, "Unlabeled", navState.history),
+          notice: "Deleted your label and reverted to default.",
         });
+      });
     }
   }, [imageId, navState]);
 
@@ -414,13 +397,13 @@ export const SingleImageLabel = () => {
     [navState]
   );
 
-  const onClickSaveButton = react.useCallback(() => {
+  const onSave = react.useCallback(() => {
     common
-      .setLabels(apiUrl, projectId, imageId, {
+      .setLabels(projectId, imageId, {
         ...navState.labels,
         ignored: false,
       })
-      .then((updated) => {
+      .then(async (updated) => {
         setNavState({
           ...navState,
           labels: updated,
@@ -428,10 +411,13 @@ export const SingleImageLabel = () => {
           history: updateHistory(imageId, "Labeled", navState.history),
           notice: "Saved your labels.",
         });
+        if (navState.advanceOnSave) {
+          common.simulateClick(nextButton);
+        }
       });
-  }, [navState]);
+  }, [navState, nextButton]);
 
-  const onClickSetBoxButton = react.useCallback(() => {
+  const onSetBox = react.useCallback(() => {
     setDraftBox(null);
     setNavState({
       ...navState,
@@ -448,7 +434,7 @@ export const SingleImageLabel = () => {
       return;
     } else {
       common
-        .setLabels(apiUrl, projectId, imageId, {
+        .setLabels(projectId, imageId, {
           ...navState.labels,
           ignored: true,
         })
@@ -517,38 +503,30 @@ export const SingleImageLabel = () => {
 
   react.useEffect(() => {
     const handler = async (event: KeyboardEvent) => {
-      let targets: react.MutableRefObject<HTMLButtonElement>[] = null;
+      let target: react.MutableRefObject<HTMLButtonElement> = null;
       switch (event.key) {
         case "ArrowRight":
-          targets = [nextButton];
+          target = nextButton;
           break;
         case "ArrowLeft":
-          targets = [prevButton];
+          target = prevButton;
           break;
         case "Enter":
           if (!boxMode) {
-            targets = [event.shiftKey ? ignoreButton : saveButton];
-            if (navState.advanceOnSave) {
-              targets = targets.concat([nextButton]);
-            }
+            target = event.shiftKey ? ignoreButton : saveButton;
           } else {
-            targets = [setBoxButton];
+            target = setBoxButton;
           }
           break;
         case "Backspace":
         case "Delete":
-          targets = boxMode ? [deleteBoxButton] : [deleteButton];
+          target = boxMode ? deleteBoxButton : deleteButton;
           break;
         default:
         // code block
       }
-      if (targets) {
-        for (let i = 0; i < targets.length; i++) {
-          targets[i].current?.focus();
-          await common.delay(200);
-          targets[i].current?.blur();
-          targets[i].current?.click();
-        }
+      if (target) {
+        common.simulateClick(target);
       }
     };
     document.addEventListener("keydown", handler, false);
@@ -663,7 +641,7 @@ export const SingleImageLabel = () => {
             {boxMode ? (
               <ShortcutButton
                 startIcon={"\u23CE"}
-                onClick={onClickSetBoxButton}
+                onClick={onSetBox}
                 ref={setBoxButton}
               >
                 Set Box Label
@@ -682,7 +660,7 @@ export const SingleImageLabel = () => {
               <ShortcutButton
                 startIcon={"\u23CE"}
                 disabled={!navState.labels.default && !navState.dirty}
-                onClick={onClickSaveButton}
+                onClick={onSave}
                 ref={saveButton}
               >
                 Save
@@ -832,7 +810,7 @@ export const SingleImageLabel = () => {
               <img
                 key={index}
                 alt={`Background Load: ${image.id}`}
-                src={`${apiUrl}/api/v1/projects/${projectId}/images/${image.id}/file`}
+                src={common.getImageUrl(projectId, imageId)}
                 style={{ width: 0, height: 0 }}
               />
             ))

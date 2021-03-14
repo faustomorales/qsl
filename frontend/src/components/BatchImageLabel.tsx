@@ -1,6 +1,7 @@
 import * as sharedTypes from "./sharedTypes";
 import LabelPanel from "./LabelPanel";
 import ShortcutButton from "./ShortcutButton";
+import LabelingStatus from "./LabelingStatus";
 
 import * as react from "react";
 import * as rrd from "react-router-dom";
@@ -389,6 +390,11 @@ export const BatchImageLabel = () => {
   );
   return (
     <mui.Grid container spacing={2}>
+      <mui.Grid item xs={12}>
+        <LabelingStatus project={navState.project}>
+          {navState.project.name} / Batches
+        </LabelingStatus>
+      </mui.Grid>
       <mui.Grid item xs={3}>
         <mui.Grid item>
           {redirect}

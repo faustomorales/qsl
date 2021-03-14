@@ -9,6 +9,7 @@ import * as rrd from "react-router-dom";
 import _ from "lodash";
 import LabelPanel from "./LabelPanel";
 import ShortcutButton from "./ShortcutButton";
+import LabelingStatus from "./LabelingStatus";
 
 interface HistoryEntry {
   id: number;
@@ -271,9 +272,6 @@ export const SingleImageLabel = () => {
     ? boxMode
       ? draftBox.labels
       : navState.labels.image
-    : null;
-  const progress = project
-    ? Math.round((100 * project.nLabeled) / project.nImages)
     : null;
 
   // Implement UI event handlers
@@ -562,38 +560,9 @@ export const SingleImageLabel = () => {
   return (
     <mui.Grid container spacing={2}>
       <mui.Grid item xs={12}>
-        <mui.AppBar position="static">
-          <mui.Toolbar>
-            <mui.Box position="relative" display="inline-flex">
-              <mui.CircularProgress
-                style={{ color: "white" }}
-                variant="determinate"
-                size={40}
-                color="secondary"
-                value={progress}
-              />
-              <mui.Box
-                top={0}
-                left={0}
-                bottom={0}
-                right={0}
-                position="absolute"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <mui.Typography
-                  variant="caption"
-                  component="div"
-                  style={{ color: "white" }}
-                >{`${progress}%`}</mui.Typography>
-              </mui.Box>
-            </mui.Box>
-            <mui.Typography variant="h6" style={{ marginLeft: "10px" }}>
-              {project.name} / Images / {imageId}
-            </mui.Typography>
-          </mui.Toolbar>
-        </mui.AppBar>
+        <LabelingStatus project={project}>
+          {project.name} / Images / {imageId}
+        </LabelingStatus>
       </mui.Grid>
       <mui.Grid container item xs={12} sm={3} direction="column" spacing={2}>
         <mui.Grid item>

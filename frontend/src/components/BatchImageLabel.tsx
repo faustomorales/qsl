@@ -207,7 +207,6 @@ export const BatchImageLabel = () => {
     // Stepping forward means replacing the current batch
     // with the next batch and then populating the images
     // in the next batch if there isn't already another one there.
-    console.log("Get length", navState.batches.length)
     const history = [
       {
         images: navState.currentBatch,
@@ -497,7 +496,7 @@ export const BatchImageLabel = () => {
               startIcon={<muic.KeyboardArrowRight />}
               ref={nextButton}
               onClick={onForward}
-              disabled={navState.batches.length == 0}
+              disabled={navState.batches.length === 0}
             >
               Next
             </ShortcutButton>
@@ -587,15 +586,15 @@ export const BatchImageLabel = () => {
               },
             ]}
           />
-        {redirect}
-        <mui.Divider style={{marginBottom: "10px"}} />
-        <mui.Link
-          component={rrd.Link}
-          variant={"body1"}
-          to={`/projects/${projectId}`}
-        >
-          Return to Project Menu
-        </mui.Link>
+          {redirect}
+          <mui.Divider style={{ marginBottom: "10px" }} />
+          <mui.Link
+            component={rrd.Link}
+            variant={"body1"}
+            to={`/projects/${projectId}`}
+          >
+            Return to Project Menu
+          </mui.Link>
         </mui.Grid>
       </mui.Grid>
       <mui.Grid item xs={9}>

@@ -621,6 +621,14 @@ def get_labels(
                 label_option=image_label_option,
             )
         elif (config.level == orm.Level.box) and box is not None:
+            points = (
+                [
+                    web.Point(**dict(zip(["x", "y"], point.split(","))))
+                    for point in box.points.split("|")
+                ]
+                if box.points
+                else None
+            )
             box_web = box_lookup.get(
                 box.id,
                 web.Box(
@@ -629,6 +637,7 @@ def get_labels(
                     y=box.y,
                     w=box.w,
                     h=box.h,
+                    points=points,
                     labels=web.LabelGroup(single={}, multiple={}, text={}),
                 ),
             )
@@ -702,6 +711,9 @@ def set_labels(
                     y=typing.cast(decimal.Decimal, box.y),
                     w=typing.cast(decimal.Decimal, box.w),
                     h=typing.cast(decimal.Decimal, box.h),
+                    points="|".join([f"{p.x},{p.y}" for p in box.points])
+                    if box.points
+                    else None,
                     labels=convert_label_group_to_labels(
                         config_group=config.box,
                         label_class=orm.BoxLabel,

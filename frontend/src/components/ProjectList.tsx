@@ -4,6 +4,7 @@ import * as rrd from "react-router-dom";
 import * as react from "react";
 import * as mui from "@material-ui/core";
 import * as muidg from "@material-ui/data-grid";
+import LabelingStatus from "./LabelingStatus";
 
 export const ProjectList = () => {
   // Get context variables.
@@ -34,7 +35,9 @@ export const ProjectList = () => {
   return (
     <mui.Grid container spacing={2}>
       <mui.Grid item xs={12}>
-        <mui.Typography variant="h5">Projects</mui.Typography>
+      <LabelingStatus>
+          QSL / <rrd.Link to="/projects">Projects</rrd.Link>
+        </LabelingStatus>
       </mui.Grid>
       <mui.Grid item xs={12}>
         <muidg.DataGrid

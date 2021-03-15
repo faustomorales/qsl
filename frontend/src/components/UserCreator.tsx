@@ -1,7 +1,9 @@
 import { Context } from "./Context";
+import LabelingStatus from "./LabelingStatus";
 import * as sharedTypes from "./sharedTypes";
 
 import * as react from "react";
+import * as rrd from "react-router-dom";
 import * as mui from "@material-ui/core";
 import * as muidg from "@material-ui/data-grid";
 
@@ -53,9 +55,9 @@ export const UserCreator = () => {
   }
   return (
     <mui.Grid container spacing={2}>
-      <mui.Grid item xs={12}>
-        <mui.Typography variant="h5">Users</mui.Typography>
-      </mui.Grid>
+      <LabelingStatus>
+          QSL / <rrd.Link to="/users">Users</rrd.Link>
+        </LabelingStatus>
       <mui.Grid item xs={12}>
         <mui.Typography variant={"body1"}>
           {authConfig.provider === "github"

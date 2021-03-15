@@ -6,12 +6,18 @@ export interface LabelGroup {
   text: { [key: string]: string };
 }
 
+export interface Point {
+  x: number;
+  y: number;
+}
+
 export interface Box {
   id: number;
   x: number;
   y: number;
   w: number;
   h: number;
+  points: Point[];
   labels: LabelGroup;
 }
 

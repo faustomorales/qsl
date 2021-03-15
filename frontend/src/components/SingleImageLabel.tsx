@@ -3,7 +3,6 @@ import * as sharedTypes from "./sharedTypes";
 import * as react from "react";
 import * as mui from "@material-ui/core";
 import * as muic from "@material-ui/icons";
-import * as muis from "@material-ui/styles";
 import * as muidg from "@material-ui/data-grid";
 import * as rrd from "react-router-dom";
 import _ from "lodash";
@@ -16,31 +15,12 @@ interface HistoryEntry {
   status: "Ignored" | "Unlabeled" | "Labeled";
 }
 
-const useStyles = muis.makeStyles((theme) => ({
-  box: {
-    position: "absolute",
-    border: "2px solid black",
-    backgroundColor: "rgba(255,255,255,0.5)",
-    color: "black",
-  },
-  selectedBox: {
-    border: "2px solid red",
-    color: "red",
-  },
-  startIcon: {
-    position: "absolute",
-    left: "8px",
-  },
-  iconButtonSpan: {
-    paddingLeft: "40px",
-  },
-}));
-
 interface DraftBox {
   x1: number;
   y1: number;
   x2: number;
   y2: number;
+  points: sharedTypes.Point[];
   next: 1 | 2;
   fixed: boolean;
   id: number;
@@ -52,53 +32,33 @@ interface MousePosition {
   y: number;
 }
 
-const float2css = (float: number) => `${float * 100}%`;
-const box2styles = (box: sharedTypes.Box) => {
-  return {
-    left: float2css(box.x),
-    top: float2css(box.y),
-    width: float2css(box.w),
-    height: float2css(box.h),
-  };
-};
-const draftBox2box = (box: DraftBox): sharedTypes.Box => {
-  return {
-    x: Math.min(box.x1, box.x2),
-    y: Math.min(box.y1, box.y2),
-    w: Math.abs(box.x2 - box.x1),
-    h: Math.abs(box.y2 - box.y1),
-    id: box.id,
-    labels: box.labels,
-  };
-};
-const draftBox2styles = (box: DraftBox) => {
-  const converted = draftBox2box(box);
-  return {
-    left: float2css(converted.x),
-    top: float2css(converted.y),
-    width: float2css(converted.w),
-    height: float2css(converted.h),
-  };
+const snap2point = (point: sharedTypes.Point, anchor: sharedTypes.Point) => {
+  const distance = Math.sqrt(
+    Math.pow(point.y - anchor.y, 2) + Math.pow(point.x - anchor.x, 2)
+  );
+  return distance < 0.01 ? anchor : point;
 };
 
-const draftBox2indicatorStyles = (box: DraftBox): react.CSSProperties => {
-  const invertedY = box.y1 > box.y2;
-  const invertedX = box.x1 > box.x2;
-  const top = (box.next === 1 && !invertedY) || (box.next === 2 && invertedY);
-  const left = (box.next === 1 && !invertedX) || (box.next === 2 && invertedX);
+const float2css = (float: number) => `${float * 100}%`;
+const draftBox2box = (box: DraftBox): sharedTypes.Box => {
+  const isPolygon = box.points && box.points.length > 0;
+  // If it's a polygon with two identical points, reduce it
+  // down to a single point.
+  const points =
+    isPolygon &&
+    box.points.length === 2 &&
+    box.points[0].x === box.points[1].x &&
+    box.points[0].y === box.points[1].y
+      ? box.points.slice(0, 1)
+      : box.points;
   return {
-    left: left ? "0%" : "auto",
-    top: top ? "0%" : "auto",
-    right: left ? "auto" : "0%",
-    bottom: top ? "auto" : "0%",
-    width: "10px",
-    height: "10px",
-    position: "absolute",
-    backgroundColor: "red",
-    marginLeft: left ? "-5px" : "0",
-    marginRight: left ? "0" : "-5px",
-    marginTop: top ? "-5px" : "0",
-    marginBottom: top ? "0" : "-5px",
+    x: isPolygon ? null : Math.min(box.x1, box.x2),
+    y: isPolygon ? null : Math.min(box.y1, box.y2),
+    w: isPolygon ? null : Math.abs(box.x2 - box.x1),
+    h: isPolygon ? null : Math.abs(box.y2 - box.y1),
+    id: box.id,
+    labels: box.labels,
+    points: points,
   };
 };
 
@@ -110,8 +70,9 @@ const box2draftBox = (box: sharedTypes.Box): DraftBox => {
     y2: box.y + box.h,
     labels: box.labels,
     id: box.id,
-    next: 2,
+    next: null,
     fixed: true,
+    points: box.points,
   };
 };
 
@@ -130,6 +91,168 @@ const click2xy = (
   };
 };
 
+const Box = (props: {
+  box?: sharedTypes.Box;
+  draftBox?: DraftBox;
+  onClick: (event: react.MouseEvent) => void;
+  onMouseMove: (event: react.MouseEvent) => void;
+}) => {
+  if (!props.draftBox && !props.box) {
+    // There's nothing here.
+    return null;
+  }
+  const isPolygon =
+    (props.box && props.box.points !== null) ||
+    (props.draftBox && props.draftBox.points !== null);
+  if (
+    !isPolygon &&
+    props.draftBox &&
+    !(
+      props.draftBox.x1 &&
+      props.draftBox.x2 &&
+      props.draftBox.y1 &&
+      props.draftBox.y2
+    )
+  ) {
+    // It's a draft box and we don't have the needed points.
+    return null;
+  }
+  const box = props.draftBox ? draftBox2box(props.draftBox) : props.box;
+  if (isPolygon && box.points.length === 0) {
+    // It's a polygon and we don't have enough points.
+    return null;
+  }
+  const color = props.draftBox ? "red" : "blue";
+  const xmin = !isPolygon
+    ? box.x
+    : Math.min.apply(
+        Math,
+        box.points.map((p) => p.x)
+      );
+  const ymin = !isPolygon
+    ? box.y
+    : Math.min.apply(
+        Math,
+        box.points.map((p) => p.y)
+      );
+  const xmax = !isPolygon
+    ? box.x + box.w
+    : Math.max.apply(
+        Math,
+        box.points.map((p) => p.x)
+      );
+  const ymax = !isPolygon
+    ? box.y + box.h
+    : Math.max.apply(
+        Math,
+        box.points.map((p) => p.y)
+      );
+  const width = !isPolygon ? box.w : xmax - xmin;
+  const height = !isPolygon ? box.h : ymax - ymin;
+  let shape: react.ReactElement = null;
+  console.log("width", width, "height", height, "points", box.points);
+  if (isPolygon && width > 0 && height > 0) {
+    shape = (
+      <svg>
+        {Array.from(Array(box.points.length - 1).keys()).map((index) => (
+          <line
+            key={index}
+            stroke={color}
+            strokeWidth="4"
+            x1={float2css((box.points[index].x - xmin) / width)}
+            y1={float2css((box.points[index].y - ymin) / height)}
+            x2={float2css((box.points[index + 1].x - xmin) / width)}
+            y2={float2css((box.points[index + 1].y - ymin) / height)}
+          />
+        ))}
+      </svg>
+    );
+  } else if (isPolygon) {
+    shape = (
+      <rect transform="translate(-5, -5)" width={10} height={10} fill={color} />
+    );
+  } else {
+    shape = (
+      <rect
+        width={"100%"}
+        height={"100%"}
+        stroke={color}
+        fill="none"
+        strokeWidth="4"
+      />
+    );
+  }
+  let indicator: react.ReactElement = null;
+  if (
+    props.draftBox &&
+    props.draftBox.fixed &&
+    !isPolygon &&
+    props.draftBox.next !== null
+  ) {
+    const invertedY = props.draftBox.y1 > props.draftBox.y2;
+    const invertedX = props.draftBox.x1 > props.draftBox.x2;
+    const top =
+      (props.draftBox.next === 1 && !invertedY) ||
+      (props.draftBox.next === 2 && invertedY);
+    const left =
+      (props.draftBox.next === 1 && !invertedX) ||
+      (props.draftBox.next === 2 && invertedX);
+    indicator = (
+      <rect
+        x={left ? "0%" : "100%"}
+        y={top ? "0%" : "100%"}
+        transform="translate(-5, -5)"
+        width={10}
+        height={10}
+        fill="red"
+      />
+    );
+  } else if (
+    props.draftBox &&
+    isPolygon &&
+    props.draftBox.next !== null &&
+    width > 0 &&
+    height > 0
+  ) {
+    indicator = (
+      <rect
+        x={float2css((box.points[0].x - xmin) / width)}
+        y={float2css((box.points[0].y - ymin) / height)}
+        transform="translate(-5, -5)"
+        width={10}
+        height={10}
+        fill="red"
+      />
+    );
+  }
+  return (
+    <svg
+      width={width > 0 ? float2css(width) : 10}
+      height={height > 0 ? float2css(height) : 10}
+      onClick={props.onClick}
+      onMouseMove={props.onMouseMove}
+      style={{
+        position: "absolute",
+        left: float2css(xmin),
+        top: float2css(ymin),
+        overflow: "visible",
+      }}
+    >
+      <text
+        x={5}
+        y={5}
+        fill={color}
+        font-family="Roboto,Helvetica,Arial,sans-serif"
+        alignmentBaseline="hanging"
+      >
+        {labels2string(box.labels)}
+      </text>
+      {shape}
+      {indicator}
+    </svg>
+  );
+};
+
 const Image = (props: {
   boxes: sharedTypes.Box[];
   draftBox: DraftBox;
@@ -138,7 +261,6 @@ const Image = (props: {
   onHover: (event: MousePosition) => void;
   onSelectBox: (boxIdx: number, event: MousePosition) => void;
 }) => {
-  const classes = useStyles();
   const { projectId, imageId } = rrd.useRouteMatch<{
     projectId: string;
     imageId: string;
@@ -156,53 +278,36 @@ const Image = (props: {
   return (
     <div>
       <div style={{ position: "relative", display: "inline-block" }}>
+        <Box
+          onMouseMove={onMouseMove}
+          onClick={(event) =>
+            props.onSelectBox(null, click2xy(event, ref.current, props.zoom))
+          }
+          draftBox={props.draftBox}
+        />
         <mui.Paper>
+          {props.boxes.map((box, index) => (
+            <Box
+              box={box}
+              key={index}
+              onMouseMove={onMouseMove}
+              onClick={(event) =>
+                props.onSelectBox(
+                  index,
+                  click2xy(event, ref.current, props.zoom)
+                )
+              }
+            />
+          ))}
           <img
+            onClick={onClick}
+            onMouseMove={onMouseMove}
             ref={ref}
             src={common.getImageUrl(projectId, imageId)}
             alt={`ID: ${imageId}`}
-            onMouseMove={onMouseMove}
-            onClick={onClick}
             style={{ display: "block", zoom: props.zoom }}
           />
         </mui.Paper>
-        {props.draftBox &&
-        props.draftBox.x1 &&
-        props.draftBox.y1 &&
-        props.draftBox.x2 &&
-        props.draftBox.y2 ? (
-          <div
-            onMouseMove={onMouseMove}
-            className={`${classes.box} ${classes.selectedBox}`}
-            style={draftBox2styles(props.draftBox)}
-            onClick={onClick}
-          >
-            <mui.Typography variant={"caption"}>
-              {labels2string(props.draftBox.labels)}
-            </mui.Typography>
-            {props.draftBox.fixed ? (
-              <div style={draftBox2indicatorStyles(props.draftBox)} />
-            ) : null}
-          </div>
-        ) : null}
-        {props.boxes.map((box, index) => (
-          <div
-            onMouseMove={onMouseMove}
-            className={classes.box}
-            style={box2styles(box)}
-            onClick={(event) => {
-              props.onSelectBox(
-                index,
-                click2xy(event, ref.current, props.zoom)
-              );
-            }}
-            key={index}
-          >
-            <mui.Typography variant={"caption"}>
-              {labels2string(box.labels)}
-            </mui.Typography>
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -252,6 +357,7 @@ export const SingleImageLabel = () => {
       | "waiting"
       | "saving"
       | "redirecting",
+    usePolygon: false,
     labels: null as sharedTypes.ImageLabels,
     advanceOnSave: false,
     dirty: false,
@@ -279,39 +385,79 @@ export const SingleImageLabel = () => {
     (pos: MousePosition) => {
       if (!draftBox) {
         setDraftBox({
-          x1: pos.x,
-          y1: pos.y,
+          x1: navState.usePolygon ? null : pos.x,
+          y1: navState.usePolygon ? null : pos.y,
           x2: null,
           y2: null,
           labels: common.buildEmptyLabelGroup(
             project.labelingConfiguration.box
           ),
           id: null,
-          fixed: false,
+          fixed: navState.usePolygon ? true : false,
+          points: navState.usePolygon
+            ? [
+                {
+                  x: pos.x,
+                  y: pos.y,
+                },
+                {
+                  x: pos.x,
+                  y: pos.y,
+                },
+              ]
+            : null,
           next: 2,
         });
-      } else {
+      } else if (draftBox && draftBox.next !== null) {
+        const isPolygon = draftBox.points && draftBox.points.length > 1;
         setDraftBox({
           ...draftBox,
-          x1: draftBox.next === 1 ? pos.x : draftBox.x1,
-          y1: draftBox.next === 1 ? pos.y : draftBox.y1,
-          x2: draftBox.next === 2 ? pos.x : draftBox.x2,
-          y2: draftBox.next === 2 ? pos.y : draftBox.y2,
+          x1: !isPolygon ? (draftBox.next === 1 ? pos.x : draftBox.x1) : null,
+          y1: !isPolygon ? (draftBox.next === 1 ? pos.y : draftBox.y1) : null,
+          x2: !isPolygon ? (draftBox.next === 2 ? pos.x : draftBox.x2) : null,
+          y2: !isPolygon ? (draftBox.next === 2 ? pos.y : draftBox.y2) : null,
           fixed: true,
           next: draftBox.next === 1 ? 2 : 1,
+          points: isPolygon
+            ? draftBox.points.concat([
+                snap2point({ x: pos.x, y: pos.y }, draftBox.points[0]),
+              ])
+            : null,
         });
+      } else {
+        setNavState({
+          ...navState,
+          labels: {
+            ...navState.labels,
+            boxes: [draftBox2box(draftBox)].concat(navState.labels.boxes),
+            default: false,
+          },
+        });
+        setDraftBox(null);
       }
     },
-    [draftBox, project]
+    [navState, draftBox, project]
   );
 
   const hover = react.useCallback(
     (pos: MousePosition) => {
-      if (draftBox && !draftBox.fixed) {
+      if (
+        draftBox &&
+        !draftBox.points &&
+        !draftBox.fixed &&
+        draftBox.next !== null
+      ) {
         setDraftBox({ ...draftBox, x2: pos.x, y2: pos.y });
+      } else if (draftBox && draftBox.points && draftBox.next !== null) {
+        setDraftBox({
+          ...draftBox,
+          points: draftBox.points
+            .slice(0, Math.max(1, draftBox.points.length - 1))
+            .concat([snap2point(pos, draftBox.points[0])]),
+        });
       }
     },
-    [draftBox]
+    [navState, draftBox]
   );
 
   const selectBox = react.useCallback(
@@ -327,8 +473,20 @@ export const SingleImageLabel = () => {
             default: false,
           },
         });
-      } else {
+      } else if (draftBox && draftBox.next !== null) {
         click(pos);
+      } else if (draftBox && draftBox.next === null) {
+        // We're de-selecting this box and moving it to the
+        // bottom of the pile.
+        setNavState({
+          ...navState,
+          labels: {
+            ...navState.labels,
+            boxes: [draftBox2box(draftBox)].concat(navState.labels.boxes),
+            default: false,
+          },
+        });
+        setDraftBox(null);
       }
     },
     [navState, draftBox]
@@ -373,8 +531,9 @@ export const SingleImageLabel = () => {
 
   // Create callbacks
   const onDeleteBox = react.useCallback(() => {
+    setNavState({ ...navState, dirty: true });
     setDraftBox(null);
-  }, []);
+  }, [navState]);
 
   const onDelete = react.useCallback(() => {
     if (!navState.labels.default) {
@@ -690,6 +849,18 @@ export const SingleImageLabel = () => {
               />
             }
             label="Advance on saving?"
+          />
+          <mui.FormControlLabel
+            control={
+              <mui.Checkbox
+                checked={navState.usePolygon}
+                onChange={(event, usePolygon) =>
+                  setNavState({ ...navState, usePolygon })
+                }
+                name="usePolygon"
+              />
+            }
+            label="Use polygons instead of boxes?"
           />
         </mui.Grid>
         <mui.Grid item>

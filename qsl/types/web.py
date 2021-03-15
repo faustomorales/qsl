@@ -12,12 +12,18 @@ class LabelGroup(BaseModel):
     text: typing.Dict[str, typing.Optional[str]]
 
 
-class Box(BaseModel):
-    id: typing.Optional[int]
+class Point(BaseModel):
     x: float
     y: float
-    w: float
-    h: float
+
+
+class Box(BaseModel):
+    id: typing.Optional[int]
+    x: typing.Optional[float]
+    y: typing.Optional[float]
+    w: typing.Optional[float]
+    h: typing.Optional[float]
+    points: typing.Optional[typing.List[Point]]
     labels: LabelGroup
 
 

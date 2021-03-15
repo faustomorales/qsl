@@ -1,5 +1,5 @@
 import * as sharedTypes from "./sharedTypes";
-import { Context } from "./Context";
+import * as common from "./common";
 import * as react from "react";
 import * as rrd from "react-router-dom";
 import * as mui from "@material-ui/core";
@@ -7,7 +7,6 @@ import LabelPanel from "./LabelPanel";
 
 export const ProjectEditor = () => {
   // Get context variables.
-  const { apiUrl, postHeaders, getHeaders } = react.useContext(Context);
   const { projectId } = rrd.useRouteMatch<{
     projectId: string;
   }>().params;
@@ -19,24 +18,20 @@ export const ProjectEditor = () => {
 
   // Implement backend API operations.
   const saveProject = react.useCallback(() => {
-    return fetch(`${apiUrl}/api/v1/projects/${projectId}`, {
-      ...postHeaders,
-      body: JSON.stringify(project),
-    })
-      .then((r) => r.json())
-      .then((updated) => {
-        setProject(updated);
-        setIsDirty(false);
-        setFinishedSaving(true);
-      });
+    return common.setProject(projectId, project).then((updated) => {
+      setProject(updated);
+      setIsDirty(false);
+      setFinishedSaving(true);
+    });
   }, [project, setProject]);
+
+  const resetProject = react.useCallback(() => {
+    common.getProject(projectId).then(setProject);
+  }, [projectId]);
+
   react.useEffect(() => {
-    fetch(`${apiUrl}/api/v1/projects/${projectId}`, { ...getHeaders })
-      .then((r) => r.json())
-      .then((project) => {
-        setProject(project);
-      });
-  }, []);
+    resetProject();
+  }, [projectId]);
   if (!project) {
     return null;
   }
@@ -88,16 +83,27 @@ export const ProjectEditor = () => {
           }}
         />
       </mui.Grid>
-      <mui.Grid item xs={12}>
-        <mui.Button
-          onClick={saveProject}
-          style={{ width: "100%" }}
-          variant="contained"
-          disabled={!isDirty}
-          color="primary"
-        >
-          Save Labeling Configuration
-        </mui.Button>
+      <mui.Grid item container xs={12} spacing={2}>
+        <mui.Grid item>
+          <mui.Button
+            onClick={saveProject}
+            variant="contained"
+            disabled={!isDirty}
+            color="primary"
+          >
+            Save Labeling Configuration
+          </mui.Button>
+        </mui.Grid>
+        <mui.Grid item>
+          <mui.Button
+            onClick={resetProject}
+            variant="contained"
+            disabled={!isDirty}
+            color="secondary"
+          >
+            Reset
+          </mui.Button>
+        </mui.Grid>
       </mui.Grid>
     </mui.Grid>
   );

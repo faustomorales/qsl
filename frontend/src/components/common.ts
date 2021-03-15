@@ -77,6 +77,15 @@ export const getProject = (projectId: number | string) => {
   ).then((r) => r.json());
 };
 
+export const setProject = (
+  projectId: number | string,
+  project: sharedTypes.Project
+) =>
+  fetch(`${apiUrl}/api/v1/projects/${projectId}`, {
+    ...postRequestInit,
+    body: JSON.stringify(project),
+  }).then((r) => r.json());
+
 export const getImageLabels = (
   projectId: number | string,
   imageId: number | string

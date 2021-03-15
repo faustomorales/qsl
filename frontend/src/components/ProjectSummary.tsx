@@ -1,6 +1,8 @@
 import * as sharedTypes from "./sharedTypes";
 import * as common from "./common";
 
+import LabelingStatus from "./LabelingStatus";
+
 import * as react from "react";
 import * as rrd from "react-router-dom";
 import * as mui from "@material-ui/core";
@@ -48,12 +50,9 @@ export const ProjectSummary = () => {
   return (
     <mui.Grid container spacing={2}>
       <mui.Grid item xs={12}>
-        <rrd.Link to="/projects">
-          <mui.Typography variant="subtitle1">
-            Back to projects list
-          </mui.Typography>
-        </rrd.Link>
-        <mui.Typography variant="h3">Project: {project.name}</mui.Typography>
+        <LabelingStatus project={project}>
+          QSL / <rrd.Link to="/projects">Projects</rrd.Link> / <rrd.Link to={`/projects/${project.name}`}>{project.name}</rrd.Link>
+        </LabelingStatus>
       </mui.Grid>
       <mui.Grid item>
         <ul>

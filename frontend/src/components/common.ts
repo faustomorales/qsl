@@ -141,7 +141,7 @@ export const delay = (amount: number) =>
 export const simulateClick = async (
   target: react.MutableRefObject<HTMLButtonElement>
 ) => {
-  target.current?.focus();
+  target.current?.focus({ preventScroll: true });
   await delay(200);
   target.current?.blur();
   target.current?.click();

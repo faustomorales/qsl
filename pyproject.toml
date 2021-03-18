@@ -33,7 +33,6 @@ uvicorn = {version = "^0.13.3", extras = ["standard"]}
 click = "*"
 aiofiles = "*"
 filetype = "^1.0.7"
-uvloop = "^0.14.0"
 async-exit-stack = "^1.0.1"
 async_generator = "^1.10"
 boto3 = "^1.17.15"
@@ -44,6 +43,7 @@ httpx = "^0.17.0"
 
 [tool.poetry.dev-dependencies]
 black = "*"
+uvloop = "^0.14.0"
 coverage = {version = "*", extras = ["toml"]}
 mypy = "*"
 pytest = "^6.1"

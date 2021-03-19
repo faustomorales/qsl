@@ -79,6 +79,7 @@ const box2draftBox = (box: sharedTypes.Box): DraftBox => {
 const labels2string = (labels: sharedTypes.LabelGroup): string =>
   Object.values(labels.single)
     .filter((l) => l !== null)
+    .concat(Object.values(labels.text).filter((l) => l !== null))
     .join(", ");
 
 const click2xy = (

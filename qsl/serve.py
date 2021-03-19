@@ -896,6 +896,12 @@ def export_project(
                         w=box.w,
                         h=box.h,
                         labels=web.LabelGroup(single={}, multiple={}, text={}),
+                        points=[
+                            web.Point(**dict(zip(["x", "y"], point.split(","))))
+                            for point in box.points.split("|")
+                        ]
+                        if box.points
+                        else None,
                     ),
                 )
                 update_label_group_with_label(

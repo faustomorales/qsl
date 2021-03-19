@@ -77,7 +77,9 @@ const box2draftBox = (box: sharedTypes.Box): DraftBox => {
 };
 
 const labels2string = (labels: sharedTypes.LabelGroup): string =>
-  Object.values(labels.single).join(", ");
+  Object.values(labels.single)
+    .filter((l) => l !== null)
+    .join(", ");
 
 const click2xy = (
   event: react.MouseEvent,
@@ -241,7 +243,7 @@ const Box = (props: {
         x={5}
         y={5}
         fill={color}
-        font-family="Roboto,Helvetica,Arial,sans-serif"
+        fontFamily="Roboto,Helvetica,Arial,sans-serif"
         alignmentBaseline="hanging"
       >
         {labels2string(box.labels)}
@@ -399,16 +401,12 @@ export const SingleImageLabel = () => {
                   x: pos.x,
                   y: pos.y,
                 },
-                {
-                  x: pos.x,
-                  y: pos.y,
-                },
               ]
             : null,
           next: 2,
         });
       } else if (draftBox && draftBox.next !== null) {
-        const isPolygon = draftBox.points && draftBox.points.length > 1;
+        const isPolygon = draftBox.points && draftBox.points.length > 0;
         const snapped = isPolygon
           ? snap2point({ x: pos.x, y: pos.y }, draftBox.points[0])
           : null;

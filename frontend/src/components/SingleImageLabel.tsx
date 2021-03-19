@@ -36,7 +36,7 @@ const snap2point = (point: sharedTypes.Point, anchor: sharedTypes.Point) => {
   const distance = Math.sqrt(
     Math.pow(point.y - anchor.y, 2) + Math.pow(point.x - anchor.x, 2)
   );
-  return distance < 0.01 ? anchor : point;
+  return distance < 0.001 ? anchor : point;
 };
 
 const float2css = (float: number) => `${float * 100}%`;
@@ -150,7 +150,6 @@ const Box = (props: {
   const width = !isPolygon ? box.w : xmax - xmin;
   const height = !isPolygon ? box.h : ymax - ymin;
   let shape: react.ReactElement = null;
-  console.log("width", width, "height", height, "points", box.points);
   if (isPolygon && width > 0 && height > 0) {
     shape = (
       <svg>
@@ -410,6 +409,9 @@ export const SingleImageLabel = () => {
         });
       } else if (draftBox && draftBox.next !== null) {
         const isPolygon = draftBox.points && draftBox.points.length > 1;
+        const snapped = isPolygon
+          ? snap2point({ x: pos.x, y: pos.y }, draftBox.points[0])
+          : null;
         setDraftBox({
           ...draftBox,
           x1: !isPolygon ? (draftBox.next === 1 ? pos.x : draftBox.x1) : null,
@@ -418,11 +420,7 @@ export const SingleImageLabel = () => {
           y2: !isPolygon ? (draftBox.next === 2 ? pos.y : draftBox.y2) : null,
           fixed: true,
           next: draftBox.next === 1 ? 2 : 1,
-          points: isPolygon
-            ? draftBox.points.concat([
-                snap2point({ x: pos.x, y: pos.y }, draftBox.points[0]),
-              ])
-            : null,
+          points: isPolygon ? draftBox.points.concat([snapped]) : null,
         });
       } else {
         setNavState({
@@ -448,14 +446,9 @@ export const SingleImageLabel = () => {
         draftBox.next !== null
       ) {
         setDraftBox({ ...draftBox, x2: pos.x, y2: pos.y });
-      } else if (draftBox && draftBox.points && draftBox.next !== null) {
-        setDraftBox({
-          ...draftBox,
-          points: draftBox.points
-            .slice(0, Math.max(1, draftBox.points.length - 1))
-            .concat([snap2point(pos, draftBox.points[0])]),
-        });
       }
+      // Handling hovers for polygons is a bit tough, so
+      // deferring on that for now.
     },
     [navState, draftBox]
   );
@@ -677,7 +670,7 @@ export const SingleImageLabel = () => {
           break;
         case "Backspace":
         case "Delete":
-          target = boxMode ? deleteBoxButton : deleteButton;
+          target = boxMode ? deleteBoxButton : null;
           break;
         default:
         // code block
@@ -716,15 +709,17 @@ export const SingleImageLabel = () => {
   if (!navState.labels || !project) {
     return redirect;
   }
+  const drawerWidth = 250;
   return (
-    <mui.Grid container spacing={2}>
-      <mui.Grid item xs={12}>
-        <LabelingStatus project={project}>
-          {project.name} / Images / {imageId}
-        </LabelingStatus>
-      </mui.Grid>
-      <mui.Grid container item xs={12} sm={3} direction="column" spacing={2}>
-        <mui.Grid item>
+    <div style={{ display: "flex" }}>
+      <mui.CssBaseline />
+      <LabelingStatus project={project} position={"fixed"}>
+        <rrd.Link to={`/projects/${projectId}`}>{project.name}</rrd.Link> /
+        Images / {imageId}
+      </LabelingStatus>
+      <mui.Drawer variant="permanent" style={{ flexShrink: 0 }}>
+        <mui.Box style={{ padding: "10px", width: drawerWidth }}>
+          <mui.Toolbar />
           {redirect}
           <mui.Typography style={{ marginBottom: "10px" }} variant={"h6"}>
             {boxMode ? "Box-Level Labels" : "Image-Level Labels"}
@@ -734,12 +729,10 @@ export const SingleImageLabel = () => {
             labels={labelGroup}
             setLabelGroup={setLabelGroup}
           />
-          <mui.Divider />
-        </mui.Grid>
-        <mui.Grid item>
+          <mui.Divider style={{ marginTop: "10px" }} />
           <mui.Typography variant={"h6"}>View Settings</mui.Typography>
           <mui.FormControl
-            style={{ width: "100%", margin: "10px 0px" }}
+            style={{ margin: "10px 0px", width: "100%" }}
             component="fieldset"
           >
             <mui.FormLabel component="legend">Zoom</mui.FormLabel>
@@ -754,8 +747,6 @@ export const SingleImageLabel = () => {
             />
           </mui.FormControl>
           <mui.Divider />
-        </mui.Grid>
-        <mui.Grid item>
           <mui.Typography style={{ marginBottom: "10px" }} variant={"h6"}>
             Label Actions
           </mui.Typography>
@@ -830,7 +821,6 @@ export const SingleImageLabel = () => {
             {boxMode ? null : (
               <ShortcutButton
                 disabled={navState.labels.default}
-                startIcon={"\u232B"}
                 ref={deleteButton}
                 onClick={onDelete}
               >
@@ -862,8 +852,6 @@ export const SingleImageLabel = () => {
             }
             label="Use polygons instead of boxes?"
           />
-        </mui.Grid>
-        <mui.Grid item>
           <mui.Divider style={{ marginBottom: "10px" }} />
           <mui.Typography variant={"h6"}>History</mui.Typography>
           <mui.Typography variant={"caption"}>
@@ -900,18 +888,12 @@ export const SingleImageLabel = () => {
               },
             ]}
           />
-        </mui.Grid>
-        <mui.Grid item>
-          <mui.Link
-            component={rrd.Link}
-            variant={"body1"}
-            to={`/projects/${projectId}`}
-          >
-            Return to Project Menu
-          </mui.Link>
-        </mui.Grid>
-      </mui.Grid>
-      <mui.Grid item xs={12} sm={9}>
+        </mui.Box>
+      </mui.Drawer>
+      <div
+        style={{ width: `calc(100%-${drawerWidth}px`, marginLeft: drawerWidth }}
+      >
+        <mui.Toolbar />
         <Image
           onClick={
             common.hasBoxLabels(project.labelingConfiguration) ? click : null
@@ -955,7 +937,7 @@ export const SingleImageLabel = () => {
               />
             ))
           : null}
-      </mui.Grid>
-    </mui.Grid>
+      </div>
+    </div>
   );
 };

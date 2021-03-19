@@ -14,15 +14,17 @@ const useStyles = muis.makeStyles((theme) => ({
 const LabelingStatus = (props: {
   project?: sharedTypes.Project;
   children: React.ReactNode;
+  position?: "static" | "fixed";
 }) => {
-  const progress = props.project
-    ? Math.round((100 * props.project.nLabeled) / props.project.nImages)
-    : null;
+  const progress =
+    props.project && props.project.nImages !== 0
+      ? Math.round((100 * props.project.nLabeled) / props.project.nImages)
+      : null;
   const classes = useStyles();
   return (
-    <mui.AppBar position="static">
+    <mui.AppBar position={props.position ?? "static"} style={{ zIndex: 1201 }}>
       <mui.Toolbar>
-        {props.project ? (
+        {progress ? (
           <mui.Box position="relative" display="inline-flex">
             <mui.CircularProgress
               style={{ color: "white" }}

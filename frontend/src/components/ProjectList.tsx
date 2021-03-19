@@ -35,7 +35,7 @@ export const ProjectList = () => {
   return (
     <mui.Grid container spacing={2}>
       <mui.Grid item xs={12}>
-      <LabelingStatus>
+        <LabelingStatus>
           QSL / <rrd.Link to="/projects">Projects</rrd.Link>
         </LabelingStatus>
       </mui.Grid>

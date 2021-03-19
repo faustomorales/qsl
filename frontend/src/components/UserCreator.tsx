@@ -56,8 +56,8 @@ export const UserCreator = () => {
   return (
     <mui.Grid container spacing={2}>
       <LabelingStatus>
-          QSL / <rrd.Link to="/users">Users</rrd.Link>
-        </LabelingStatus>
+        QSL / <rrd.Link to="/users">Users</rrd.Link>
+      </LabelingStatus>
       <mui.Grid item xs={12}>
         <mui.Typography variant={"body1"}>
           {authConfig.provider === "github"

@@ -304,7 +304,7 @@ def get_project(
                 }
             subgroup[config.name] = subconfig
         elif config.label_type.name == "text":
-            subgroup[config.name] = {"id": config.id}
+            subgroup[config.name] = web.TextLabelConfiguration(id=config.id)
     return web.Project(
         labelingConfiguration=labeling,
         id=project_id,

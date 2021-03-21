@@ -1,4 +1,5 @@
 import { Context } from "./Context";
+import * as common from "./common";
 import * as sharedTypes from "./sharedTypes";
 import * as rrd from "react-router-dom";
 import * as react from "react";
@@ -22,16 +23,28 @@ export const ProjectList = () => {
   }, []);
 
   const createProject = react.useCallback(() => {
-    fetch(`${context.apiUrl}/api/v1/projects`, {
-      ...context.postHeaders,
-      body: JSON.stringify({ name }),
-    })
-      .then((r) => r.json())
-      .then((project: sharedTypes.Project) => {
+    common
+      .createProject({ name, id: null, labelingConfiguration: null })
+      .then((project) => {
         setProjects(projects.concat([project]));
         setName("");
       });
   }, [name, projects, setProjects]);
+
+  const duplicateProject = react.useCallback(
+    (project: sharedTypes.Project) => {
+      common
+        .getProject(project.id)
+        .then((existing) =>
+          common.createProject({
+            ...existing,
+            name: `${project.name} (Duplicate)`,
+          })
+        )
+        .then((created) => setProjects(projects.concat([created])));
+    },
+    [projects, setProjects]
+  );
   return (
     <mui.Grid container spacing={2}>
       <mui.Grid item xs={12}>
@@ -73,6 +86,30 @@ export const ProjectList = () => {
               field: "nLabeled",
               headerName: "Labeled Images",
               flex: 1,
+            },
+            {
+              field: "Actions",
+              renderCell: (params: muidg.CellParams) => (
+                <div>
+                  <mui.Button
+                    variant={"outlined"}
+                    component={rrd.Link}
+                    to={`/projects/${params.row.id}/edit-project`}
+                    style={{ marginRight: "10px" }}
+                  >
+                    Edit
+                  </mui.Button>
+                  <mui.Button
+                    variant="outlined"
+                    onClick={() =>
+                      duplicateProject(params.row as sharedTypes.Project)
+                    }
+                  >
+                    Duplicate
+                  </mui.Button>
+                </div>
+              ),
+              flex: 2,
             },
           ]}
         />

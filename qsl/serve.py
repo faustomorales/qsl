@@ -314,33 +314,18 @@ def get_project(
     )
 
 
-@app.post("/api/v1/projects")
-def create_project(
-    project: web.Project,
-    session: sa.orm.Session = fastapi.Depends(get_session),
-    user: web.User = fastapi.Depends(get_current_user),
-) -> web.Project:
-    """Create a new project."""
-    project_orm = orm.Project(name=project.name)
-    session.add(project_orm)
-    session.commit()
-    return get_project(project_id=project_orm.id, session=session)
-
-
-@app.post("/api/v1/projects/{project_id}")
-def update_project(
+def set_config_for_project(
+    labelingConfiguration: web.LabelingConfiguration,
+    session: sa.orm.Session,
     project_id: int,
-    project: web.Project,
-    session: sa.orm.Session = fastapi.Depends(get_session),
-    user: web.User = fastapi.Depends(get_current_user),
-) -> web.Project:
-    """Update the configuration for a project."""
+    ignore_existing=False,
+):
+    """Set the labeling configuration for a project, optionally ignoring existing IDs."""
     for level, label_type in itertools.product(orm.Level, orm.LabelType):
         for config_name, input_config in getattr(
-            getattr(project.labelingConfiguration, level.name), label_type.name
+            getattr(labelingConfiguration, level.name), label_type.name
         ).items():
-
-            if input_config.id is not None:
+            if input_config.id is not None and not ignore_existing:
                 if label_type is orm.LabelType.text:
                     # Text inputs don't have any configuration to update.
                     continue
@@ -371,7 +356,68 @@ def update_project(
                         ],
                     )
                 )
+
+
+@app.post("/api/v1/projects")
+def create_project(
+    project: web.Project,
+    session: sa.orm.Session = fastapi.Depends(get_session),
+    user: web.User = fastapi.Depends(get_current_user),
+) -> web.Project:
+    """Create a new project."""
+    project_orm = orm.Project(name=project.name)
+    session.add(project_orm)
+    session.commit()
+    if project.labelingConfiguration is not None:
+        set_config_for_project(
+            labelingConfiguration=project.labelingConfiguration,
+            project_id=project_orm.id,
+            ignore_existing=True,
+            session=session,
+        )
         session.commit()
+    return get_project(project_id=project_orm.id, session=session)
+
+
+@app.delete("/api/v1/projects/{project_id}")
+def delete_project(
+    project_id: int,
+    session: sa.orm.Session = fastapi.Depends(get_session),
+    user: web.User = fastapi.Depends(get_current_user),
+):
+    """Delete a project."""
+    if not user.isAdmin:
+        raise fastapi.HTTPException(
+            403, detail="Only administrators may delete project."
+        )
+    session.query(orm.Project).filter((orm.Project.id == project_id)).delete(
+        synchronize_session=False
+    )
+    session.commit()
+
+
+@app.post("/api/v1/projects/{project_id}")
+def update_project(
+    project_id: int,
+    project: web.Project,
+    session: sa.orm.Session = fastapi.Depends(get_session),
+    user: web.User = fastapi.Depends(get_current_user),
+) -> web.Project:
+    """Update the configuration for a project."""
+    current_project = (
+        session.query(orm.Project).filter(orm.Project.id == project_id).first()
+    )
+    if current_project is None:
+        raise fastapi.HTTPException(404, "Project not found.")
+    if current_project.name != project.name:
+        current_project.name = project.name  # Updates the project name
+    if project.labelingConfiguration is not None:
+        set_config_for_project(
+            labelingConfiguration=project.labelingConfiguration,
+            session=session,
+            project_id=project_id,
+        )
+    session.commit()
     return get_project(project_id=project_id, session=session)
 
 

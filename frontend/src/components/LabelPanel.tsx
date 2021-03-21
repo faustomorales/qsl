@@ -460,6 +460,14 @@ const LabelPanel = (props: {
   }, [onEnter, setLabelGroup, shortcuts, shortcutsDisabled, handleLabelChange]);
   return (
     <div>
+      {props.setConfigGroup ? (
+        <div>
+          <NewConfig addConfig={handleAddConfig} configGroup={configGroup} />
+          <mui.Divider
+            style={{ marginTop: "10px", marginBottom: "10px" }}
+          />{" "}
+        </div>
+      ) : null}
       {Object.entries(configGroup.single).map(([configName, config]) => (
         <SingleLabelPanel
           config={config}
@@ -531,9 +539,6 @@ const LabelPanel = (props: {
           value={props.labels ? props.labels.text[configName] || "" : ""}
         />
       ))}
-      {props.setConfigGroup ? (
-        <NewConfig addConfig={handleAddConfig} configGroup={configGroup} />
-      ) : null}
     </div>
   );
 };

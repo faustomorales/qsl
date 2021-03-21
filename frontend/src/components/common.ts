@@ -86,6 +86,18 @@ export const setProject = (
     body: JSON.stringify(project),
   }).then((r) => r.json());
 
+export const createProject = (project: sharedTypes.Project) =>
+  fetch(`${apiUrl}/api/v1/projects`, {
+    ...postRequestInit,
+    body: JSON.stringify(project),
+  }).then((r) => r.json());
+
+export const deleteProject = (projectId: number | string) =>
+  fetch(`${apiUrl}/api/v1/projects/${projectId}`, {
+    ...getRequestInit,
+    method: "DELETE",
+  }).then((r) => r.json());
+
 export const getImageLabels = (
   projectId: number | string,
   imageId: number | string

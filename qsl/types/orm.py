@@ -29,11 +29,11 @@ class Project(BaseModel):
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String, nullable=False)
     label_configs = sa.orm.relationship(
-        "LabelConfig",
-        cascade=CASCADE,
-        back_populates="project",
+        "LabelConfig", cascade=CASCADE, back_populates="project", uselist=True
     )
-    images = sa.orm.relationship("Image", cascade=CASCADE, back_populates="project")
+    images = sa.orm.relationship(
+        "Image", cascade=CASCADE, back_populates="project", uselist=True
+    )
 
 
 class Level(enum.Enum):
@@ -54,7 +54,9 @@ class LabelConfig(BaseModel):
     name = sa.Column(sa.String, nullable=False)
     label_type = sa.Column(SqlAlchemyEnum(LabelType), nullable=False)
     level = sa.Column(SqlAlchemyEnum(Level), nullable=False)
-    project_id = sa.Column(sa.Integer, sa.ForeignKey("projects.id"), nullable=False)
+    project_id = sa.Column(
+        sa.Integer, sa.ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
     project = sa.orm.relationship("Project", back_populates="label_configs")
     options = sa.orm.relationship(
         "LabelOption", back_populates="config", cascade=CASCADE, uselist=True
@@ -74,7 +76,11 @@ class LabelOption(BaseModel):
     name = sa.Column(sa.String, nullable=False)
     shortcut = sa.Column(sa.String(length=1))
     config = sa.orm.relationship("LabelConfig", back_populates="options")
-    config_id = sa.Column(sa.Integer, sa.ForeignKey("label_configs.id"), nullable=False)
+    config_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey("label_configs.id", ondelete="CASCADE"),
+        nullable=False,
+    )
 
 
 class Image(BaseModel):
@@ -87,7 +93,9 @@ class Image(BaseModel):
         nullable=True,
     )
     last_access = sa.Column(sa.Float)
-    project_id = sa.Column(sa.Integer, sa.ForeignKey("projects.id"), nullable=False)
+    project_id = sa.Column(
+        sa.Integer, sa.ForeignKey("projects.id", ondelete="CASCADE"), nullable=False
+    )
     project = sa.orm.relationship("Project", back_populates="images")
     text = sa.Column(sa.String)
     user_image_label_collections = sa.orm.relationship(
@@ -121,8 +129,14 @@ class ImageLevelLabel(BaseModel):
         ),
     )
     id = sa.Column(sa.Integer, primary_key=True)
-    config_id = sa.Column(sa.Integer, sa.ForeignKey("label_configs.id"), nullable=False)
-    selected_id = sa.Column(sa.Integer, sa.ForeignKey("label_options.id"))
+    config_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey("label_configs.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    selected_id = sa.Column(
+        sa.Integer, sa.ForeignKey("label_options.id", ondelete="CASCADE")
+    )
     user_image_label_collection_id = sa.Column(
         sa.Integer, sa.ForeignKey("user_image_label_collections.id", ondelete="CASCADE")
     )
@@ -180,8 +194,14 @@ class BoxLabel(BaseModel):
     box_id = sa.Column(
         sa.Integer, sa.ForeignKey("boxes.id", ondelete="CASCADE"), nullable=False
     )
-    config_id = sa.Column(sa.Integer, sa.ForeignKey("label_configs.id"), nullable=False)
-    selected_id = sa.Column(sa.Integer, sa.ForeignKey("label_options.id"))
+    config_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey("label_configs.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    selected_id = sa.Column(
+        sa.Integer, sa.ForeignKey("label_options.id", ondelete="CASCADE")
+    )
     text = sa.Column(sa.String)
     box = sa.orm.relationship("Box", back_populates="labels")
     selected = sa.orm.relationship("LabelOption")
@@ -192,7 +212,9 @@ class UserImageLabelCollection(BaseModel):
     __tablename__ = "user_image_label_collections"
     __table_args__ = (sa.UniqueConstraint("user_id", "image_id"),)
     id = sa.Column(sa.Integer, primary_key=True)
-    user_id = sa.Column(sa.Integer, sa.ForeignKey("users.id"), nullable=False)
+    user_id = sa.Column(
+        sa.Integer, sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     image_id = sa.Column(
         sa.Integer, sa.ForeignKey("images.id", ondelete="CASCADE"), nullable=False
     )

@@ -4,6 +4,7 @@ import * as react from "react";
 import * as rrd from "react-router-dom";
 import * as mui from "@material-ui/core";
 import LabelPanel from "./LabelPanel";
+import LabelingStatus from "./LabelingStatus";
 
 export const ProjectEditor = () => {
   // Get context variables.
@@ -15,6 +16,7 @@ export const ProjectEditor = () => {
   const [project, setProject] = react.useState<sharedTypes.Project>(null);
   const [isDirty, setIsDirty] = react.useState(false);
   const [finishedSaving, setFinishedSaving] = react.useState(false);
+  const [deleted, setDeleted] = react.useState(false);
 
   // Implement backend API operations.
   const saveProject = react.useCallback(() => {
@@ -29,6 +31,12 @@ export const ProjectEditor = () => {
     common.getProject(projectId).then(setProject);
   }, [projectId]);
 
+  const deleteProject = react.useCallback(() => {
+    common.deleteProject(project.id).then(() => {
+      setDeleted(true);
+    });
+  }, [project]);
+
   react.useEffect(() => {
     resetProject();
   }, [projectId]);
@@ -38,18 +46,33 @@ export const ProjectEditor = () => {
   if (finishedSaving) {
     return <rrd.Redirect to={`/projects/${projectId}`} />;
   }
+  if (deleted) {
+    return <rrd.Redirect to={`/projects`} />;
+  }
   return (
     <mui.Grid container spacing={2}>
       <mui.Grid item xs={12}>
-        <rrd.Link to={`/projects/${projectId}`}>
-          <mui.Typography variant="subtitle1">
-            Back to project menu
-          </mui.Typography>
-        </rrd.Link>
-        <mui.Typography variant="h3">Project: {project.name}</mui.Typography>
-        <mui.Typography variant="h5">
-          Edit Labeling Configuration
-        </mui.Typography>
+        <LabelingStatus>
+          <rrd.Link to={"/projects"}>QSL</rrd.Link> /{" "}
+          <rrd.Link to={`/projects/${projectId}`}>
+            Project: {project.name}
+          </rrd.Link>{" "}
+          / Edit
+        </LabelingStatus>
+      </mui.Grid>
+      <mui.Grid item xs={12}>
+        <mui.FormControl component="fieldset">
+          <mui.FormGroup>
+            <mui.FormLabel component="legend">Project Name</mui.FormLabel>
+            <mui.Input
+              value={project.name}
+              onChange={(event) => {
+                setProject({ ...project, name: event.target.value });
+                setIsDirty(true);
+              }}
+            />
+          </mui.FormGroup>
+        </mui.FormControl>
       </mui.Grid>
       <mui.Grid item xs={12} sm={6}>
         <mui.Typography variant="h6">Image-Level Labels</mui.Typography>
@@ -91,7 +114,7 @@ export const ProjectEditor = () => {
             disabled={!isDirty}
             color="primary"
           >
-            Save Labeling Configuration
+            Save Changes
           </mui.Button>
         </mui.Grid>
         <mui.Grid item>
@@ -102,6 +125,15 @@ export const ProjectEditor = () => {
             color="secondary"
           >
             Reset
+          </mui.Button>
+        </mui.Grid>
+        <mui.Grid item>
+          <mui.Button
+            onClick={deleteProject}
+            variant="contained"
+            color="secondary"
+          >
+            Delete Project
           </mui.Button>
         </mui.Grid>
       </mui.Grid>

@@ -475,10 +475,19 @@ def create_images(
                     label_group=group.defaults.image,
                 ),
                 box_level_labels=[
-                    convert_label_group_to_labels(
-                        config_group=project.labelingConfiguration.box,
-                        label_class=orm.BoxLabel,
-                        label_group=box.labels,
+                    orm.Box(
+                        x=typing.cast(decimal.Decimal, box.x),
+                        y=typing.cast(decimal.Decimal, box.y),
+                        w=typing.cast(decimal.Decimal, box.w),
+                        h=typing.cast(decimal.Decimal, box.h),
+                        points="|".join([f"{p.x},{p.y}" for p in box.points])
+                        if box.points
+                        else None,
+                        labels=convert_label_group_to_labels(
+                            config_group=project.labelingConfiguration.box,
+                            label_class=orm.BoxLabel,
+                            label_group=box.labels,
+                        ),
                     )
                     for box in group.defaults.boxes
                 ],

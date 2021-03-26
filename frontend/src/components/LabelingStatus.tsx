@@ -24,7 +24,7 @@ const LabelingStatus = (props: {
   return (
     <mui.AppBar position={props.position ?? "static"} style={{ zIndex: 1201 }}>
       <mui.Toolbar>
-        {progress ? (
+        {progress !== null ? (
           <mui.Box position="relative" display="inline-flex">
             <mui.CircularProgress
               style={{ color: "white" }}

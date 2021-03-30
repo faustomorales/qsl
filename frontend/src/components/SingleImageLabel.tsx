@@ -307,7 +307,11 @@ const Image = (props: {
             ref={ref}
             src={common.getImageUrl(projectId, imageId)}
             alt={`ID: ${imageId}`}
-            style={{ display: "block", zoom: props.zoom }}
+            style={{
+              display: "block",
+              zoom: props.zoom,
+              imageRendering: "pixelated",
+            }}
           />
         </mui.Paper>
       </div>
@@ -741,7 +745,7 @@ export const SingleImageLabel = () => {
               aria-labelledby="zoom-slider"
               value={zoom}
               min={1}
-              max={5}
+              max={10}
               onChange={(event, value) => setZoom(value as number)}
             />
           </mui.FormControl>

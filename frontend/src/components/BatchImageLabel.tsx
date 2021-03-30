@@ -97,6 +97,7 @@ const BatchImageGrid = (props: {
               bottom: 0,
               left: 0,
               right: 0,
+              imageRendering: "pixelated",
             }}
             src={common.getImageUrl(props.projectId, item.image.id)}
             alt={`ID: ${item.image.id}`}

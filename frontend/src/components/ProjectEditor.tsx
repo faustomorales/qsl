@@ -53,9 +53,9 @@ export const ProjectEditor = () => {
     <mui.Grid container spacing={2}>
       <mui.Grid item xs={12}>
         <LabelingStatus>
-          <rrd.Link to={"/projects"}>QSL</rrd.Link> /{" "}
+          <rrd.Link to={"/"}>QSL</rrd.Link> /{" "}
           <rrd.Link to={`/projects/${projectId}`}>
-            Project: {project.name}
+            {project.name}
           </rrd.Link>{" "}
           / Edit
         </LabelingStatus>

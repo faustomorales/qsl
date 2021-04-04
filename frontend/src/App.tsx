@@ -2,6 +2,7 @@ import * as mui from "@material-ui/core";
 import * as rrd from "react-router-dom";
 import * as components from "./components";
 import * as react from "react";
+import * as common from "./components/common";
 
 const theme = mui.createMuiTheme({
   components: {
@@ -28,76 +29,49 @@ const theme = mui.createMuiTheme({
 });
 
 const App = () => {
-  const [context, setContext] = react.useState({
-    queueSize: 20,
-    apiUrl: process.env.REACT_APP_API_URL || "",
-    postHeaders: {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include" as RequestCredentials,
-    },
-    getHeaders: {
-      credentials: "include" as RequestCredentials,
-    },
-    user: undefined,
-  });
+  const [state, setState] = react.useState({user: undefined})
   react.useEffect(() => {
-    fetch(`${context.apiUrl}/api/v1/users/me`, { ...context.getHeaders })
-      .then((r) => {
-        if (r.ok) {
-          return r;
-        }
-        throw Error(r.statusText);
-      })
-      .then(
-        (r) =>
-          r.json().then((user) => {
-            setContext({ ...context, user });
-          }),
-        () => {
-          setContext({ ...context, user: null });
-        }
-      );
-  }, []);
-  if (context.user === undefined) {
+    common.getMyUser().then((user) => setState({ user }), () => {
+      setState({user: null})
+    })
+  }, [])
+  if (state.user === undefined) {
     return null;
-  } else if (context.user === null) {
-    window.location.href = `${context.apiUrl}/auth/login`;
+  } else if (state.user === null) {
+    window.location.href = `${common.apiUrl}/auth/login`;
     return null;
   }
   return (
-    <components.Context.Provider value={context}>
-      <mui.ThemeProvider theme={theme}>
-        <rrd.BrowserRouter>
-          <rrd.Switch>
-            <rrd.Route path="/projects/:projectId/images/:imageId">
-              <components.SingleImageLabel />
-            </rrd.Route>
-            <rrd.Route path="/projects/:projectId/batches/:imageIds">
-              <components.BatchImageLabel />
-            </rrd.Route>
-            <rrd.Route path="/projects/:projectId/edit-project">
-              <components.ProjectEditor />
-            </rrd.Route>
-            <rrd.Route path="/projects/:projectId/add-images">
-              <components.ImageAdder />
-            </rrd.Route>
-            <rrd.Route path="/projects/:projectId">
-              <components.ProjectSummary />
-            </rrd.Route>
-            <rrd.Route path="/projects">
-              <components.ProjectList />
-            </rrd.Route>
-            <rrd.Route path="/users">
-              <components.UserCreator />
-            </rrd.Route>
-            <rrd.Route path="/">
-              <rrd.Redirect to={"/projects"} />
-            </rrd.Route>
-          </rrd.Switch>
-        </rrd.BrowserRouter>
-      </mui.ThemeProvider>
-    </components.Context.Provider>
+    <mui.ThemeProvider theme={theme}>
+      <rrd.BrowserRouter>
+        <rrd.Switch>
+          <rrd.Route path="/projects/:projectId/images/:imageId">
+            <components.SingleImageLabel />
+          </rrd.Route>
+          <rrd.Route path="/projects/:projectId/batches/:imageIds">
+            <components.BatchImageLabel />
+          </rrd.Route>
+          <rrd.Route path="/projects/:projectId/edit-project">
+            <components.ProjectEditor />
+          </rrd.Route>
+          <rrd.Route path="/projects/:projectId/add-images">
+            <components.ImageAdder />
+          </rrd.Route>
+          <rrd.Route path="/projects/:projectId">
+            <components.ProjectSummary />
+          </rrd.Route>
+          <rrd.Route path="/projects">
+            <components.Home />
+          </rrd.Route>
+          <rrd.Route path="/users">
+            <components.Home />
+          </rrd.Route>
+          <rrd.Route path="/">
+            <components.Home />
+          </rrd.Route>
+        </rrd.Switch>
+      </rrd.BrowserRouter>
+    </mui.ThemeProvider>
   );
 };
 

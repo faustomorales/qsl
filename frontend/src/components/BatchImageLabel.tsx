@@ -392,7 +392,7 @@ export const BatchImageLabel = () => {
     <mui.Grid container spacing={2}>
       <mui.Grid item xs={12}>
         <LabelingStatus project={navState.project}>
-          {navState.project.name} / Batches
+          <rrd.Link to={`/`}>QSL</rrd.Link> / <rrd.Link to={`/projects/${projectId}`}>{navState.project.name}</rrd.Link> / Batches
         </LabelingStatus>
       </mui.Grid>
       <mui.Grid item xs={3}>

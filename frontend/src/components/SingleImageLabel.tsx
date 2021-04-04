@@ -713,7 +713,7 @@ export const SingleImageLabel = () => {
     <div style={{ display: "flex" }}>
       <mui.CssBaseline />
       <LabelingStatus project={project} position={"fixed"}>
-        <rrd.Link to={`/projects/${projectId}`}>{project.name}</rrd.Link> /
+      <rrd.Link to={`/`}>QSL</rrd.Link> / <rrd.Link to={`/projects/${projectId}`}>{project.name}</rrd.Link> /
         Images / {imageId}
       </LabelingStatus>
       <mui.Drawer variant="permanent" style={{ flexShrink: 0 }}>

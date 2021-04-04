@@ -2,7 +2,7 @@ import * as sharedTypes from "./sharedTypes";
 
 import * as react from "react";
 
-const apiUrl = process.env.REACT_APP_API_URL || "";
+export const apiUrl = process.env.REACT_APP_API_URL || "";
 
 export const buildEmptyLabelGroup = (
   configGroup: sharedTypes.LabelConfigurationGroup
@@ -70,11 +70,46 @@ const postRequestInit = {
   credentials: "include" as RequestCredentials,
 };
 
+export const createUser = (user: sharedTypes.User) =>
+  fetch(`${apiUrl}/api/v1/users`, {
+    ...postRequestInit,
+    body: JSON.stringify(user),
+  }).then((r) => r.json() as Promise<sharedTypes.User>);
+
+export const getAuthConfig = () => {
+  return fetch(`${apiUrl}/api/v1/auth/config`, getRequestInit).then(
+    (r) => r.json() as Promise<sharedTypes.AuthConfig>
+  );
+};
+
+export const getUsers = () => {
+  return fetch(`${apiUrl}/api/v1/users`, getRequestInit).then(
+    (r) => r.json() as Promise<sharedTypes.User[]>
+  );
+};
+
+export const getMyUser = () => {
+  return fetch(`${apiUrl}/api/v1/users/me`, getRequestInit)
+    .then((r) => {
+      if (r.ok) {
+        return r;
+      }
+      throw Error(r.statusText);
+    })
+    .then((r) => r.json() as Promise<sharedTypes.User>);
+};
+
 export const getProject = (projectId: number | string) => {
   return fetch(
     `${apiUrl}/api/v1/projects/${projectId}`,
     getRequestInit
   ).then((r) => r.json());
+};
+
+export const getProjects = () => {
+  return fetch(`${apiUrl}/api/v1/projects`, getRequestInit).then((r) =>
+    r.json()
+  );
 };
 
 export const setProject = (
@@ -124,6 +159,16 @@ export const getImages = (
   }
   return fetch(url, getRequestInit).then((r) => r.json());
 };
+
+export const addImages = (
+  projectId: number | string,
+  files: string[],
+  defaults: sharedTypes.ImageLabels
+) =>
+  fetch(`${apiUrl}/api/v1/projects/${projectId}/images`, {
+    ...postRequestInit,
+    body: JSON.stringify({ files, defaults }),
+  }).then((r) => r.json());
 
 export const setLabels = (
   projectId: number | string,

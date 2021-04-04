@@ -1,79 +1,72 @@
-import { Context } from "./Context";
-import LabelingStatus from "./LabelingStatus";
 import * as sharedTypes from "./sharedTypes";
+import * as common from "./common";
 
 import * as react from "react";
-import * as rrd from "react-router-dom";
 import * as mui from "@material-ui/core";
 import * as muidg from "@material-ui/data-grid";
 
-export const UserCreator = () => {
-  // Get context variables.
-  const context = react.useContext(Context);
-
+const UserList = () => {
   // Set state variables
-  const [name, setName] = react.useState("");
-  const [admin, setAdmin] = react.useState(false);
-  const [users, setUsers] = react.useState([]);
-  const [myUser, setMyUser] = react.useState<sharedTypes.User>(null);
-  const [authConfig, setAuthConfig] = react.useState<sharedTypes.AuthConfig>(
-    null
-  );
+  const [state, setState] = react.useState({
+    newUserName: "",
+    users: [] as sharedTypes.User[],
+    myUser: null as sharedTypes.User,
+    authConfig: null as sharedTypes.AuthConfig,
+    newUserAdmin: false,
+  });
 
   // Implement backend API operations
   react.useEffect(() => {
-    fetch(`${context.apiUrl}/api/v1/users/me`, { ...context.getHeaders })
-      .then((r) => r.json())
-      .then(setMyUser);
-  }, []);
-
-  react.useEffect(() => {
-    fetch(`${context.apiUrl}/api/v1/users`, { ...context.getHeaders })
-      .then((r) => r.json())
-      .then(setUsers);
-  }, []);
-
-  react.useEffect(() => {
-    fetch(`${context.apiUrl}/api/v1/auth/config`, { ...context.getHeaders })
-      .then((r) => r.json())
-      .then(setAuthConfig);
+    Promise.all([
+      common.getMyUser(),
+      common.getUsers(),
+      common.getAuthConfig(),
+    ]).then(([myUser, users, authConfig]) => {
+      setState({
+        ...state,
+        myUser,
+        users,
+        authConfig,
+      });
+    });
   }, []);
 
   const createUser = react.useCallback(() => {
-    fetch(`${context.apiUrl}/api/v1/users`, {
-      ...context.postHeaders,
-      body: JSON.stringify({ name, isAdmin: admin }),
-    })
-      .then((r) => r.json())
-      .then((user: sharedTypes.User) => {
-        setUsers(users.concat([user]));
-        setName("");
+    common
+      .createUser({
+        name: state.newUserName,
+        isAdmin: state.newUserAdmin,
+        id: null,
+      })
+      .then((newUser) => {
+        setState({
+          ...state,
+          newUserName: "",
+          users: state.users.concat([newUser]),
+        });
       });
-  }, [admin, name, users, setUsers]);
-  if (!myUser || !authConfig) {
+  }, [state]);
+  if (!state.myUser || !state.authConfig) {
     return null;
   }
   return (
     <mui.Grid container spacing={2}>
-      <LabelingStatus>
-        QSL / <rrd.Link to="/users">Users</rrd.Link>
-      </LabelingStatus>
       <mui.Grid item xs={12}>
         <mui.Typography variant={"body1"}>
-          {authConfig.provider === "github"
+          {state.authConfig.provider === "github"
             ? "You are using GitHub as the authentication provider. Usernames should match GitHub usernames."
             : null}
-          {authConfig.provider === "google"
+          {state.authConfig.provider === "google"
             ? "You are using Google as the authentication provider. Usernames should match email addresses."
             : null}
-          {authConfig.provider === null
+          {state.authConfig.provider === null
             ? "You are not using an authentication provider. You will always be logged in as the first user."
             : null}
         </mui.Typography>
       </mui.Grid>
       <mui.Grid item xs={12}>
         <muidg.DataGrid
-          rows={users}
+          rows={state.users}
           autoHeight
           columns={[
             {
@@ -100,24 +93,31 @@ export const UserCreator = () => {
         />
       </mui.Grid>
       <mui.Grid item xs={12}>
-        {myUser.isAdmin ? (
+        {state.myUser.isAdmin ? (
           <mui.Grid container direction={"row"}>
             <mui.Input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
+              value={state.newUserName}
+              onChange={(event) =>
+                setState({ ...state, newUserName: event.target.value })
+              }
               placeholder={"New user name"}
             />
             <mui.FormControlLabel
               control={
                 <mui.Checkbox
-                  checked={admin}
-                  onChange={(event, checked) => setAdmin(checked)}
+                  checked={state.newUserAdmin}
+                  onChange={(event, checked) =>
+                    setState({ ...state, newUserAdmin: checked })
+                  }
                   name="makeAdmin"
                 />
               }
               label="Administrator"
             />
-            <mui.Button disabled={name === ""} onClick={createUser}>
+            <mui.Button
+              disabled={state.newUserName === ""}
+              onClick={createUser}
+            >
               Create User
             </mui.Button>
           </mui.Grid>
@@ -126,3 +126,5 @@ export const UserCreator = () => {
     </mui.Grid>
   );
 };
+
+export default UserList;

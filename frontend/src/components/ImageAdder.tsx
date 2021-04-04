@@ -5,11 +5,9 @@ import * as react from "react";
 import * as rrd from "react-router-dom";
 import * as mui from "@material-ui/core";
 import LabelPanel from "./LabelPanel";
-import { Context } from "./Context";
 
 export const ImageAdder = () => {
   // Get context variables.
-  const { apiUrl, postHeaders, getHeaders } = react.useContext(Context);
   const { projectId } = rrd.useRouteMatch<{
     projectId: string;
   }>().params;
@@ -21,24 +19,16 @@ export const ImageAdder = () => {
 
   // Implement backend API operations.
   const addFiles = react.useCallback(() => {
-    return fetch(`${apiUrl}/api/v1/projects/${projectId}/images`, {
-      ...postHeaders,
-      body: JSON.stringify({
-        files: files,
-        defaults: draftDefaultLabels,
-      } as sharedTypes.ImageGroup),
-    }).then(() => {
+    return common.addImages(projectId, files, draftDefaultLabels).then(() => {
       setDraftDefaultLabels(common.buildEmptyLabels(project));
       setFiles([]);
     });
   }, [project, files, draftDefaultLabels]);
   react.useEffect(() => {
-    fetch(`${apiUrl}/api/v1/projects/${projectId}`, { ...getHeaders })
-      .then((r) => r.json())
-      .then((project) => {
-        setDraftDefaultLabels(common.buildEmptyLabels(project));
-        setProject(project);
-      });
+    common.getProject(projectId).then((project) => {
+      setDraftDefaultLabels(common.buildEmptyLabels(project));
+      setProject(project);
+    });
   }, []);
   if (!project) {
     return null;

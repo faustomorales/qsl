@@ -1,25 +1,18 @@
-import { Context } from "./Context";
 import * as common from "./common";
 import * as sharedTypes from "./sharedTypes";
 import * as rrd from "react-router-dom";
 import * as react from "react";
 import * as mui from "@material-ui/core";
 import * as muidg from "@material-ui/data-grid";
-import LabelingStatus from "./LabelingStatus";
 
-export const ProjectList = () => {
-  // Get context variables.
-  const context = react.useContext(Context);
-
+const ProjectList = () => {
   // Set state variables
   const [name, setName] = react.useState("");
   const [projects, setProjects] = react.useState([]);
 
   // Implement backend API operations
   react.useEffect(() => {
-    fetch(`${context.apiUrl}/api/v1/projects`, { ...context.getHeaders })
-      .then((r) => r.json())
-      .then(setProjects);
+    common.getProjects().then(setProjects);
   }, []);
 
   const createProject = react.useCallback(() => {
@@ -47,11 +40,6 @@ export const ProjectList = () => {
   );
   return (
     <mui.Grid container spacing={2}>
-      <mui.Grid item xs={12}>
-        <LabelingStatus>
-          QSL / <rrd.Link to="/projects">Projects</rrd.Link>
-        </LabelingStatus>
-      </mui.Grid>
       <mui.Grid item xs={12}>
         <muidg.DataGrid
           rows={projects}
@@ -118,6 +106,7 @@ export const ProjectList = () => {
         <mui.Box>
           <mui.Input
             value={name}
+            placeholder={"New project name"}
             onChange={(event) => setName(event.target.value)}
             style={{ marginRight: "10px" }}
           />
@@ -134,3 +123,5 @@ export const ProjectList = () => {
     </mui.Grid>
   );
 };
+
+export default ProjectList;

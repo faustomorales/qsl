@@ -930,7 +930,7 @@ export const SingleImageLabel = () => {
         {navState.queue && navState.queue.length
           ? navState.queue.map((image, index) => (
               <img
-                key={index}
+                key={image.id}
                 alt={`Background Load: ${image.id}`}
                 src={common.getImageUrl(projectId, image.id)}
                 style={{ width: 0, height: 0 }}

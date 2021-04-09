@@ -931,7 +931,7 @@ export const SingleImageLabel = () => {
               <img
                 key={index}
                 alt={`Background Load: ${image.id}`}
-                src={common.getImageUrl(projectId, imageId)}
+                src={common.getImageUrl(projectId, image.id)}
                 style={{ width: 0, height: 0 }}
               />
             ))

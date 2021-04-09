@@ -43,6 +43,17 @@ export const ImageAdder = () => {
         </rrd.Link>
         <mui.Typography variant="h5">Add Files to Project</mui.Typography>
       </mui.Grid>
+      <mui.Grid item xs={12}>
+        <mui.Button
+          onClick={addFiles}
+          disabled={files.length === 0}
+          style={{ width: "100%" }}
+          variant="contained"
+          color="primary"
+        >
+          Add Files
+        </mui.Button>
+      </mui.Grid>
       <mui.Grid item xs={6}>
         <ChipInput
           label="New Files"
@@ -76,17 +87,6 @@ export const ImageAdder = () => {
             setDraftDefaultLabels({ ...draftDefaultLabels, image: labels })
           }
         />
-      </mui.Grid>
-      <mui.Grid item xs={12}>
-        <mui.Button
-          onClick={addFiles}
-          disabled={files.length === 0}
-          style={{ width: "100%" }}
-          variant="contained"
-          color="primary"
-        >
-          Add Files
-        </mui.Button>
       </mui.Grid>
     </mui.Grid>
   );

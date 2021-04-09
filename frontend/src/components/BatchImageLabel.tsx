@@ -389,6 +389,7 @@ export const BatchImageLabel = () => {
     0
   );
   return (
+    <div>
     <mui.Grid container spacing={2}>
       <mui.Grid item xs={12}>
         <LabelingStatus project={navState.project}>
@@ -655,5 +656,18 @@ export const BatchImageLabel = () => {
         </mui.Grid>
       </mui.Grid>
     </mui.Grid>
+
+  {navState.batches && navState.batches.length
+    ? navState.batches.map((images, batch_index) => (
+     images.map((image, index) => (
+          <img
+            key={index}
+            alt={`Background Load: ${image.id}`}
+            src={common.getImageUrl(projectId, image.id)}
+            style={{ width: 0, height: 0 }}
+          />
+      ))))
+    : null}
+</div>
   );
 };

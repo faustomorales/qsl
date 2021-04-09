@@ -14,9 +14,19 @@ export const Home = () => {
         </LabelingStatus>
       </mui.Grid>
       <mui.Grid item xs={12}>
-        <mui.Typography style={{marginTop: "10px", marginBottom: "10px"}} variant={"h4"}>Projects</mui.Typography>
+        <mui.Typography
+          style={{ marginTop: "10px", marginBottom: "10px" }}
+          variant={"h4"}
+        >
+          Projects
+        </mui.Typography>
         <ProjectList />
-        <mui.Typography style={{marginTop: "20px", marginBottom: "10px"}} variant={"h4"}>Users</mui.Typography>
+        <mui.Typography
+          style={{ marginTop: "20px", marginBottom: "10px" }}
+          variant={"h4"}
+        >
+          Users
+        </mui.Typography>
         <UserList />
       </mui.Grid>
     </mui.Grid>

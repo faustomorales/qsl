@@ -14,6 +14,8 @@ init-yarn:
 init: ## Build local development environment
 	make init-poetry
 	make init-yarn
+	# Folder needs to exist, it can be empty.
+	mkdir -p ./qsl/frontend/static
 
 develop: ## Start local development on frontend and backend
 	FRONTEND_PORT=$(FRONTEND_PORT) $(PYTHON_EXEC) qsl label --dev --port $(BACKEND_PORT) & cd frontend && PORT=$(FRONTEND_PORT) REACT_APP_API_URL=http://localhost:$(BACKEND_PORT) yarn start

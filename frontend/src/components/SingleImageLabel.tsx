@@ -361,7 +361,7 @@ export const SingleImageLabel = () => {
       | "redirecting",
     usePolygon: false,
     labels: null as sharedTypes.ImageLabels,
-    advanceOnSave: false,
+    advanceOnSave: true,
     dirty: false,
     notice: null as string,
     history: [] as HistoryEntry[],
@@ -930,9 +930,9 @@ export const SingleImageLabel = () => {
         {navState.queue && navState.queue.length
           ? navState.queue.map((image, index) => (
               <img
-                key={index}
+                key={image.id}
                 alt={`Background Load: ${image.id}`}
-                src={common.getImageUrl(projectId, imageId)}
+                src={common.getImageUrl(projectId, image.id)}
                 style={{ width: 0, height: 0 }}
               />
             ))

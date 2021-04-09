@@ -361,7 +361,7 @@ export const SingleImageLabel = () => {
       | "redirecting",
     usePolygon: false,
     labels: null as sharedTypes.ImageLabels,
-    advanceOnSave: false,
+    advanceOnSave: true,
     dirty: false,
     notice: null as string,
     history: [] as HistoryEntry[],

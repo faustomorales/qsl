@@ -125,7 +125,7 @@ export const BatchImageLabel = () => {
     batchSize: 10,
     thumbnailSize: 160,
     redirecting: false,
-    advanceOnSave: false,
+    advanceOnSave: true,
     history: [] as HistoryEntry[],
     project: null as sharedTypes.Project,
     currentBatchStatus: {} as BatchStatuses,

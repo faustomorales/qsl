@@ -5,13 +5,14 @@ import time
 import logging
 import decimal
 import sqlite3
+import tempfile
 import contextlib
 import threading
 import itertools
 import typing
-import typing_extensions as tx
 
 import boto3
+import uvicorn  # type: ignore
 import pkg_resources
 import fastapi
 import fastapi.staticfiles
@@ -26,7 +27,6 @@ from .types import web, orm
 
 LOGGER = logging.getLogger(__name__)
 FRONTEND_DIRECTORY = pkg_resources.resource_filename("qsl", "frontend")
-CONFIG = Config(".env")
 
 
 class OAuthConfig(typing.NamedTuple):
@@ -36,24 +36,7 @@ class OAuthConfig(typing.NamedTuple):
     username_key: str
 
 
-Context = tx.TypedDict(
-    "Context",
-    {
-        "engine": typing.Any,
-        "s3": typing.Any,
-        "oauth": typing.Optional[OAuthConfig],
-        "frontend_port": typing.Optional[str],
-    },
-)
-
 tls = threading.local()
-app = fastapi.FastAPI()
-context: Context = {
-    "engine": None,
-    "s3": typing.Any,
-    "oauth": None,
-    "frontend_port": None,
-}
 
 # pylint: disable=unused-argument
 @sa.event.listens_for(sa.engine.Engine, "connect")
@@ -97,15 +80,39 @@ def build_session(engine):
         session.close()  # pylint: disable=no-member
 
 
-def get_session():
+def add_clients(engine: sa.engine.Engine, oauth=None, frontend_port=None):
+    """Add database, S3, Oauth, and frontend port configuration to requests."""
+
+    def middleware(request: fastapi.Request, call_next):
+        request.state.engine = engine
+        request.state.s3 = boto3.client("s3")
+        request.state.oauth = oauth
+        request.state.frontend_port = frontend_port
+        response = call_next(request)
+        return response
+
+    return middleware
+
+
+def get_session(request: Request):
     """Provide a transactional scope around a series of operations."""
-    with build_session(context["engine"]) as session:
+    with build_session(request.state.engine) as session:
         yield session
 
 
-def get_s3():
+def get_s3(request: Request):
     """Provide an s3 client"""
-    return context["s3"]
+    return request.state.s3
+
+
+def get_oauth(request: Request) -> OAuthConfig:
+    """Provide Ouath configuration."""
+    return request.state.oauth
+
+
+def get_frontend_port(request: Request):
+    """Get the frontend port for the app."""
+    return request.state.frontend_port
 
 
 def get_current_user(
@@ -120,86 +127,6 @@ def get_current_user(
         )
     except Exception as e:
         raise fastapi.HTTPException(401, detail="Not logged in") from e
-
-
-@app.on_event("startup")
-def startup():
-    """Initialize application context."""
-    context["engine"] = sa.create_engine(
-        CONFIG("DB_CONNECTION_STRING", str, "sqlite:///qsl-labeling.db"),
-        echo=False,
-        connect_args={"check_same_thread": False},
-    )
-    context["s3"] = boto3.client("s3")
-    provider_name = CONFIG("OAUTH_PROVIDER", str, None)
-    initial_user = CONFIG("OAUTH_INITIAL_USER", str, "Default User")
-    if provider_name is None:
-        LOGGER.warning("Starting application with no authentication.")
-    elif provider_name == "github":
-        client = starlette_client.OAuth()
-        client.register(
-            name="provider",
-            client_id=CONFIG("OAUTH_CLIENT_ID", str),
-            client_secret=CONFIG("OAUTH_CLIENT_SECRET", str),
-            api_base_url="https://api.github.com/",
-            access_token_url="https://github.com/login/oauth/access_token",
-            authorize_url="https://github.com/login/oauth/authorize",
-            userinfo_endpoint="https://api.github.com/user",
-            client_kwargs={"scope": "user:email"},
-        )
-        context["oauth"] = OAuthConfig(
-            client=client,
-            name=provider_name,
-            userinfo_query_key="user",
-            username_key="login",
-        )
-    elif provider_name == "google":
-        client = starlette_client.OAuth()
-        client.register(
-            name="provider",
-            client_id=CONFIG("OAUTH_CLIENT_ID", str),
-            client_secret=CONFIG("OAUTH_CLIENT_SECRET", str),
-            api_base_url="https://openidconnect.googleapis.com/v1/",
-            server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
-            client_kwargs={"scope": "email"},
-        )
-        context["oauth"] = OAuthConfig(
-            client=client,
-            name=provider_name,
-            userinfo_query_key="userinfo",
-            username_key="email",
-        )
-    else:
-        raise NotImplementedError(f"Unsupported Oauth provider: {provider_name}.")
-    app.add_middleware(
-        SessionMiddleware,
-        secret_key=CONFIG("SESSION_SECRET_KEY", str, str(uuid.uuid4())),
-        session_cookie="qsl-session",
-    )
-    orm.BaseModel.metadata.create_all(context["engine"])
-    with build_session(context["engine"]) as session:
-
-        if CONFIG("DEVELOPMENT_MODE", bool, False):
-            # We're in development mode and need to let the live frontend
-            # access the backend.
-            frontend_port = CONFIG("FRONTEND_PORT", str, "5000")
-            context["frontend_port"] = frontend_port
-            app.add_middleware(
-                fastapi.middleware.cors.CORSMiddleware,
-                allow_origins=[
-                    f"http://localhost:{frontend_port}",
-                ],
-                allow_credentials=True,
-                allow_methods=["*"],
-                allow_headers=["*"],
-            )
-
-        if not any(user.name == initial_user for user in list_users(session=session)):
-            create_user(
-                new_user=web.User(name=initial_user, isAdmin=True),
-                existing_user=web.User(name="Dummy User", isAdmin=True),
-                session=session,
-            )
 
 
 LeveledLabel = typing.TypeVar("LeveledLabel", orm.BoxLabel, orm.ImageLevelLabel)
@@ -257,7 +184,6 @@ def build_images_query(session: sa.orm.Session, project_id=None):
     return query
 
 
-@app.get("/api/v1/projects/{project_id}")
 def get_project(
     project_id: int,
     session: sa.orm.Session = fastapi.Depends(get_session),
@@ -358,7 +284,6 @@ def set_config_for_project(
                 )
 
 
-@app.post("/api/v1/projects")
 def create_project(
     project: web.Project,
     session: sa.orm.Session = fastapi.Depends(get_session),
@@ -379,7 +304,6 @@ def create_project(
     return get_project(project_id=project_orm.id, session=session)
 
 
-@app.delete("/api/v1/projects/{project_id}")
 def delete_project(
     project_id: int,
     session: sa.orm.Session = fastapi.Depends(get_session),
@@ -396,7 +320,6 @@ def delete_project(
     session.commit()
 
 
-@app.post("/api/v1/projects/{project_id}")
 def update_project(
     project_id: int,
     project: web.Project,
@@ -421,7 +344,6 @@ def update_project(
     return get_project(project_id=project_id, session=session)
 
 
-@app.get("/api/v1/projects")
 def list_projects(
     session: sa.orm.Session = fastapi.Depends(get_session),
     user: web.User = fastapi.Depends(get_current_user),
@@ -441,7 +363,6 @@ def list_projects(
     ]
 
 
-@app.post("/api/v1/projects/{project_id}/images")
 def create_images(
     group: web.ImageGroup,
     project_id: int,
@@ -497,7 +418,6 @@ def create_images(
     return [web.Image(id=image.id, filepath=image.filepath) for image in images]
 
 
-@app.get("/api/v1/projects/{project_id}/images")
 def list_images(
     page: int = 1,
     limit: int = None,
@@ -578,7 +498,6 @@ def list_images(
     ]
 
 
-@app.get("/api/v1/projects/{project_id}/images/{image_id}/file")
 def get_file(
     project_id: int,
     image_id: int,
@@ -631,7 +550,6 @@ def update_label_group_with_label(
         label_group.text[config.name] = label.text if label is not None else None
 
 
-@app.get("/api/v1/projects/{project_id}/images/{image_id}/labels")
 def get_labels(
     project_id: int,
     image_id: int,
@@ -707,7 +625,6 @@ def get_labels(
     return labels
 
 
-@app.delete("/api/v1/projects/{project_id}/images/{image_id}/labels")
 def delete_labels(
     project_id: int,
     image_id: int,
@@ -726,7 +643,6 @@ def delete_labels(
     )
 
 
-@app.post("/api/v1/projects/{project_id}/images/{image_id}/labels")
 def set_labels(
     project_id: int,
     image_id: int,
@@ -898,7 +814,6 @@ def query_labels(
     )
 
 
-@app.get("/api/v1/projects/{project_id}/export")
 def export_project(
     project_id: int,
     user: web.User = fastapi.Depends(get_current_user),
@@ -1022,13 +937,11 @@ def export_project(
     return project
 
 
-@app.get("/api/v1/users/me")
 def get_my_user(user: web.User = fastapi.Depends(get_current_user)) -> web.User:
     """Get the current user configuration."""
     return user
 
 
-@app.post("/api/v1/users")
 def create_user(
     new_user: web.User,
     existing_user: web.User = fastapi.Depends(get_current_user),
@@ -1044,7 +957,6 @@ def create_user(
     )
 
 
-@app.get("/api/v1/users")
 def list_users(
     session: sa.orm.Session = fastapi.Depends(get_session),
     user: web.User = fastapi.Depends(get_current_user),
@@ -1056,51 +968,38 @@ def list_users(
     ]
 
 
-app.mount(
-    "/static",
-    fastapi.staticfiles.StaticFiles(
-        directory=os.path.join(FRONTEND_DIRECTORY, "static")
-    ),
-    name="frontend-static",
-)
-
-
-@app.get("/auth/login")
-async def login(request: Request):
+async def login(request: Request, oauth=fastapi.Depends(get_oauth)):
     """Log a user in."""
     redirect_uri = request.url_for("auth")
-    if context["oauth"] is not None:
-        return await context["oauth"].client.provider.authorize_redirect(
-            request, redirect_uri
-        )
+    if oauth is not None:
+        return await oauth.client.provider.authorize_redirect(request, redirect_uri)
     # Authentication is disabled, skip to the auth callback.
     return fastapi.responses.RedirectResponse(url="/auth/callback")
 
 
-@app.get("/api/v1/auth/config")
-def auth_config(user: web.User = fastapi.Depends(get_current_user)) -> web.AuthConfig:
+def auth_config(
+    user: web.User = fastapi.Depends(get_current_user),
+    oauth: OAuthConfig = fastapi.Depends(get_oauth),
+) -> web.AuthConfig:
     """Get the authentication configuration for the application."""
-    return web.AuthConfig(
-        provider=context["oauth"].name if context["oauth"] is not None else None
-    )
+    return web.AuthConfig(provider=oauth.name if oauth is not None else None)
 
 
-@app.get("/auth/callback")
 async def auth(
     request: Request,
     session: sa.orm.Session = fastapi.Depends(get_session),
+    oauth: OAuthConfig = fastapi.Depends(get_oauth),
+    frontend_port: typing.Optional[str] = fastapi.Depends(get_frontend_port),
 ):
     """Authenticate a user after login (i.e., a callback)"""
-    if context["oauth"] is None:
+    if oauth is None:
         # Authentication is disabled, so we just assume we're using the first user.
         user = session.query(orm.User).first()
     else:
-        token = await context["oauth"].client.provider.authorize_access_token(request)
-        resp = await context["oauth"].client.provider.get(
-            context["oauth"].userinfo_query_key, token=token
-        )
+        token = await oauth.client.provider.authorize_access_token(request)
+        resp = await oauth.client.provider.get(oauth.userinfo_query_key, token=token)
         resp.raise_for_status()
-        name = resp.json()[context["oauth"].username_key]
+        name = resp.json()[oauth.username_key]
         user = session.query(orm.User).filter(orm.User.name == name).first()
     if user is None:
         raise fastapi.HTTPException(401, "Could not find user.")
@@ -1109,14 +1008,13 @@ async def auth(
         "name": user.name,
         "isAdmin": user.is_admin,
     }
-    if context["frontend_port"]:
+    if frontend_port is not None:
         return fastapi.responses.RedirectResponse(
-            url=f"http://localhost:{context['frontend_port']}/"
+            url=f"http://localhost:{frontend_port}/"
         )
     return fastapi.responses.RedirectResponse(url="/")
 
 
-@app.get("/{path:path}")
 def frontend(path: str):
     """Paths for the frontend."""
     local = os.path.join(FRONTEND_DIRECTORY, path)
@@ -1125,3 +1023,263 @@ def frontend(path: str):
     return fastapi.responses.FileResponse(
         os.path.join(FRONTEND_DIRECTORY, "index.html")
     )
+
+
+def build_oauth(provider_name: str, **kwargs) -> typing.Optional[OAuthConfig]:
+    """Build an oauth configuration."""
+    if provider_name is None:
+        return None
+    if provider_name == "github":
+        client = starlette_client.OAuth()
+        client.register(
+            name="provider",
+            api_base_url="https://api.github.com/",
+            access_token_url="https://github.com/login/oauth/access_token",
+            authorize_url="https://github.com/login/oauth/authorize",
+            userinfo_endpoint="https://api.github.com/user",
+            client_kwargs={"scope": "user:email"},
+            **kwargs,
+        )
+        return OAuthConfig(
+            client=client,
+            name=provider_name,
+            userinfo_query_key="user",
+            username_key="login",
+        )
+    if provider_name == "google":
+        client = starlette_client.OAuth()
+        client.register(
+            name="provider",
+            api_base_url="https://openidconnect.googleapis.com/v1/",
+            server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+            client_kwargs={"scope": "email"},
+            **kwargs,
+        )
+        return OAuthConfig(
+            client=client,
+            name=provider_name,
+            userinfo_query_key="userinfo",
+            username_key="email",
+        )
+    raise NotImplementedError(f"Unsupported Oauth provider: {provider_name}.")
+
+
+def default_startup(app: fastapi.FastAPI):
+    """Default startup for a full implementation of QSL."""
+
+    def startup():
+        CONFIG = Config(".env")
+        frontend_port = None
+        connection_string = CONFIG(
+            "DB_CONNECTION_STRING", str, "sqlite:///qsl-labeling.db"
+        )
+        initial_user = CONFIG("OAUTH_INITIAL_USER", str, "Default User")
+        engine = sa.create_engine(
+            connection_string,
+            echo=False,
+            connect_args={"check_same_thread": False},
+        )
+        orm.BaseModel.metadata.create_all(engine)
+        oauth = build_oauth(
+            provider_name=CONFIG("OAUTH_PROVIDER", str, None),
+            client_id=CONFIG("OAUTH_CLIENT_ID", str, None),
+            client_secret=CONFIG("OAUTH_CLIENTS_ECRET", str, None),
+        )
+        if oauth is None:
+            LOGGER.warning("Starting application with no authentication.")
+
+        if CONFIG("DEVELOPMENT_MODE", bool, False):
+            # We're in development mode and need to let the live frontend
+            # access the backend.
+            frontend_port = CONFIG("FRONTEND_PORT", str, "5000")
+            app.add_middleware(
+                fastapi.middleware.cors.CORSMiddleware,
+                allow_origins=[
+                    f"http://localhost:{frontend_port}",
+                ],
+                allow_credentials=True,
+                allow_methods=["*"],
+                allow_headers=["*"],
+            )
+
+        with build_session(engine) as session:
+            if not any(
+                user.name == initial_user for user in list_users(session=session)
+            ):
+                create_user(
+                    new_user=web.User(name=initial_user, isAdmin=True),
+                    existing_user=web.User(name="Dummy User", isAdmin=True),
+                    session=session,
+                )
+        app.middleware("http")(
+            add_clients(
+                engine=engine,
+                oauth=oauth,
+                frontend_port=frontend_port,
+            )
+        )
+        app.add_middleware(
+            SessionMiddleware,
+            secret_key=CONFIG("SESSION_SECRET_KEY", str, str(uuid.uuid4())),
+            session_cookie="qsl-session",
+        )
+
+    return startup
+
+
+def build_app():
+    """Build the QSL app."""
+    app = fastapi.FastAPI()
+    app.get("/api/v1/projects/{project_id}")(get_project)
+    app.post("/api/v1/projects/{project_id}")(update_project)
+    app.post("/api/v1/projects/{project_id}/images")(create_images)
+    app.get("/api/v1/projects/{project_id}/images")(list_images)
+    app.get("/api/v1/projects/{project_id}/images/{image_id}/file")(get_file)
+    app.get("/api/v1/projects/{project_id}/images/{image_id}/labels")(get_labels)
+    app.delete("/api/v1/projects/{project_id}/images/{image_id}/labels")(delete_labels)
+    app.post("/api/v1/projects/{project_id}/images/{image_id}/labels")(set_labels)
+    app.mount(
+        "/static",
+        fastapi.staticfiles.StaticFiles(
+            directory=os.path.join(FRONTEND_DIRECTORY, "static")
+        ),
+        name="frontend-static",
+    )
+    app.get("/api/v1/projects/{project_id}/export")(export_project)
+    app.post("/api/v1/projects")(create_project)
+    app.delete("/api/v1/projects/{project_id}")(delete_project)
+    app.get("/api/v1/projects")(list_projects)
+    app.post("/api/v1/users")(create_user)
+    app.get("/auth/login")(login)
+    app.get("/api/v1/users")(list_users)
+    app.get("/api/v1/auth/config")(auth_config)
+    app.get("/api/v1/users/me")(get_my_user)
+    app.get("/auth/callback")(auth)
+    app.get("/{path:path}")(frontend)
+    return app
+
+
+def mock_user_middleware(user: web.User):
+    """Middleware to automatically insert the user for the simple app."""
+
+    def middleware(request: fastapi.Request, call_next):
+        request.session["user"] = user.dict()
+        return call_next(request)
+
+    return middleware
+
+
+def launch_app(host: str, port: int, log_level: str, dev: bool):
+    """Launch the full QSL app."""
+    uvicorn.run(
+        "qsl.serve:default_app",
+        host=host,
+        port=port,
+        log_level=log_level,
+        reload=dev,
+        reload_dirs=[os.path.dirname(__file__)],
+    )
+
+
+def launch_simple_app(host: str, port: int, project: web.Project):
+    """Launch a simplified version of the QSL app."""
+    user = web.User(name="Default User", id=1, isAdmin=True)
+
+    with tempfile.TemporaryDirectory() as tdir:
+        app = build_app()
+        engine = sa.create_engine(
+            f"sqlite:///{tdir}/qsl-labeling.db",
+            echo=False,
+            connect_args={"check_same_thread": False},
+        )
+        orm.BaseModel.metadata.create_all(engine)
+        with build_session(engine) as session:
+            project_id = create_project(project=project, session=session).id
+            assert project_id is not None, "Did not get a project ID."
+            user = create_user(
+                new_user=web.User(name="Default User", isAdmin=True),
+                existing_user=web.User(name="Dummy User", isAdmin=True),
+                session=session,
+            )
+            if project.labels:
+                default_groups: typing.Dict[web.ImageLabels, typing.Any] = {}
+                no_defaults: typing.List[web.ExportedImageLabels] = []
+                filepath_to_user_labels: typing.Dict[str, web.ImageLabels] = {}
+                for image in project.labels:
+                    if (
+                        image.defaultLabels is not None
+                        and image.defaultLabels not in default_groups
+                    ):
+                        default_groups[image.defaultLabels] = {
+                            "defaults": image.defaultLabels,
+                            "images": [image],
+                        }
+                    elif image.defaultLabels is not None:
+                        default_groups[image.defaultLabels]["images"].append(image)
+                    else:
+                        no_defaults.append(image)
+                    if not image.labels:
+                        continue
+                    if image.labels:
+                        for labels in image.labels:
+                            if labels.userId != 1:
+                                raise ValueError(
+                                    "For simple projects, only one user is supported."
+                                )
+                            filepath_to_user_labels[image.filepath] = labels.labels
+                # Create images without defaults.
+                filepath_to_id: typing.Dict[str, int] = {}
+                for saved in create_images(
+                    group=web.ImageGroup(
+                        files=[image.filepath for image in no_defaults]
+                    ),
+                    project_id=project_id,
+                    session=session,
+                    user=user,
+                ):
+                    assert saved.id is not None, "Failed to get an image ID."
+                    filepath_to_id[saved.filepath] = saved.id
+
+                # Create images with defaults.
+                for defaultSet in default_groups.values():
+                    for saved in create_images(
+                        group=web.ImageGroup(
+                            files=[image.filepath for image in defaultSet["images"]],
+                            defaults=defaultSet["defaults"],
+                        ),
+                        project_id=project_id,
+                        session=session,
+                        user=user,
+                    ):
+                        assert saved.id is not None, "Failed to get an image ID."
+                        filepath_to_id[saved.filepath] = saved.id
+
+                # Set user labels.
+                for filepath, user_labels in filepath_to_user_labels.items():
+                    set_labels(
+                        project_id=project_id,
+                        image_id=filepath_to_id[filepath],
+                        labels=user_labels,
+                        user=user,
+                        session=session,
+                    )
+        app.middleware("http")(
+            add_clients(
+                engine=engine,
+            )
+        )
+        app.on_event("startup")(
+            lambda: app.add_middleware(
+                SessionMiddleware,
+                secret_key="not-a-secret",
+                session_cookie="qsl-session",
+            )
+        )
+        app.middleware("http")(mock_user_middleware(user))
+        uvicorn.run(app, host=host, port=port)
+        with build_session(engine) as session:
+            return export_project(user=user, project_id=project_id, session=session)
+
+
+default_app = build_app()
+default_app.on_event("startup")(default_startup(default_app))

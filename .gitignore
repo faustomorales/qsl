@@ -37,3 +37,4 @@ __pycache__
 dist
 .env
 .env*
+*.json

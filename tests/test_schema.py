@@ -11,10 +11,9 @@ def test_project_creation():
     tfile = tempfile.NamedTemporaryFile()
     filename = tfile.name
     os.environ["DB_CONNECTION_STRING"] = f"sqlite:///{filename}"
-    with fastapi.testclient.TestClient(serve.app) as client:
-        serve.context["oauth"] = None
+    with fastapi.testclient.TestClient(serve.default_app) as client:
         client.get("/auth/login")
-        user = web.User.parse_obj(
+        _ = web.User.parse_obj(
             client.post(
                 "/api/v1/users",
                 data=web.User(name="new-test-user", isAdmin=True).json(),

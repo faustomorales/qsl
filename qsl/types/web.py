@@ -11,10 +11,21 @@ class LabelGroup(BaseModel):
     multiple: typing.Dict[str, typing.List[str]]
     text: typing.Dict[str, typing.Optional[str]]
 
+    def __hash__(self):
+        return hash(
+            tuple(
+                (k, v) for k, v in list(self.single.items()) + list(self.text.items())
+            )
+            + tuple((k, tuple(v)) for k, v in self.multiple.items())
+        )
+
 
 class Point(BaseModel):
     x: float
     y: float
+
+    def __hash__(self):
+        return hash((self.x, self.y))
 
 
 class Box(BaseModel):
@@ -26,12 +37,29 @@ class Box(BaseModel):
     points: typing.Optional[typing.List[Point]]
     labels: LabelGroup
 
+    def __hash__(self):
+        return hash(
+            (
+                (self.x, self.y, self.w, self.h)
+                + (p.__hash__() for p in self.points)
+                + self.labels.__hash__()
+            )
+        )
+
 
 class ImageLabels(BaseModel):
     image: LabelGroup
     boxes: typing.List[Box]
     default: typing.Optional[bool]
     ignored: typing.Optional[bool]
+
+    def __hash__(self):
+        return hash(
+            (
+                (self.image.__hash__(), self.default, self.ignored)
+                + tuple(b.__hash__() for b in self.boxes)
+            )
+        )
 
 
 class LabelOption(BaseModel):
@@ -95,7 +123,7 @@ class User(BaseModel):
 
 
 class Image(BaseModel):
-    id: int
+    id: typing.Optional[int]
     filepath: str
     labels: typing.Optional[int]
     status: typing.Optional[tx.Literal["ignored", "labeled", "unlabeled"]]
@@ -112,7 +140,7 @@ class ExportedUserLabels(BaseModel):
 
 
 class ExportedImageLabels(BaseModel):
-    imageId: int
+    imageId: typing.Optional[int]
     filepath: str
     labels: typing.List[ExportedUserLabels]
     defaultLabels: typing.Optional[ImageLabels]

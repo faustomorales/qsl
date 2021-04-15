@@ -390,288 +390,289 @@ export const BatchImageLabel = () => {
   );
   return (
     <div>
-    <mui.Grid container spacing={2}>
-      <mui.Grid item xs={12}>
-        <LabelingStatus project={navState.project}>
-          <rrd.Link to={`/`}>QSL</rrd.Link> /{" "}
-          <rrd.Link to={`/projects/${projectId}`}>
-            {navState.project.name}
-          </rrd.Link>{" "}
-          / Batches
-        </LabelingStatus>
-      </mui.Grid>
-      <mui.Grid item xs={3}>
-        <mui.Grid item>
-          {redirect}
-          <mui.Typography style={{ marginBottom: "10px" }} variant={"h6"}>
-            Image-Level Labels
-          </mui.Typography>
-          {navState.labels && navState.project ? (
-            <LabelPanel
-              configGroup={navState.project.labelingConfiguration.image}
-              labels={navState.labels.image}
-              setLabelGroup={(labels) =>
-                setNavState({
-                  ...navState,
-                  labels: {
-                    boxes: [],
-                    image: labels,
-                    default: false,
-                    ignored: false,
-                  },
-                })
-              }
-            />
-          ) : null}
-          <mui.Divider />
+      <mui.Grid container spacing={2}>
+        <mui.Grid item xs={12}>
+          <LabelingStatus project={navState.project}>
+            <rrd.Link to={`/`}>QSL</rrd.Link> /{" "}
+            <rrd.Link to={`/projects/${projectId}`}>
+              {navState.project.name}
+            </rrd.Link>{" "}
+            / Batches
+          </LabelingStatus>
         </mui.Grid>
-        <mui.Grid item>
-          <mui.Typography variant={"h6"}>View Settings</mui.Typography>
-          <mui.Typography id="batch-size-selector" gutterBottom>
-            Target Batch Size
-          </mui.Typography>
-          <mui.Slider
-            value={navState.batchSize}
-            aria-labelledby="batch-size-selector"
-            valueLabelDisplay="auto"
-            onChange={(event, value) =>
-              setNavState({ ...navState, batchSize: value as number })
-            }
-            step={10}
-            marks
-            min={10}
-            max={110}
-          />
-          <mui.Typography id="batch-size-selector" gutterBottom>
-            Thumbnail Size
-          </mui.Typography>
-          <mui.Slider
-            value={navState.thumbnailSize}
-            aria-labelledby="batch-size-selector"
-            valueLabelDisplay="auto"
-            onChange={(event, value) =>
-              setNavState({ ...navState, thumbnailSize: value as number })
-            }
-            step={20}
-            marks
-            min={160}
-            max={500}
-          />
-          <mui.Divider />
-        </mui.Grid>
-        <mui.Grid item>
-          <mui.Typography style={{ marginBottom: "10px" }} variant={"h6"}>
-            Label Actions
-          </mui.Typography>
-          <mui.ButtonGroup
-            size="small"
-            orientation="vertical"
-            color="primary"
-            style={{ width: "100%" }}
-            aria-label="acton button group"
-          >
-            <ShortcutButton
-              startIcon={"\u23CE"}
-              disabled={
-                nLabeled + nIgnored === navState.currentBatch.length ||
-                nSelected === 0
-              }
-              onClick={() => onIgnoreDeleteSave("save")}
-              ref={saveButton}
-            >
-              Save
-            </ShortcutButton>
-            <ShortcutButton
-              startIcon={"\u21E7\u23CE"}
-              disabled={
-                nLabeled + nIgnored === navState.currentBatch.length ||
-                nSelected === 0
-              }
-              onClick={() => onIgnoreDeleteSave("ignore")}
-              ref={ignoreButton}
-            >
-              Ignore
-            </ShortcutButton>
-            <ShortcutButton
-              startIcon={"\u232B"}
-              ref={deleteButton}
-              disabled={
-                nLabeled + nIgnored === navState.currentBatch.length ||
-                nSelected === 0
-              }
-              onClick={() => onIgnoreDeleteSave("delete")}
-            >
-              Remove Labels
-            </ShortcutButton>
-            <ShortcutButton
-              startIcon={<muic.KeyboardArrowRight />}
-              ref={nextButton}
-              onClick={onForward}
-              disabled={navState.batches.length === 0}
-            >
-              Next
-            </ShortcutButton>
-            <ShortcutButton
-              startIcon={<muic.KeyboardArrowLeft />}
-              onClick={onBackward}
-              ref={prevButton}
-              disabled={getFilteredHistory().length === 0}
-            >
-              Previous
-            </ShortcutButton>
-            <ShortcutButton
-              disabled={nSelected === navState.currentBatch.length - nLabeled}
-              onClick={selectAll}
-              startIcon={"\u2303A"}
-              ref={selectAllButton}
-            >
-              Select All
-            </ShortcutButton>
-            <ShortcutButton
-              startIcon={"\u2303\u21E7A"}
-              disabled={nSelected === 0}
-              onClick={selectNone}
-              ref={selectNoneButton}
-            >
-              Select None
-            </ShortcutButton>
-          </mui.ButtonGroup>
-          <mui.FormControlLabel
-            control={
-              <mui.Checkbox
-                checked={navState.advanceOnSave}
-                onChange={(event, advanceOnSave) =>
-                  setNavState({ ...navState, advanceOnSave })
-                }
-                name="advanceOnSave"
-              />
-            }
-            label="Advance when batch complete?"
-          />
-          {common.hasBoxLabels(navState.project.labelingConfiguration) ? (
-            <mui.Typography variant="body1">
-              This project has box-level labels which will be overwritten in
-              batch mode.
+        <mui.Grid item xs={3}>
+          <mui.Grid item>
+            {redirect}
+            <mui.Typography style={{ marginBottom: "10px" }} variant={"h6"}>
+              Image-Level Labels
             </mui.Typography>
-          ) : null}
-        </mui.Grid>
-        <mui.Grid item>
-          <mui.Divider style={{ marginBottom: "10px" }} />
-          <mui.Typography variant={"h6"}>History</mui.Typography>
-          <mui.Typography variant={"caption"}>
-            Ten most recently reviewed batches.
-          </mui.Typography>
-          <muidg.DataGrid
-            rows={navState.history.map((entry) => {
-              return {
-                ...entry,
-                id: entry.images.map((image) => image.id).join(","),
-              };
-            })}
-            hideFooterPagination
-            disableColumnSelector
-            disableSelectionOnClick
-            disableColumnMenu
-            hideFooter
-            disableColumnReorder
-            disableColumnFilter
-            autoHeight
-            columns={[
-              {
-                field: "images",
-                headerName: "ID",
-                flex: 1,
-                renderCell: (params: muidg.CellParams) => {
-                  const ids = (params.value as sharedTypes.Image[]).map(
-                    (image) => image.id
-                  );
-                  return (
-                    <rrd.Link
-                      to={`/projects/${projectId}/images/${ids.join(",")}`}
-                    >
-                      {ids.slice(0, 5).join(", ") +
-                        (ids.length > 5 ? ", ..." : "")}
-                    </rrd.Link>
-                  );
-                },
-              },
-            ]}
-          />
-          {redirect}
-          <mui.Divider style={{ marginBottom: "10px" }} />
-          <mui.Link
-            component={rrd.Link}
-            variant={"body1"}
-            to={`/projects/${projectId}`}
-          >
-            Return to Project Menu
-          </mui.Link>
-        </mui.Grid>
-      </mui.Grid>
-      <mui.Grid item xs={9}>
-        {nLabeled + nIgnored < navState.currentBatch.length ? (
-          <mui.Box>
-            <BatchImageGrid
-              items={navState.currentBatch
-                .filter(
-                  (image) =>
-                    navState.currentBatchStatus[image.id].remoteStatus ===
-                    "unknown"
-                )
-                .map((image) => {
-                  return {
-                    image,
-                    selected: navState.currentBatchStatus[image.id].selected,
-                  };
-                })}
-              thumbnailSize={navState.thumbnailSize}
-              projectId={projectId}
-              toggleSelected={(id) =>
-                setNavState({
-                  ...navState,
-                  currentBatchStatus: {
-                    ...navState.currentBatchStatus,
-                    [id]: {
-                      ...navState.currentBatchStatus[id],
-                      selected: !navState.currentBatchStatus[id].selected,
+            {navState.labels && navState.project ? (
+              <LabelPanel
+                configGroup={navState.project.labelingConfiguration.image}
+                labels={navState.labels.image}
+                setLabelGroup={(labels) =>
+                  setNavState({
+                    ...navState,
+                    labels: {
+                      boxes: [],
+                      image: labels,
+                      default: false,
+                      ignored: false,
                     },
-                  },
-                })
-              }
-            />
-            <mui.Divider style={{ marginBottom: "10px" }} />
-          </mui.Box>
-        ) : null}
-        <mui.Grid container direction={"row"} alignItems="center" spacing={1}>
-          <mui.Grid item>
-            <mui.Button
-              onClick={onReset}
-              disabled={nLabeled === 0 && nIgnored === 0}
-              variant="contained"
-            >
-              Reset
-            </mui.Button>
+                  })
+                }
+              />
+            ) : null}
+            <mui.Divider />
           </mui.Grid>
           <mui.Grid item>
-            <mui.Typography variant={"body1"}>
-              Hiding {nLabeled} labeled and {nIgnored} ignored images.
+            <mui.Typography variant={"h6"}>View Settings</mui.Typography>
+            <mui.Typography id="batch-size-selector" gutterBottom>
+              Target Batch Size
             </mui.Typography>
+            <mui.Slider
+              value={navState.batchSize}
+              aria-labelledby="batch-size-selector"
+              valueLabelDisplay="auto"
+              onChange={(event, value) =>
+                setNavState({ ...navState, batchSize: value as number })
+              }
+              step={10}
+              marks
+              min={10}
+              max={110}
+            />
+            <mui.Typography id="batch-size-selector" gutterBottom>
+              Thumbnail Size
+            </mui.Typography>
+            <mui.Slider
+              value={navState.thumbnailSize}
+              aria-labelledby="batch-size-selector"
+              valueLabelDisplay="auto"
+              onChange={(event, value) =>
+                setNavState({ ...navState, thumbnailSize: value as number })
+              }
+              step={20}
+              marks
+              min={160}
+              max={500}
+            />
+            <mui.Divider />
+          </mui.Grid>
+          <mui.Grid item>
+            <mui.Typography style={{ marginBottom: "10px" }} variant={"h6"}>
+              Label Actions
+            </mui.Typography>
+            <mui.ButtonGroup
+              size="small"
+              orientation="vertical"
+              color="primary"
+              style={{ width: "100%" }}
+              aria-label="acton button group"
+            >
+              <ShortcutButton
+                startIcon={"\u23CE"}
+                disabled={
+                  nLabeled + nIgnored === navState.currentBatch.length ||
+                  nSelected === 0
+                }
+                onClick={() => onIgnoreDeleteSave("save")}
+                ref={saveButton}
+              >
+                Save
+              </ShortcutButton>
+              <ShortcutButton
+                startIcon={"\u21E7\u23CE"}
+                disabled={
+                  nLabeled + nIgnored === navState.currentBatch.length ||
+                  nSelected === 0
+                }
+                onClick={() => onIgnoreDeleteSave("ignore")}
+                ref={ignoreButton}
+              >
+                Ignore
+              </ShortcutButton>
+              <ShortcutButton
+                startIcon={"\u232B"}
+                ref={deleteButton}
+                disabled={
+                  nLabeled + nIgnored === navState.currentBatch.length ||
+                  nSelected === 0
+                }
+                onClick={() => onIgnoreDeleteSave("delete")}
+              >
+                Remove Labels
+              </ShortcutButton>
+              <ShortcutButton
+                startIcon={<muic.KeyboardArrowRight />}
+                ref={nextButton}
+                onClick={onForward}
+                disabled={navState.batches.length === 0}
+              >
+                Next
+              </ShortcutButton>
+              <ShortcutButton
+                startIcon={<muic.KeyboardArrowLeft />}
+                onClick={onBackward}
+                ref={prevButton}
+                disabled={getFilteredHistory().length === 0}
+              >
+                Previous
+              </ShortcutButton>
+              <ShortcutButton
+                disabled={nSelected === navState.currentBatch.length - nLabeled}
+                onClick={selectAll}
+                startIcon={"\u2303A"}
+                ref={selectAllButton}
+              >
+                Select All
+              </ShortcutButton>
+              <ShortcutButton
+                startIcon={"\u2303\u21E7A"}
+                disabled={nSelected === 0}
+                onClick={selectNone}
+                ref={selectNoneButton}
+              >
+                Select None
+              </ShortcutButton>
+            </mui.ButtonGroup>
+            <mui.FormControlLabel
+              control={
+                <mui.Checkbox
+                  checked={navState.advanceOnSave}
+                  onChange={(event, advanceOnSave) =>
+                    setNavState({ ...navState, advanceOnSave })
+                  }
+                  name="advanceOnSave"
+                />
+              }
+              label="Advance when batch complete?"
+            />
+            {common.hasBoxLabels(navState.project.labelingConfiguration) ? (
+              <mui.Typography variant="body1">
+                This project has box-level labels which will be overwritten in
+                batch mode.
+              </mui.Typography>
+            ) : null}
+          </mui.Grid>
+          <mui.Grid item>
+            <mui.Divider style={{ marginBottom: "10px" }} />
+            <mui.Typography variant={"h6"}>History</mui.Typography>
+            <mui.Typography variant={"caption"}>
+              Ten most recently reviewed batches.
+            </mui.Typography>
+            <muidg.DataGrid
+              rows={navState.history.map((entry) => {
+                return {
+                  ...entry,
+                  id: entry.images.map((image) => image.id).join(","),
+                };
+              })}
+              hideFooterPagination
+              disableColumnSelector
+              disableSelectionOnClick
+              disableColumnMenu
+              hideFooter
+              disableColumnReorder
+              disableColumnFilter
+              autoHeight
+              columns={[
+                {
+                  field: "images",
+                  headerName: "ID",
+                  flex: 1,
+                  renderCell: (params: muidg.CellParams) => {
+                    const ids = (params.value as sharedTypes.Image[]).map(
+                      (image) => image.id
+                    );
+                    return (
+                      <rrd.Link
+                        to={`/projects/${projectId}/images/${ids.join(",")}`}
+                      >
+                        {ids.slice(0, 5).join(", ") +
+                          (ids.length > 5 ? ", ..." : "")}
+                      </rrd.Link>
+                    );
+                  },
+                },
+              ]}
+            />
+            {redirect}
+            <mui.Divider style={{ marginBottom: "10px" }} />
+            <mui.Link
+              component={rrd.Link}
+              variant={"body1"}
+              to={`/projects/${projectId}`}
+            >
+              Return to Project Menu
+            </mui.Link>
+          </mui.Grid>
+        </mui.Grid>
+        <mui.Grid item xs={9}>
+          {nLabeled + nIgnored < navState.currentBatch.length ? (
+            <mui.Box>
+              <BatchImageGrid
+                items={navState.currentBatch
+                  .filter(
+                    (image) =>
+                      navState.currentBatchStatus[image.id].remoteStatus ===
+                      "unknown"
+                  )
+                  .map((image) => {
+                    return {
+                      image,
+                      selected: navState.currentBatchStatus[image.id].selected,
+                    };
+                  })}
+                thumbnailSize={navState.thumbnailSize}
+                projectId={projectId}
+                toggleSelected={(id) =>
+                  setNavState({
+                    ...navState,
+                    currentBatchStatus: {
+                      ...navState.currentBatchStatus,
+                      [id]: {
+                        ...navState.currentBatchStatus[id],
+                        selected: !navState.currentBatchStatus[id].selected,
+                      },
+                    },
+                  })
+                }
+              />
+              <mui.Divider style={{ marginBottom: "10px" }} />
+            </mui.Box>
+          ) : null}
+          <mui.Grid container direction={"row"} alignItems="center" spacing={1}>
+            <mui.Grid item>
+              <mui.Button
+                onClick={onReset}
+                disabled={nLabeled === 0 && nIgnored === 0}
+                variant="contained"
+              >
+                Reset
+              </mui.Button>
+            </mui.Grid>
+            <mui.Grid item>
+              <mui.Typography variant={"body1"}>
+                Hiding {nLabeled} labeled and {nIgnored} ignored images.
+              </mui.Typography>
+            </mui.Grid>
           </mui.Grid>
         </mui.Grid>
       </mui.Grid>
-    </mui.Grid>
 
-  {navState.batches && navState.batches.length
-    ? navState.batches.map((images, batch_index) => (
-     images.map((image, index) => (
-          <img
-            key={image.id}
-            alt={`Background Load: ${image.id}`}
-            src={common.getImageUrl(projectId, image.id)}
-            style={{ width: 0, height: 0 }}
-          />
-      ))))
-    : null}
-</div>
+      {navState.batches && navState.batches.length
+        ? navState.batches.map((images, batch_index) =>
+            images.map((image, index) => (
+              <img
+                key={image.id}
+                alt={`Background Load: ${image.id}`}
+                src={common.getImageUrl(projectId, image.id)}
+                style={{ width: 0, height: 0 }}
+              />
+            ))
+          )
+        : null}
+    </div>
   );
 };

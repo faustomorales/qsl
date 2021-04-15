@@ -522,13 +522,15 @@ def get_file(
             ExpiresIn=3600,
         )
         return fastapi.responses.RedirectResponse(
-            url, headers={"Cache-Control": "max-age=3600"}
+            url, headers={"Cache-Control": "max-age=30"}
         )
     if filepath.startswith("http://") or filepath.startswith("https://"):
         return fastapi.responses.RedirectResponse(
-            filepath, headers={"Cache-Control": "max-age=3600"}
+            filepath, headers={"Cache-Control": "max-age=30"}
         )
-    return fastapi.responses.FileResponse(filepath)
+    return fastapi.responses.FileResponse(
+        filepath, headers={"Cache-Control": "max-age=0"}
+    )
 
 
 def update_label_group_with_label(

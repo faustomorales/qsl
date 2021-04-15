@@ -5,8 +5,7 @@ FRONTEND_PORT = 5001
 TEST_SCOPE=tests/
 
 init-poetry: ## Make a poetry virtualenv on the host
-	@$(PYTHON_EXEC) poetry lock
-	@POETRY_VIRTUALENVS_IN_PROJECT=true poetry install
+	poetry install
 
 init-yarn:
 	cd frontend && yarn install

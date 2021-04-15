@@ -818,7 +818,9 @@ def query_labels(
         .join(orm.DefaultImageLabelCollection, isouter=True)
         .join(
             orm.UserImageLabelCollection,
-            orm.UserImageLabelCollection.image_id == orm.Image.id,
+            (orm.UserImageLabelCollection.image_id == orm.Image.id)
+            & orm.UserImageLabelCollection.user_id
+            == user_id,
             isouter=True,
         )
         .filter(*conditions)
@@ -906,34 +908,47 @@ def export_project(
     label_mapping: typing.Dict[
         int, typing.Dict[int, typing.Tuple[web.LabelGroup, typing.Dict[int, web.Box]]]
     ] = {}
+    default_label_mapping: typing.Dict[
+        int, typing.Tuple[web.LabelGroup, typing.Dict[int, web.Box]]
+    ] = {}
     filepath_mapping: typing.Dict[int, str] = {}
-    for (
-        image_id,
-        image_filepath,
-        user_id,
-        _,
-        user_ignored,
-        _,
-        config,
-        image_label,
-        image_label_option,
-        box,
-        box_label,  # pylint: disable=unused-variable
-        box_label_option,  # pylint: disable=unused-variable
-    ) in query_labels(
-        session=session, project_id=project_id, image_id=None, user_id=None
-    ):
-        filepath_mapping[image_id] = image_filepath
-        if not user_id:
-            if image_id not in label_mapping:
-                label_mapping[image_id] = {}
-        elif user_id and user_ignored:
-            continue
-        else:
-            labels, box_lookup = label_mapping.get(image_id, {}).get(
-                user_id,
-                (web.LabelGroup(single={}, multiple={}, text={}), {}),
-            )
+    for query_user_id in [u.id for u in list_users(session=session, user=user)] + [
+        None
+    ]:
+        for (
+            image_id,
+            image_filepath,
+            user_id,
+            _,
+            user_ignored,
+            _,
+            config,
+            image_label,
+            image_label_option,
+            box,
+            box_label,  # pylint: disable=unused-variable
+            box_label_option,  # pylint: disable=unused-variable
+        ) in query_labels(
+            session=session, project_id=project_id, image_id=None, user_id=query_user_id
+        ):
+            filepath_mapping[image_id] = image_filepath
+            if user_id is None and query_user_id is not None:
+                # We're looking for a specific user's labels
+                # but this is a default label.
+                continue
+            if user_id is not None and user_ignored:
+                # This is a user-specific label but the user
+                # chose to ignore the image.
+                continue
+            if query_user_id is not None:
+                labels, box_lookup = label_mapping.get(image_id, {}).get(
+                    user_id,
+                    (web.LabelGroup(single={}, multiple={}, text={}), {}),
+                )
+            else:
+                labels, box_lookup = default_label_mapping.get(
+                    image_id, (web.LabelGroup(single={}, multiple={}, text={}), {})
+                )
             if config.level == orm.Level.image:
                 update_label_group_with_label(
                     label_group=labels,
@@ -966,26 +981,43 @@ def export_project(
                     label_option=box_label_option,
                 )
                 box_lookup[box.id] = box_web
-            if image_id not in label_mapping:
+            if (query_user_id is not None) and (image_id not in label_mapping):
                 label_mapping[image_id] = {user_id: (labels, box_lookup)}
-            elif user_id not in label_mapping[image_id]:
+            elif (query_user_id is not None) and (
+                user_id not in label_mapping[image_id]
+            ):
                 label_mapping[image_id][user_id] = (labels, box_lookup)
+            elif (query_user_id is None) and (image_id not in default_label_mapping):
+                default_label_mapping[image_id] = (labels, box_lookup)
     project = get_project(project_id=project_id, session=session)
     project.labels = [
         web.ExportedImageLabels(
             imageId=image_id,
-            filepath=filepath_mapping[image_id],
+            filepath=filepath,
             labels=[
                 web.ExportedUserLabels(
                     userId=user_id,
                     labels=web.ImageLabels(
-                        image=image_labels, boxes=list(box_lookup.values())
+                        image=image_labels,
+                        boxes=list(box_lookup.values()),
+                        default=False,
                     ),
                 )
-                for user_id, (image_labels, box_lookup) in user_labels.items()
-            ],
+                for user_id, (image_labels, box_lookup) in label_mapping[
+                    image_id
+                ].items()
+            ]
+            if image_id in label_mapping
+            else [],
+            defaultLabels=web.ImageLabels(
+                image=default_label_mapping[image_id][0],
+                boxes=list(default_label_mapping[image_id][1].values()),
+                default=True,
+            )
+            if image_id in default_label_mapping
+            else None,
         )
-        for image_id, user_labels in label_mapping.items()
+        for image_id, filepath in filepath_mapping.items()
     ]
     return project
 

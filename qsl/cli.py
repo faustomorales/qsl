@@ -6,6 +6,8 @@ import click
 import qsl.serve as qs
 import qsl.types as qt
 
+from ._version import __version__
+
 
 @click.group()
 def cli():
@@ -54,9 +56,14 @@ def simple_label(project_file: str, host: str, port: int):
     with open(project_file, "w") as f:
         f.write(project.json())
 
+@click.command()
+def version():
+    """Get the version number for qsl."""
+    click.echo(__version__)
 
 cli.add_command(label)
 cli.add_command(simple_label)
+cli.add_command(version)
 
 if __name__ == "__main__":
     cli()

@@ -167,3 +167,4 @@ class InitializationConfiguration(BaseModel):
 
 class AuthConfig(BaseModel):
     provider: typing.Optional[tx.Literal["github", "google"]]
+    singleProject: typing.Optional[int]

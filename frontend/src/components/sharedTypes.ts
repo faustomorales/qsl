@@ -87,4 +87,5 @@ export interface InitializationConfiguration {
 
 export interface AuthConfig {
   provider: "github" | "google" | null;
+  singleProject?: number;
 }

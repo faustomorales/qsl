@@ -29,10 +29,10 @@ const theme = mui.createMuiTheme({
 });
 
 const App = () => {
-  const [state, setState] = react.useState({user: undefined})
+  const [state, setState] = react.useState({user: undefined, config: undefined})
   react.useEffect(() => {
-    common.getMyUser().then((user) => setState({ user }), () => {
-      setState({user: null})
+    Promise.all([common.getMyUser(), common.getAuthConfig()]).then(([user, config]) => setState({ user, config }), () => {
+      setState({user: null, config: null})
     })
   }, [])
   if (state.user === undefined) {
@@ -61,13 +61,13 @@ const App = () => {
             <components.ProjectSummary />
           </rrd.Route>
           <rrd.Route path="/projects">
-            <components.Home />
+            {state.config.singleProject !== null ? <rrd.Redirect to={`/projects/${state.config.singleProject}`} /> : <components.Home /> }
           </rrd.Route>
           <rrd.Route path="/users">
-            <components.Home />
+          {state.config.singleProject !== null ? <rrd.Redirect to={`/projects/${state.config.singleProject}`} />:<components.Home />}
           </rrd.Route>
           <rrd.Route path="/">
-            <components.Home />
+          {state.config.singleProject !== null ? <rrd.Redirect to={`/projects/${state.config.singleProject}`} /> : <components.Home />}
           </rrd.Route>
         </rrd.Switch>
       </rrd.BrowserRouter>

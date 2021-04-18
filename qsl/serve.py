@@ -2,6 +2,7 @@
 import os
 import uuid
 import time
+import tempfile
 import logging
 import decimal
 import sqlite3
@@ -33,6 +34,10 @@ class OAuthConfig(typing.NamedTuple):
     client: starlette_client.OAuth
     userinfo_query_key: str
     username_key: str
+
+
+class AppConfig(typing.NamedTuple):
+    single_project: typing.Optional[int]
 
 
 tls = threading.local()
@@ -79,7 +84,9 @@ def build_session(engine):
         session.close()  # pylint: disable=no-member
 
 
-def add_clients(engine: sa.engine.Engine, oauth=None, frontend_port=None):
+def add_context(
+    engine: sa.engine.Engine, oauth=None, frontend_port=None, single_project: int = None
+):
     """Add database, S3, Oauth, and frontend port configuration to requests."""
 
     def middleware(request: fastapi.Request, call_next):
@@ -87,6 +94,7 @@ def add_clients(engine: sa.engine.Engine, oauth=None, frontend_port=None):
         request.state.s3 = boto3.client("s3")
         request.state.oauth = oauth
         request.state.frontend_port = frontend_port
+        request.state.single_project = single_project
         response = call_next(request)
         return response
 
@@ -97,6 +105,11 @@ def get_session(request: Request):
     """Provide a transactional scope around a series of operations."""
     with build_session(request.state.engine) as session:
         yield session
+
+
+def get_single_project(request: Request) -> typing.Optional[int]:
+    """Get the single project if we are in single project mode."""
+    return request.state.single_project
 
 
 def get_s3(request: Request):
@@ -981,9 +994,13 @@ async def login(request: Request, oauth=fastapi.Depends(get_oauth)):
 def auth_config(
     user: web.User = fastapi.Depends(get_current_user),
     oauth: OAuthConfig = fastapi.Depends(get_oauth),
+    single_project: int = fastapi.Depends(get_single_project),
 ) -> web.AuthConfig:
     """Get the authentication configuration for the application."""
-    return web.AuthConfig(provider=oauth.name if oauth is not None else None)
+    return web.AuthConfig(
+        provider=oauth.name if oauth is not None else None,
+        singleProject=single_project,
+    )
 
 
 async def auth(
@@ -1026,7 +1043,9 @@ def frontend(path: str):
     )
 
 
-def build_oauth(provider_name: str, **kwargs) -> typing.Optional[OAuthConfig]:
+def build_oauth(
+    provider_name: str, single_project: bool = False, **kwargs
+) -> typing.Optional[OAuthConfig]:
     """Build an oauth configuration."""
     if provider_name is None:
         return None
@@ -1065,6 +1084,16 @@ def build_oauth(provider_name: str, **kwargs) -> typing.Optional[OAuthConfig]:
     raise NotImplementedError(f"Unsupported Oauth provider: {provider_name}.")
 
 
+def mock_user_middleware(user: web.User):
+    """Middleware to automatically insert the user for the simple app."""
+
+    def middleware(request: fastapi.Request, call_next):
+        request.session["user"] = user.dict()
+        return call_next(request)
+
+    return middleware
+
+
 def default_startup(app: fastapi.FastAPI):
     """Default startup for a full implementation of QSL."""
 
@@ -1086,8 +1115,6 @@ def default_startup(app: fastapi.FastAPI):
             client_id=CONFIG("OAUTH_CLIENT_ID", str, None),
             client_secret=CONFIG("OAUTH_CLIENTS_ECRET", str, None),
         )
-        if oauth is None:
-            LOGGER.warning("Starting application with no authentication.")
 
         if CONFIG("DEVELOPMENT_MODE", bool, False):
             # We're in development mode and need to let the live frontend
@@ -1104,19 +1131,29 @@ def default_startup(app: fastapi.FastAPI):
             )
 
         with build_session(engine) as session:
-            if not any(
-                user.name == initial_user for user in list_users(session=session)
-            ):
-                create_user(
+            user = next(
+                (
+                    user
+                    for user in list_users(session=session)
+                    if user.name == initial_user
+                ),
+                None,
+            )
+            if user is None:
+                user = create_user(
                     new_user=web.User(name=initial_user, isAdmin=True),
                     existing_user=web.User(name="Dummy User", isAdmin=True),
                     session=session,
                 )
+            if oauth is None:
+                LOGGER.warning("Starting application with no authentication.")
+                app.middleware("http")(mock_user_middleware(user))
         app.middleware("http")(
-            add_clients(
+            add_context(
                 engine=engine,
                 oauth=oauth,
                 frontend_port=frontend_port,
+                single_project=CONFIG("SINGLE_PROJECT", int, None),
             )
         )
         app.add_middleware(
@@ -1160,16 +1197,6 @@ def build_app():
     return app
 
 
-def mock_user_middleware(user: web.User):
-    """Middleware to automatically insert the user for the simple app."""
-
-    def middleware(request: fastapi.Request, call_next):
-        request.session["user"] = user.dict()
-        return call_next(request)
-
-    return middleware
-
-
 def launch_app(host: str, port: int, log_level: str, dev: bool):
     """Launch the full QSL app."""
     uvicorn.run(
@@ -1185,66 +1212,49 @@ def launch_app(host: str, port: int, log_level: str, dev: bool):
 def launch_simple_app(host: str, port: int, project: web.Project):
     """Launch a simplified version of the QSL app."""
     user = web.User(name="Default User", id=1, isAdmin=True)
-
-    app = build_app()
-    engine = sa.create_engine(
-        "sqlite://",
-        echo=False,
-        connect_args={"check_same_thread": False},
-        poolclass=sa.pool.StaticPool,
-    )
-    orm.BaseModel.metadata.create_all(engine)
-    with build_session(engine) as session:
-        project_id = create_project(project=project, session=session).id
-        assert project_id is not None, "Did not get a project ID."
-        user = create_user(
-            new_user=web.User(name="Default User", isAdmin=True),
-            existing_user=web.User(name="Dummy User", isAdmin=True),
-            session=session,
-        )
-        if project.labels:
-            default_groups: typing.Dict[web.ImageLabels, typing.Any] = {}
-            no_defaults: typing.List[web.ExportedImageLabels] = []
-            filepath_to_user_labels: typing.Dict[str, web.ImageLabels] = {}
-            for image in project.labels:
-                if (
-                    image.defaultLabels is not None
-                    and image.defaultLabels not in default_groups
-                ):
-                    default_groups[image.defaultLabels] = {
-                        "defaults": image.defaultLabels,
-                        "images": [image],
-                    }
-                elif image.defaultLabels is not None:
-                    default_groups[image.defaultLabels]["images"].append(image)
-                else:
-                    no_defaults.append(image)
-                if not image.labels:
-                    continue
-                if image.labels:
-                    for labels in image.labels:
-                        if labels.userId != 1:
-                            raise ValueError(
-                                "For simple projects, only one user is supported."
-                            )
-                        filepath_to_user_labels[image.filepath] = labels.labels
-            # Create images without defaults.
-            filepath_to_id: typing.Dict[str, int] = {}
-            for saved in create_images(
-                group=web.ImageGroup(files=[image.filepath for image in no_defaults]),
-                project_id=project_id,
+    with tempfile.TemporaryDirectory() as tdir:
+        db_conn_string = f"sqlite:///{tdir}/qsl.db"
+        engine = sa.create_engine(db_conn_string)
+        orm.BaseModel.metadata.create_all(engine)
+        with build_session(engine) as session:
+            project_id = create_project(project=project, session=session).id
+            assert project_id is not None, "Did not get a project ID."
+            user = create_user(
+                new_user=web.User(name="Default User", isAdmin=True),
+                existing_user=web.User(name="Dummy User", isAdmin=True),
                 session=session,
-                user=user,
-            ):
-                assert saved.id is not None, "Failed to get an image ID."
-                filepath_to_id[saved.filepath] = saved.id
-
-            # Create images with defaults.
-            for defaultSet in default_groups.values():
+            )
+            if project.labels:
+                default_groups: typing.Dict[web.ImageLabels, typing.Any] = {}
+                no_defaults: typing.List[web.ExportedImageLabels] = []
+                filepath_to_user_labels: typing.Dict[str, web.ImageLabels] = {}
+                for image in project.labels:
+                    if (
+                        image.defaultLabels is not None
+                        and image.defaultLabels not in default_groups
+                    ):
+                        default_groups[image.defaultLabels] = {
+                            "defaults": image.defaultLabels,
+                            "images": [image],
+                        }
+                    elif image.defaultLabels is not None:
+                        default_groups[image.defaultLabels]["images"].append(image)
+                    else:
+                        no_defaults.append(image)
+                    if not image.labels:
+                        continue
+                    if image.labels:
+                        for labels in image.labels:
+                            if labels.userId != 1:
+                                raise ValueError(
+                                    "For simple projects, only one user is supported."
+                                )
+                            filepath_to_user_labels[image.filepath] = labels.labels
+                # Create images without defaults.
+                filepath_to_id: typing.Dict[str, int] = {}
                 for saved in create_images(
                     group=web.ImageGroup(
-                        files=[image.filepath for image in defaultSet["images"]],
-                        defaults=defaultSet["defaults"],
+                        files=[image.filepath for image in no_defaults]
                     ),
                     project_id=project_id,
                     session=session,
@@ -1253,31 +1263,40 @@ def launch_simple_app(host: str, port: int, project: web.Project):
                     assert saved.id is not None, "Failed to get an image ID."
                     filepath_to_id[saved.filepath] = saved.id
 
-            # Set user labels.
-            for filepath, user_labels in filepath_to_user_labels.items():
-                set_labels(
-                    project_id=project_id,
-                    image_id=filepath_to_id[filepath],
-                    labels=user_labels,
-                    user=user,
-                    session=session,
-                )
-    app.middleware("http")(
-        add_clients(
-            engine=engine,
+                # Create images with defaults.
+                for defaultSet in default_groups.values():
+                    for saved in create_images(
+                        group=web.ImageGroup(
+                            files=[image.filepath for image in defaultSet["images"]],
+                            defaults=defaultSet["defaults"],
+                        ),
+                        project_id=project_id,
+                        session=session,
+                        user=user,
+                    ):
+                        assert saved.id is not None, "Failed to get an image ID."
+                        filepath_to_id[saved.filepath] = saved.id
+
+                # Set user labels.
+                for filepath, user_labels in filepath_to_user_labels.items():
+                    set_labels(
+                        project_id=project_id,
+                        image_id=filepath_to_id[filepath],
+                        labels=user_labels,
+                        user=user,
+                        session=session,
+                    )
+        os.environ["DB_CONNECTION_STRING"] = db_conn_string
+        os.environ["OAUTH_INITIAL_USER"] = user.name
+        os.environ["SINGLE_PROJECT"] = str(project_id)
+        uvicorn.run(
+            "qsl.serve:default_app",
+            host=host,
+            port=port,
         )
-    )
-    app.on_event("startup")(
-        lambda: app.add_middleware(
-            SessionMiddleware,
-            secret_key="not-a-secret",
-            session_cookie="qsl-session",
-        )
-    )
-    app.middleware("http")(mock_user_middleware(user))
-    uvicorn.run(app, host=host, port=port)
-    with build_session(engine) as session:
-        return export_project(user=user, project_id=project_id, session=session)
+        with build_session(engine) as session:
+            return export_project(user=user, project_id=project_id, session=session)
+        engine.dispose()
 
 
 default_app = build_app()

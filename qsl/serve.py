@@ -1293,8 +1293,9 @@ def launch_simple_app(host: str, port: int, project: web.Project):
             port=port,
         )
         with build_session(engine) as session:
-            return export_project(user=user, project_id=project_id, session=session)
+            exported = export_project(user=user, project_id=project_id, session=session)
         engine.dispose()
+        return exported
 
 
 default_app = build_app()

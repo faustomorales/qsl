@@ -159,6 +159,48 @@ class Project(BaseModel):
             return False
         return self.labelingConfiguration == other.labelingConfiguration
 
+    def box_level_labels(self):
+        """Get the box level labels as a list of dicts."""
+        if self.labels is None:
+            raise ValueError("This project does not have labels set.")
+        rows = []
+        for image_labels in self.labels:
+            for user_label in image_labels.labels:
+                for box in user_label.labels.boxes:
+                    rows.append(
+                        dict(
+                            x=box.x,
+                            y=box.y,
+                            w=box.w,
+                            h=box.h,
+                            points=[{"x": p.x, "y": p.y} for p in box.points],
+                            filepath=image_labels.filepath,
+                            **box.labels.single,
+                            **box.labels.multiple,
+                            **box.labels.text,
+                            user=user_label.userId
+                        )
+                    )
+        return rows
+
+    def image_level_labels(self):
+        """Get the image level labels as a list of dicts."""
+        if self.labels is None:
+            raise ValueError("This project does not have labels set.")
+        rows = []
+        for image_labels in self.labels:
+            for user_label in image_labels.labels:
+                rows.append(
+                    dict(
+                        filepath=image_labels.filepath,
+                        **user_label.labels.image.single,
+                        **user_label.labels.image.multiple,
+                        **user_label.labels.image.text,
+                        user=user_label.userId
+                    )
+                )
+        return rows
+
 
 class InitializationConfiguration(BaseModel):
     imageGroups: typing.List[ImageGroup]

@@ -2,7 +2,6 @@
 import os
 import uuid
 import time
-import tempfile
 import logging
 import decimal
 import sqlite3
@@ -1092,21 +1091,23 @@ def mock_user_middleware(user: web.User):
     return middleware
 
 
-def default_startup(app: fastapi.FastAPI):
+def default_startup(app: fastapi.FastAPI, engine=None):
     """Default startup for a full implementation of QSL."""
 
     def startup():
+        nonlocal engine
         CONFIG = Config(".env")
         frontend_port = None
         connection_string = CONFIG(
             "DB_CONNECTION_STRING", str, "sqlite:///qsl-labeling.db"
         )
         initial_user = CONFIG("OAUTH_INITIAL_USER", str, "Default User")
-        engine = sa.create_engine(
-            connection_string,
-            echo=False,
-            connect_args={"check_same_thread": False},
-        )
+        if engine is None:
+            engine = sa.create_engine(
+                connection_string,
+                echo=False,
+                connect_args={"check_same_thread": False},
+            )
         orm.BaseModel.metadata.create_all(engine)
         oauth = build_oauth(
             provider_name=CONFIG("OAUTH_PROVIDER", str, None),
@@ -1210,49 +1211,63 @@ def launch_app(host: str, port: int, log_level: str, dev: bool):
 def launch_simple_app(host: str, port: int, project: web.Project):
     """Launch a simplified version of the QSL app."""
     user = web.User(name="Default User", id=1, isAdmin=True)
-    with tempfile.TemporaryDirectory() as tdir:
-        db_conn_string = f"sqlite:///{tdir}/qsl.db"
-        engine = sa.create_engine(db_conn_string)
+    engine = sa.create_engine(
+        "sqlite://",
+        poolclass=sa.pool.StaticPool,
+        connect_args={"check_same_thread": False},
+    )
+    with build_session(engine) as session:
         orm.BaseModel.metadata.create_all(engine)
-        with build_session(engine) as session:
-            project_id = create_project(project=project, session=session).id
-            assert project_id is not None, "Did not get a project ID."
-            user = create_user(
-                new_user=web.User(name="Default User", isAdmin=True),
-                existing_user=web.User(name="Dummy User", isAdmin=True),
+        project_id = create_project(project=project, session=session).id
+        assert project_id is not None, "Did not get a project ID."
+        user = create_user(
+            new_user=web.User(name="Default User", isAdmin=True),
+            existing_user=web.User(name="Dummy User", isAdmin=True),
+            session=session,
+        )
+        if project.labels:
+            default_groups: typing.Dict[web.ImageLabels, typing.Any] = {}
+            no_defaults: typing.List[web.ExportedImageLabels] = []
+            filepath_to_user_labels: typing.Dict[str, web.ImageLabels] = {}
+            for image in project.labels:
+                if (
+                    image.defaultLabels is not None
+                    and image.defaultLabels not in default_groups
+                ):
+                    default_groups[image.defaultLabels] = {
+                        "defaults": image.defaultLabels,
+                        "images": [image],
+                    }
+                elif image.defaultLabels is not None:
+                    default_groups[image.defaultLabels]["images"].append(image)
+                else:
+                    no_defaults.append(image)
+                if not image.labels:
+                    continue
+                if image.labels:
+                    for labels in image.labels:
+                        if labels.userId != 1:
+                            raise ValueError(
+                                "For simple projects, only one user is supported."
+                            )
+                        filepath_to_user_labels[image.filepath] = labels.labels
+            # Create images without defaults.
+            filepath_to_id: typing.Dict[str, int] = {}
+            for saved in create_images(
+                group=web.ImageGroup(files=[image.filepath for image in no_defaults]),
+                project_id=project_id,
                 session=session,
-            )
-            if project.labels:
-                default_groups: typing.Dict[web.ImageLabels, typing.Any] = {}
-                no_defaults: typing.List[web.ExportedImageLabels] = []
-                filepath_to_user_labels: typing.Dict[str, web.ImageLabels] = {}
-                for image in project.labels:
-                    if (
-                        image.defaultLabels is not None
-                        and image.defaultLabels not in default_groups
-                    ):
-                        default_groups[image.defaultLabels] = {
-                            "defaults": image.defaultLabels,
-                            "images": [image],
-                        }
-                    elif image.defaultLabels is not None:
-                        default_groups[image.defaultLabels]["images"].append(image)
-                    else:
-                        no_defaults.append(image)
-                    if not image.labels:
-                        continue
-                    if image.labels:
-                        for labels in image.labels:
-                            if labels.userId != 1:
-                                raise ValueError(
-                                    "For simple projects, only one user is supported."
-                                )
-                            filepath_to_user_labels[image.filepath] = labels.labels
-                # Create images without defaults.
-                filepath_to_id: typing.Dict[str, int] = {}
+                user=user,
+            ):
+                assert saved.id is not None, "Failed to get an image ID."
+                filepath_to_id[saved.filepath] = saved.id
+
+            # Create images with defaults.
+            for defaultSet in default_groups.values():
                 for saved in create_images(
                     group=web.ImageGroup(
-                        files=[image.filepath for image in no_defaults]
+                        files=[image.filepath for image in defaultSet["images"]],
+                        defaults=defaultSet["defaults"],
                     ),
                     project_id=project_id,
                     session=session,
@@ -1261,41 +1276,26 @@ def launch_simple_app(host: str, port: int, project: web.Project):
                     assert saved.id is not None, "Failed to get an image ID."
                     filepath_to_id[saved.filepath] = saved.id
 
-                # Create images with defaults.
-                for defaultSet in default_groups.values():
-                    for saved in create_images(
-                        group=web.ImageGroup(
-                            files=[image.filepath for image in defaultSet["images"]],
-                            defaults=defaultSet["defaults"],
-                        ),
-                        project_id=project_id,
-                        session=session,
-                        user=user,
-                    ):
-                        assert saved.id is not None, "Failed to get an image ID."
-                        filepath_to_id[saved.filepath] = saved.id
-
-                # Set user labels.
-                for filepath, user_labels in filepath_to_user_labels.items():
-                    set_labels(
-                        project_id=project_id,
-                        image_id=filepath_to_id[filepath],
-                        labels=user_labels,
-                        user=user,
-                        session=session,
-                    )
-        os.environ["DB_CONNECTION_STRING"] = db_conn_string
-        os.environ["OAUTH_INITIAL_USER"] = user.name
-        os.environ["SINGLE_PROJECT"] = str(project_id)
-        uvicorn.run(
-            "qsl.serve:default_app",
-            host=host,
-            port=port,
-        )
-        with build_session(engine) as session:
-            exported = export_project(user=user, project_id=project_id, session=session)
-        engine.dispose()
-        return exported
+            # Set user labels.
+            for filepath, user_labels in filepath_to_user_labels.items():
+                set_labels(
+                    project_id=project_id,
+                    image_id=filepath_to_id[filepath],
+                    labels=user_labels,
+                    user=user,
+                    session=session,
+                )
+    os.environ["OAUTH_INITIAL_USER"] = user.name
+    os.environ["SINGLE_PROJECT"] = str(project_id)
+    app = build_app()
+    app.on_event("startup")(default_startup(app=app, engine=engine))
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+    )
+    with build_session(engine) as session:
+        return export_project(user=user, project_id=project_id, session=session)
 
 
 default_app = build_app()

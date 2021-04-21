@@ -41,7 +41,7 @@ class Box(BaseModel):
         return hash(
             (
                 (self.x, self.y, self.w, self.h)
-                + (p.__hash__() for p in self.points)
+                + (p.__hash__() for p in (self.points or []))
                 + self.labels.__hash__()
             )
         )
@@ -173,7 +173,9 @@ class Project(BaseModel):
                             y=box.y,
                             w=box.w,
                             h=box.h,
-                            points=[{"x": p.x, "y": p.y} for p in box.points],
+                            points=[{"x": p.x, "y": p.y} for p in box.points]
+                            if box.points
+                            else None,
                             filepath=image_labels.filepath,
                             **box.labels.single,
                             **box.labels.multiple,

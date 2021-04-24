@@ -1,6 +1,17 @@
 # QSL: Quick and Simple Labeler
 
-QSL is a simple image labeling tool. It supports batch and single image labeling using images stored locally, on the web, or in cloud storage (currently only S3).
+![QSL Screenshot](https://raw.githubusercontent.com/faustomorales/qsl/main/docs/screenshot.png)
+
+
+QSL is a simple, open-source image labeling tool. It supports:
+
+- Bounding box and polygon labeling.
+- Configurable keyboard shortcuts for labels.
+- Loading images stored locally, on the web, or in cloud storage (currently only AWS S3).
+- Pre-loading images in a queue to speed up labeling.
+- Deployment as shared service with support for OAuth (currently only GitHub and Google)
+
+Please note that that QSL is still under development and there are likely to be major bugs, breaking changes, etc. Bug reports and contributions are welcome!
 
 ## Getting Started
 
@@ -47,7 +58,21 @@ Please note that paths like this must meet some criteria.
 - Your AWS credentials must be available in a form compatible with the default `boto3` credential-finding methods and that those credentials must support the `ListBucket` and `GetObject` actions.
 
 ### Advanced Use Cases
-Documentation for more advanced use cases (e.g., batched labeling for images with shared default labels, hosting a central QSL server with multiple users, supporting authentication with Google or GitHub OAuth providers, etc.) is forthcoming.
+Documentation for the more advanced use cases is not yet available though they are implemented in the package. Advanced use cases include things like:
+
+- Hosting a central QSL server with multiple users and projects
+- Authentication with Google or GitHub OAuth providers
+- Batched labeling for images with shared default labels
+
+In short, you can launch a full-blown QSL deployment simply by doing the following.
+
+1. Set the following environment variables to configure the application.
+    - `DB_CONNECTION_STRING`: A database connection string, used to host the application data. If not provided, a SQLite database will be used in the current working directory called `qsl-labeling.db`.
+    - `OAUTH_INITIAL_USER`: The initial user that will be an administrator for the QSL instance.
+    - `OAUTH_PROVIDER`: The OAuth provider to use (currently `github` and `google` are supported)- `OAUTH_CLIENT_SECRET`: The OAuth client secret.
+    - `OAUTH_CLIENT_ID`: The OAuth client ID.
+2. Execute `qsl label` (instead of `qsl simple-label`) to launch the application (use `--host` and `--port` to modify how the application listens for connections).
+
 
 # Development
 

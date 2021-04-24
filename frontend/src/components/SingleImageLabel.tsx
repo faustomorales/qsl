@@ -366,6 +366,7 @@ export const SingleImageLabel = () => {
     notice: null as string,
     history: [] as HistoryEntry[],
     queue: [] as sharedTypes.Image[],
+    unlabeledOnly: true,
   });
   const [zoom, setZoom] = react.useState<number>(1);
 
@@ -507,7 +508,10 @@ export const SingleImageLabel = () => {
         : common.getImages(
             projectId,
             excludedIds,
-            navState.queueSize - existing.length
+            navState.queueSize - existing.length,
+            true,
+            navState.unlabeledOnly ? true : false,
+            navState.unlabeledOnly ? 0 : -1
           ),
     ]).then(([labels, additions]) => {
       const updated = existing.concat(additions);
@@ -851,6 +855,18 @@ export const SingleImageLabel = () => {
               />
             }
             label="Use polygons instead of boxes?"
+          />
+          <mui.FormControlLabel
+            control={
+              <mui.Checkbox
+                checked={navState.unlabeledOnly}
+                onChange={(event, unlabeledOnly) =>
+                  setNavState({ ...navState, unlabeledOnly })
+                }
+                name="unlabeledOnly"
+              />
+            }
+            label="Show only unlabeled / unignored images?"
           />
           <mui.Divider style={{ marginBottom: "10px" }} />
           <mui.Typography variant={"h6"}>History</mui.Typography>

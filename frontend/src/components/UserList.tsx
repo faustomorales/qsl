@@ -85,7 +85,7 @@ const UserList = () => {
               field: "isAdmin",
               headerName: "Adminstrator",
               flex: 2,
-              valueFormatter: (params: muidg.ValueFormatterParams) =>
+              valueFormatter: (params: muidg.GridValueFormatterParams) =>
                 params.value ? "Yes" : "No",
               disableColumnMenu: true,
             },

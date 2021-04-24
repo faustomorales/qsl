@@ -53,7 +53,7 @@ const ProjectList = () => {
               field: "id",
               headerName: "ID",
               flex: 1,
-              renderCell: (params: muidg.CellParams) => (
+              renderCell: (params: muidg.GridCellParams) => (
                 <rrd.Link to={`/projects/${params.value}`}>
                   {params.value}
                 </rrd.Link>
@@ -77,7 +77,7 @@ const ProjectList = () => {
             },
             {
               field: "Actions",
-              renderCell: (params: muidg.CellParams) => (
+              renderCell: (params: muidg.GridCellParams) => (
                 <div>
                   <mui.Button
                     variant={"outlined"}

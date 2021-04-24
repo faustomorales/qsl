@@ -888,7 +888,7 @@ export const SingleImageLabel = () => {
                 field: "id",
                 headerName: "ID",
                 flex: 1,
-                renderCell: (params: muidg.CellParams) => (
+                renderCell: (params: muidg.GridCellParams) => (
                   <rrd.Link
                     to={`/projects/${projectId}/images/${params.value}`}
                   >

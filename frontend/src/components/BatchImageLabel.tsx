@@ -581,7 +581,7 @@ export const BatchImageLabel = () => {
                   field: "images",
                   headerName: "ID",
                   flex: 1,
-                  renderCell: (params: muidg.CellParams) => {
+                  renderCell: (params: muidg.GridCellParams) => {
                     const ids = (params.value as sharedTypes.Image[]).map(
                       (image) => image.id
                     );

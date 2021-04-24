@@ -117,7 +117,7 @@ export const ProjectSummary = () => {
               headerName: "ID",
               flex: 1,
               disableColumnMenu: true,
-              renderCell: (params: muidg.CellParams) => (
+              renderCell: (params: muidg.GridCellParams) => (
                 <rrd.Link to={`/projects/${projectId}/images/${params.value}`}>
                   {params.value}
                 </rrd.Link>
@@ -136,7 +136,7 @@ export const ProjectSummary = () => {
             {
               field: "status",
               headerName: "Status",
-              renderCell: (params: muidg.CellParams) => (
+              renderCell: (params: muidg.GridCellParams) => (
                 <span style={{ textTransform: "capitalize" }}>
                   {params.value}
                 </span>

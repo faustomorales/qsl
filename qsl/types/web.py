@@ -159,6 +159,12 @@ class Project(BaseModel):
             return False
         return self.labelingConfiguration == other.labelingConfiguration
 
+    def get_filepaths(self) -> typing.List[str]:
+        """Get a list of the filepaths in a project."""
+        if self.labels is None:
+            raise ValueError("This project does not have labels set.")
+        return [l.filepath for l in self.labels]
+
     def box_level_labels(self):
         """Get the box level labels as a list of dicts."""
         if self.labels is None:

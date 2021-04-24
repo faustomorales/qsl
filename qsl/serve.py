@@ -773,6 +773,7 @@ def query_labels(
         .join(
             orm.LabelConfig,
             (collections.c.project_id == orm.LabelConfig.project_id),
+            isouter=True,
         )
         .join(
             orm.ImageLevelLabel,
@@ -875,7 +876,14 @@ def export_project(
                 labels, box_lookup = default_label_mapping.get(
                     image_id, (web.LabelGroup(single={}, multiple={}, text={}), {})
                 )
-            if config.level == orm.Level.image:
+            if config is None:
+                # There's nothing to update if there's no
+                # label configuration. This happens if
+                # we have files in the project but the
+                # label configuration for the project is
+                # empty.
+                pass
+            elif config.level == orm.Level.image:
                 update_label_group_with_label(
                     label_group=labels,
                     config=config,

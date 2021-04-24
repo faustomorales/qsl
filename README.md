@@ -55,7 +55,7 @@ qsl simple-label 's3://my-bucket/images/*.jpg' 's3://my-bucket/other/*.jpg' 'htt
 Please note that paths like this must meet some criteria.
 
 - On most platforms / shells, you must use quotes (as shown in the example).
-- Your AWS credentials must be available in a form compatible with the default `boto3` credential-finding methods and that those credentials must support the `ListBucket` and `GetObject` actions.
+- Your AWS credentials must be available in a form compatible with the default `boto3` credential-finding methods and those credentials must be permitted to use the `ListBucket` and `GetObject` actions.
 
 ### Advanced Use Cases
 Documentation for the more advanced use cases is not yet available though they are implemented in the package. Advanced use cases include things like:
@@ -69,7 +69,8 @@ In short, you can launch a full-blown QSL deployment simply by doing the followi
 1. Set the following environment variables to configure the application.
     - `DB_CONNECTION_STRING`: A database connection string, used to host the application data. If not provided, a SQLite database will be used in the current working directory called `qsl-labeling.db`.
     - `OAUTH_INITIAL_USER`: The initial user that will be an administrator for the QSL instance.
-    - `OAUTH_PROVIDER`: The OAuth provider to use (currently `github` and `google` are supported)- `OAUTH_CLIENT_SECRET`: The OAuth client secret.
+    - `OAUTH_PROVIDER`: The OAuth provider to use (currently `github` and `google` are supported)
+    - `OAUTH_CLIENT_SECRET`: The OAuth client secret.
     - `OAUTH_CLIENT_ID`: The OAuth client ID.
 2. Execute `qsl label` (instead of `qsl simple-label`) to launch the application (use `--host` and `--port` to modify how the application listens for connections).
 

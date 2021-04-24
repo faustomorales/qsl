@@ -1,0 +1,1 @@
+The image in the screenshot originated from [Wikimedia](https://commons.wikimedia.org/wiki/Commons:Picture_of_the_day#/media/File:M%C3%BCnster,_Beresa,_Mercedes-Benz_C-Klasse_Cabrio_--_2018_--_1757.jpg).

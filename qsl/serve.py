@@ -1120,7 +1120,7 @@ def default_startup(app: fastapi.FastAPI, engine=None):
         oauth = build_oauth(
             provider_name=CONFIG("OAUTH_PROVIDER", str, None),
             client_id=CONFIG("OAUTH_CLIENT_ID", str, None),
-            client_secret=CONFIG("OAUTH_CLIENTS_ECRET", str, None),
+            client_secret=CONFIG("OAUTH_CLIENT_SECRET", str, None),
         )
 
         if CONFIG("DEVELOPMENT_MODE", bool, False):

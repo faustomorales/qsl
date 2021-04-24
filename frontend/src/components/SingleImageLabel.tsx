@@ -293,11 +293,17 @@ const Image = (props: {
               box={box}
               key={index}
               onMouseMove={onMouseMove}
+              // If the alt key is pressed while clicking on an
+              // existing box, we interpret that as the user asserting
+              // that they want to draw a new box rather than selecting
+              // an existing box.
               onClick={(event) =>
-                props.onSelectBox(
-                  index,
-                  click2xy(event, ref.current, props.zoom)
-                )
+                event.altKey
+                  ? onClick(event)
+                  : props.onSelectBox(
+                      index,
+                      click2xy(event, ref.current, props.zoom)
+                    )
               }
             />
           ))}

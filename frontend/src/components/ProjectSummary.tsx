@@ -52,7 +52,7 @@ export const ProjectSummary = () => {
       <mui.Grid item xs={12}>
         <LabelingStatus project={project}>
           <rrd.Link to="/">QSL</rrd.Link> /{" "}
-          <rrd.Link to={`/projects/${project.name}`}>{project.name}</rrd.Link>
+          <rrd.Link to={`/projects/${projectId}`}>{project.name}</rrd.Link>
         </LabelingStatus>
       </mui.Grid>
       <mui.Grid item>

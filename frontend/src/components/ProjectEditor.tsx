@@ -6,7 +6,7 @@ import * as mui from "@material-ui/core";
 import LabelPanel from "./LabelPanel";
 import LabelingStatus from "./LabelingStatus";
 
-export const ProjectEditor = () => {
+export const ProjectEditor = (props: { allowDelete: boolean }) => {
   // Get context variables.
   const { projectId } = rrd.useRouteMatch<{
     projectId: string;
@@ -125,15 +125,17 @@ export const ProjectEditor = () => {
             Reset
           </mui.Button>
         </mui.Grid>
-        <mui.Grid item>
-          <mui.Button
-            onClick={deleteProject}
-            variant="contained"
-            color="secondary"
-          >
-            Delete Project
-          </mui.Button>
-        </mui.Grid>
+        {props.allowDelete ? (
+          <mui.Grid item>
+            <mui.Button
+              onClick={deleteProject}
+              variant="contained"
+              color="secondary"
+            >
+              Delete Project
+            </mui.Button>
+          </mui.Grid>
+        ) : null}
       </mui.Grid>
     </mui.Grid>
   );

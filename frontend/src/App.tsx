@@ -52,7 +52,7 @@ const App = () => {
             <components.BatchImageLabel />
           </rrd.Route>
           <rrd.Route path="/projects/:projectId/edit-project">
-            <components.ProjectEditor />
+            <components.ProjectEditor allowDelete={state.config.singleProject === null} />
           </rrd.Route>
           <rrd.Route path="/projects/:projectId/add-images">
             <components.ImageAdder />

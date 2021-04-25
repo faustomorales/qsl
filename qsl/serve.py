@@ -1111,10 +1111,11 @@ def default_startup(app: fastapi.FastAPI, engine=None):
         )
         initial_user = CONFIG("OAUTH_INITIAL_USER", str, "Default User")
         if engine is None:
+            connect_args = {}
+            if connection_string.startswith("sqlite://"):
+                connect_args["check_same_thread"] = False
             engine = sa.create_engine(
-                connection_string,
-                echo=False,
-                connect_args={"check_same_thread": False},
+                connection_string, echo=False, connect_args=connect_args
             )
         orm.BaseModel.metadata.create_all(engine)
         oauth = build_oauth(

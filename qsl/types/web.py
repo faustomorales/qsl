@@ -41,8 +41,8 @@ class Box(BaseModel):
         return hash(
             (
                 (self.x, self.y, self.w, self.h)
-                + (p.__hash__() for p in (self.points or []))
-                + self.labels.__hash__()
+                + tuple(p.__hash__() for p in (self.points or []))
+                + (self.labels.__hash__(),)
             )
         )
 

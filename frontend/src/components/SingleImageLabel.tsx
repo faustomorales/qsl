@@ -360,6 +360,7 @@ export const SingleImageLabel = () => {
   const [navState, setNavState] = react.useState({
     queueSize: 20,
     desiredImageId: imageId,
+    typing: false,
     status: "initializing" as
       | "initializing"
       | "waiting"
@@ -679,7 +680,7 @@ export const SingleImageLabel = () => {
           break;
         case "Backspace":
         case "Delete":
-          target = boxMode ? deleteBoxButton : null;
+          target = boxMode && !navState.typing ? deleteBoxButton : null;
           break;
         default:
         // code block
@@ -738,6 +739,7 @@ export const SingleImageLabel = () => {
             configGroup={configGroup}
             labels={labelGroup}
             setLabelGroup={setLabelGroup}
+            setTyping={(typing) => setNavState({ ...navState, typing })}
           />
           <mui.Divider style={{ marginTop: "10px" }} />
           <mui.Typography variant={"h6"}>View Settings</mui.Typography>

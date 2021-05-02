@@ -325,6 +325,7 @@ const LabelPanel = (props: {
   onEsc?: () => void;
   onDel?: () => void;
   onCtrlEnter?: () => void;
+  setTyping?: (typing: boolean) => void;
 }) => {
   const {
     configGroup,
@@ -533,8 +534,18 @@ const LabelPanel = (props: {
               ? (event, value) => handleLabelChange(configName, "text", value)
               : null
           }
-          onFocus={() => setShortcutsDisabled(true)}
-          onBlur={() => setShortcutsDisabled(false)}
+          onFocus={() => {
+            setShortcutsDisabled(true);
+            if (props.setTyping) {
+              props.setTyping(true);
+            }
+          }}
+          onBlur={() => {
+            setShortcutsDisabled(false);
+            if (props.setTyping) {
+              props.setTyping(false);
+            }
+          }}
           configName={configName}
           value={props.labels ? props.labels.text[configName] || "" : ""}
         />

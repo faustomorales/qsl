@@ -1033,7 +1033,7 @@ async def auth(
     }
     if frontend_port is not None:
         return fastapi.responses.RedirectResponse(
-            url=f"http://localhost:{frontend_port}/"
+            url=f"http://{request.headers['Host'].split(':')[0]}:{frontend_port}/"
         )
     return fastapi.responses.RedirectResponse(url="/")
 

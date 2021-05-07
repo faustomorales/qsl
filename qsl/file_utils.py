@@ -13,7 +13,7 @@ def get_s3_files_for_pattern(client, pattern: str) -> typing.List[str]:
     )
     keys = []
     for page in client.get_paginator("list_objects_v2").paginate(
-        Bucket="qsl-test-bucket", Prefix=prefix
+        Bucket=bucket, Prefix=prefix
     ):
         if "Contents" not in page:
             break

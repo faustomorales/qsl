@@ -2,6 +2,7 @@
 import os
 import uuid
 import time
+import socket
 import logging
 import decimal
 import sqlite3
@@ -23,6 +24,7 @@ from starlette.middleware.sessions import SessionMiddleware
 import sqlalchemy as sa
 
 from .types import web, orm
+from . import file_utils
 
 LOGGER = logging.getLogger(__name__)
 FRONTEND_DIRECTORY = pkg_resources.resource_filename("qsl", "frontend")
@@ -378,6 +380,7 @@ def create_images(
     group: web.ImageGroup,
     project_id: int,
     session: sa.orm.Session = fastapi.Depends(get_session),
+    s3=fastapi.Depends(get_s3),
     user: web.User = fastapi.Depends(get_current_user),
 ) -> typing.List[web.Image]:
     """Add images to a project."""
@@ -392,7 +395,7 @@ def create_images(
             project_id=project_id,
             last_access=typing.cast(decimal.Decimal, now),
         )
-        for filepath in group.files
+        for filepath in file_utils.filepaths_from_patterns(group.files, s3=s3)
     ]
     for image in images:
         session.add(image)
@@ -1128,9 +1131,20 @@ def default_startup(app: fastapi.FastAPI, engine=None):
             # We're in development mode and need to let the live frontend
             # access the backend.
             frontend_port = CONFIG("FRONTEND_PORT", str, "5000")
+
+            # Get the local network IP address so we can access
+            # services from other devices. We can't use "*"
+            # because it is not supported when credentials are
+            # passed.
+            test_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            test_socket.connect(("8.8.8.8", 80))
+            ipaddr = test_socket.getsockname()[0]
             app.add_middleware(
                 fastapi.middleware.cors.CORSMiddleware,
-                allow_origins=["*"],
+                allow_origins=[
+                    f"http://{ipaddr}:{frontend_port}",
+                    f"http://localhost:{frontend_port}",
+                ],
                 allow_credentials=True,
                 allow_methods=["*"],
                 allow_headers=["*"],

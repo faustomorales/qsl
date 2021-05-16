@@ -1,9 +1,7 @@
 import os
-import glob
 import json
 import typing
 
-import boto3
 import click
 
 import qsl.serve as qs
@@ -60,20 +58,7 @@ def simple_label(
         project = qt.web.Project.parse_obj(json.loads(f.read()))
     if project.labels is None:
         project.labels = []
-    incoming_filepaths = []
-    s3 = None
-    for file_or_pattern in files_to_add:
-        if file_or_pattern.startswith("s3://"):
-            if s3 is None:
-                s3 = boto3.client("s3")
-            incoming_filepaths.extend(
-                file_utils.get_s3_files_for_pattern(client=s3, pattern=file_or_pattern)
-            )
-        elif file_or_pattern.startswith("http://"):
-            # We have no way of handling wildcards for HTTP URLs.
-            incoming_filepaths.append(file_or_pattern)
-        else:
-            incoming_filepaths.extend(glob.glob(file_or_pattern))
+    incoming_filepaths = file_utils.filepaths_from_patterns(files_to_add)
     project.labels.extend(
         [
             qt.web.ExportedImageLabels(

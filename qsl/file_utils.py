@@ -1,5 +1,7 @@
+import glob
 import typing
 import fnmatch
+import boto3
 
 
 def get_s3_files_for_pattern(client, pattern: str) -> typing.List[str]:
@@ -25,3 +27,21 @@ def get_s3_files_for_pattern(client, pattern: str) -> typing.List[str]:
             ]
         )
     return [f"s3://{bucket}/{key}" for key in keys if fnmatch.fnmatch(key, keypat)]
+
+
+def filepaths_from_patterns(patterns: typing.List[str], s3=None) -> typing.List[str]:
+    """Create filepaths from patterns."""
+    filepaths = []
+    for file_or_pattern in patterns:
+        if file_or_pattern.startswith("s3://"):
+            if s3 is None:
+                s3 = boto3.client("s3")
+            filepaths.extend(
+                get_s3_files_for_pattern(client=s3, pattern=file_or_pattern)
+            )
+        elif file_or_pattern.startswith("http://"):
+            # We have no way of handling wildcards for HTTP URLs.
+            filepaths.append(file_or_pattern)
+        else:
+            filepaths.extend(glob.glob(file_or_pattern))
+    return filepaths

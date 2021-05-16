@@ -82,15 +82,11 @@ const labels2string = (labels: sharedTypes.LabelGroup): string =>
     .concat(Object.values(labels.text).filter((l) => l !== null))
     .join(", ");
 
-const click2xy = (
-  event: react.MouseEvent,
-  img: HTMLImageElement,
-  zoom: number
-) => {
+const click2xy = (event: react.MouseEvent, img: HTMLImageElement) => {
   const { x, y, width, height } = img.getBoundingClientRect();
   return {
-    x: (event.nativeEvent.pageX - window.scrollX - x * zoom) / (width * zoom),
-    y: (event.nativeEvent.pageY - window.scrollY - y * zoom) / (height * zoom),
+    x: (event.nativeEvent.pageX - window.scrollX - x) / width,
+    y: (event.nativeEvent.pageY - window.scrollY - y) / height,
   };
 };
 
@@ -269,13 +265,13 @@ const Image = (props: {
   }>().params;
   const ref = react.useRef<HTMLImageElement>();
   const onMouseMove = _.debounce((event: react.MouseEvent) => {
-    props.onHover(click2xy(event, ref.current, props.zoom));
+    props.onHover(click2xy(event, ref.current));
   }, 5);
   const onClick = (event: react.MouseEvent) => {
     if (!props.onClick) {
       return;
     }
-    props.onClick(click2xy(event, ref.current, props.zoom));
+    props.onClick(click2xy(event, ref.current));
   };
   return (
     <div>
@@ -283,7 +279,7 @@ const Image = (props: {
         <Box
           onMouseMove={onMouseMove}
           onClick={(event) =>
-            props.onSelectBox(null, click2xy(event, ref.current, props.zoom))
+            props.onSelectBox(null, click2xy(event, ref.current))
           }
           draftBox={props.draftBox}
         />
@@ -300,10 +296,7 @@ const Image = (props: {
               onClick={(event) =>
                 event.altKey
                   ? onClick(event)
-                  : props.onSelectBox(
-                      index,
-                      click2xy(event, ref.current, props.zoom)
-                    )
+                  : props.onSelectBox(index, click2xy(event, ref.current))
               }
             />
           ))}
@@ -313,7 +306,10 @@ const Image = (props: {
             ref={ref}
             src={common.getImageUrl(projectId, imageId)}
             alt={`ID: ${imageId}`}
-            style={{ display: "block", zoom: props.zoom }}
+            style={{
+              display: "block",
+              width: `${props.zoom * 512}px`,
+            }}
           />
         </mui.Paper>
       </div>

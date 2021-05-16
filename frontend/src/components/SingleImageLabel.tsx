@@ -750,7 +750,7 @@ export const SingleImageLabel = () => {
               aria-labelledby="zoom-slider"
               value={zoom}
               min={0.25}
-              max={10}
+              max={20}
               onChange={(event, value) => setZoom(value as number)}
             />
           </mui.FormControl>

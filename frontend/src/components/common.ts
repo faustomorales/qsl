@@ -2,7 +2,9 @@ import * as sharedTypes from "./sharedTypes";
 
 import * as react from "react";
 
-export const apiUrl = process.env.REACT_APP_API_URL || "";
+export const apiUrl = process.env.REACT_APP_BACKEND_PORT
+  ? `http://${window.location.hostname}:${process.env.REACT_APP_BACKEND_PORT}`
+  : "";
 
 export const buildEmptyLabelGroup = (
   configGroup: sharedTypes.LabelConfigurationGroup

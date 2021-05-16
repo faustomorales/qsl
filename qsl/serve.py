@@ -1130,9 +1130,7 @@ def default_startup(app: fastapi.FastAPI, engine=None):
             frontend_port = CONFIG("FRONTEND_PORT", str, "5000")
             app.add_middleware(
                 fastapi.middleware.cors.CORSMiddleware,
-                allow_origins=[
-                    f"http://localhost:{frontend_port}",
-                ],
+                allow_origins=["*"],
                 allow_credentials=True,
                 allow_methods=["*"],
                 allow_headers=["*"],

@@ -516,7 +516,7 @@ def list_images(
     session.commit()
 
     return [
-        web.Image(id=image.id, filepath=image.filepath, labels=labels, status=status)
+        web.Image(id=image.id, filepath=image.filepath, nLabels=labels, status=status)
         for image, labels, status in entries
     ]
 
@@ -571,6 +571,29 @@ def update_label_group_with_label(
         ) + ([label_option.name] if label_option is not None else [])
     elif config.label_type == orm.LabelType.text:
         label_group.text[config.name] = label.text if label is not None else None
+
+
+def get_image(
+    project_id: int,
+    image_id: str,
+    user: web.User = fastapi.Depends(get_current_user),
+    session: sa.orm.Session = fastapi.Depends(get_session),
+) -> web.Image:
+    """Get image with labels."""
+    image = (
+        session.query(orm.Image)
+        .filter((orm.Image.id == image_id) & (orm.Image.project_id == project_id))
+        .first()
+    )
+    if image is None:
+        raise fastapi.HTTPException(404, detail="File not found")
+
+    return web.Image(
+        filepath=image.filepath,
+        labels=get_labels(
+            project_id=project_id, image_id=image_id, user=user, session=session
+        ),
+    )
 
 
 def get_labels(
@@ -1201,6 +1224,7 @@ def build_app():
     app.post("/api/v1/projects/{project_id}")(update_project)
     app.post("/api/v1/projects/{project_id}/images")(create_images)
     app.get("/api/v1/projects/{project_id}/images")(list_images)
+    app.get("/api/v1/projects/{project_id}/images/{image_id}")(get_image)
     app.get("/api/v1/projects/{project_id}/images/{image_id}/file")(get_file)
     app.get("/api/v1/projects/{project_id}/images/{image_id}/labels")(get_labels)
     app.delete("/api/v1/projects/{project_id}/images/{image_id}/labels")(delete_labels)

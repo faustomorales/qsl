@@ -129,7 +129,7 @@ export const ProjectSummary = () => {
               flex: 4,
             },
             {
-              field: "labels",
+              field: "nLabels",
               headerName: "# Labels",
               flex: 1,
             },

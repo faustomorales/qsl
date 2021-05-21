@@ -364,6 +364,7 @@ export const SingleImageLabel = () => {
       | "redirecting",
     usePolygon: false,
     labels: null as sharedTypes.ImageLabels,
+    filepath: null as string,
     advanceOnSave: true,
     dirty: false,
     notice: null as string,
@@ -504,7 +505,7 @@ export const SingleImageLabel = () => {
       .concat(imageId ? [imageId] : []);
     Promise.all([
       imageId
-        ? common.getImageLabels(projectId, imageId)
+        ? common.getImage(projectId, imageId)
         : Promise.resolve(null),
       navState.queueSize <= existing.length
         ? Promise.resolve([])
@@ -516,11 +517,12 @@ export const SingleImageLabel = () => {
             navState.unlabeledOnly ? true : false,
             navState.unlabeledOnly ? 0 : -1
           ),
-    ]).then(([labels, additions]) => {
+    ]).then(([image, additions]) => {
       const updated = existing.concat(additions);
       setNavState({
         ...navState,
-        labels,
+        labels: image.labels,
+        filepath: image.filepath,
         queue: updated,
         status: imageId ? "waiting" : "redirecting",
         desiredImageId: imageId ? imageId : getNextDesiredImageId(updated),
@@ -722,7 +724,7 @@ export const SingleImageLabel = () => {
       <LabelingStatus project={project} position={"fixed"}>
         <rrd.Link to={`/`}>QSL</rrd.Link> /{" "}
         <rrd.Link to={`/projects/${projectId}`}>{project.name}</rrd.Link> /
-        Images / {imageId}
+        Images / {navState.filepath}
       </LabelingStatus>
       <mui.Drawer variant="permanent" style={{ flexShrink: 0 }}>
         <mui.Box style={{ padding: "10px", width: drawerWidth }}>

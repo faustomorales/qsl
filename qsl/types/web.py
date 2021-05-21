@@ -125,7 +125,8 @@ class User(BaseModel):
 class Image(BaseModel):
     id: typing.Optional[str]
     filepath: str
-    labels: typing.Optional[int]
+    labels: typing.Optional[ImageLabels]
+    nLabels: typing.Optional[int]
     status: typing.Optional[tx.Literal["ignored", "labeled", "unlabeled"]]
 
 

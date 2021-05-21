@@ -145,6 +145,16 @@ export const getImageLabels = (
   ).then((r) => r.json());
 };
 
+export const getImage = (
+  projectId: number | string,
+  imageId: number | string
+) => {
+  return fetch(
+    `${apiUrl}/api/v1/projects/${projectId}/images/${imageId}`,
+    getRequestInit
+  ).then((r) => r.json());
+};
+
 export const getImages = (
   projectId: number | string,
   excludedIds: string[] = [],

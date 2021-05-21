@@ -11,7 +11,7 @@ import ShortcutButton from "./ShortcutButton";
 import LabelingStatus from "./LabelingStatus";
 
 interface HistoryEntry {
-  id: number;
+  id: string;
   status: "Ignored" | "Unlabeled" | "Labeled";
 }
 
@@ -328,11 +328,11 @@ const updateHistory = (
 ): HistoryEntry[] => {
   return [
     {
-      id: parseInt(imageId),
+      id: imageId,
       status,
     },
   ]
-    .concat(current.filter((entry) => entry.id !== parseInt(imageId)))
+    .concat(current.filter((entry) => entry.id !== imageId))
     .slice(0, 10);
 };
 
@@ -821,7 +821,7 @@ export const SingleImageLabel = () => {
                 ref={prevButton}
                 disabled={
                   navState.history.filter(
-                    (entry) => entry.id !== parseInt(imageId)
+                    (entry) => entry.id !== imageId
                   ).length === 0
                 }
               >
@@ -893,7 +893,7 @@ export const SingleImageLabel = () => {
               {
                 field: "id",
                 headerName: "ID",
-                flex: 1,
+                flex: 4,
                 renderCell: (params: muidg.GridCellParams) => (
                   <rrd.Link
                     to={`/projects/${projectId}/images/${params.value}`}

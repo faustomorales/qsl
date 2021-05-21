@@ -147,7 +147,7 @@ export const getImageLabels = (
 
 export const getImages = (
   projectId: number | string,
-  excludedIds: number[] = [],
+  excludedIds: string[] = [],
   limit: number = 1,
   shuffle: boolean = true,
   excludeIgnored: boolean = true,

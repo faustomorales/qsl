@@ -501,7 +501,7 @@ export const SingleImageLabel = () => {
     );
     const excludedIds = existing
       .map((image) => image.id)
-      .concat(imageId ? [parseInt(imageId)] : []);
+      .concat(imageId ? [imageId] : []);
     Promise.all([
       imageId
         ? common.getImageLabels(projectId, imageId)
@@ -636,7 +636,7 @@ export const SingleImageLabel = () => {
       desiredImageId:
         navState.history.length > 0 ? navState.history[0].id.toString() : null,
       history: navState.history.slice(1),
-      queue: [{ id: parseInt(imageId) }].concat(navState.queue),
+      queue: [{ id: imageId }].concat(navState.queue),
       status: "redirecting",
     });
   }, [imageId, navState]);

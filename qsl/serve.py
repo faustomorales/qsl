@@ -5,6 +5,7 @@ import time
 import socket
 import logging
 import decimal
+import hashlib
 import sqlite3
 import contextlib
 import threading
@@ -376,6 +377,13 @@ def list_projects(
     ]
 
 
+def compute_hash(filepath: str) -> str:
+    """Compute an MD5 hash for a filepath string."""
+    h = hashlib.md5()
+    h.update(filepath.encode())
+    return h.hexdigest()
+
+
 def create_images(
     group: web.ImageGroup,
     project_id: int,
@@ -391,6 +399,7 @@ def create_images(
     ), "Did not find labeling configuratin for project."
     images = [
         orm.Image(
+            id=compute_hash(filepath),
             filepath=filepath,
             project_id=project_id,
             last_access=typing.cast(decimal.Decimal, now),
@@ -437,7 +446,7 @@ def list_images(
     limit: int = None,
     max_labels: int = None,
     project_id: int = None,
-    exclude: typing.Optional[typing.List[int]] = fastapi.Query(None),
+    exclude: typing.Optional[typing.List[str]] = fastapi.Query(None),
     session: sa.orm.Session = fastapi.Depends(get_session),
     shuffle: bool = False,
     exclude_ignored: bool = False,
@@ -514,7 +523,7 @@ def list_images(
 
 def get_file(
     project_id: int,
-    image_id: int,
+    image_id: str,
     session: sa.orm.Session = fastapi.Depends(get_session),
     s3=fastapi.Depends(get_s3),
     user: web.User = fastapi.Depends(get_current_user),
@@ -566,7 +575,7 @@ def update_label_group_with_label(
 
 def get_labels(
     project_id: int,
-    image_id: int,
+    image_id: str,
     user: web.User = fastapi.Depends(get_current_user),
     session: sa.orm.Session = fastapi.Depends(get_session),
 ) -> web.ImageLabels:
@@ -641,7 +650,7 @@ def get_labels(
 
 def delete_labels(
     project_id: int,
-    image_id: int,
+    image_id: str,
     user: web.User = fastapi.Depends(get_current_user),
     session: sa.orm.Session = fastapi.Depends(get_session),
 ) -> web.ImageLabels:
@@ -659,7 +668,7 @@ def delete_labels(
 
 def set_labels(
     project_id: int,
-    image_id: int,
+    image_id: str,
     labels: web.ImageLabels,
     user: web.User = fastapi.Depends(get_current_user),
     session: sa.orm.Session = fastapi.Depends(get_session),
@@ -718,7 +727,7 @@ def set_labels(
 def query_labels(
     session: sa.orm.Session,
     project_id: int = None,
-    image_id: int = None,
+    image_id: str = None,
     user_id: int = None,
 ):
     """Build a label query."""
@@ -1273,7 +1282,7 @@ def launch_simple_app(host: str, port: int, project: web.Project):
                             )
                         filepath_to_user_labels[image.filepath] = labels.labels
             # Create images without defaults.
-            filepath_to_id: typing.Dict[str, int] = {}
+            filepath_to_id: typing.Dict[str, str] = {}
             for saved in create_images(
                 group=web.ImageGroup(files=[image.filepath for image in no_defaults]),
                 project_id=project_id,

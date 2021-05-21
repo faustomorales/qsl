@@ -24,7 +24,7 @@ interface GridItem {
 }
 
 interface BatchStatuses {
-  [key: number]: Status;
+  [key: string]: Status;
 }
 
 interface HistoryEntry {
@@ -59,7 +59,7 @@ const BatchImageGrid = (props: {
   items: GridItem[];
   projectId: string;
   thumbnailSize: number;
-  toggleSelected: (id: number) => void;
+  toggleSelected: (id: string) => void;
 }) => {
   const classes = useStyles();
 
@@ -276,7 +276,7 @@ export const BatchImageLabel = () => {
   react.useEffect(() => {
     // Runs whenever the image IDs or project ID in the URL change.
     const currentBatch = imageIds.split(",").map((id) => {
-      return { id: parseInt(id) };
+      return { id: id };
     });
     const currentBatchStatus = statusesFromBatch(currentBatch);
     const nextBatchesQuery =
@@ -385,7 +385,7 @@ export const BatchImageLabel = () => {
     0
   );
   const nSelected = Object.entries(navState.currentBatchStatus).reduce(
-    (memo, [id, status]) => memo + status.selected,
+    (memo, [id, status]) => memo + (status.selected ? 1 : 0),
     0
   );
   return (

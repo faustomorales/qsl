@@ -115,7 +115,7 @@ export const ProjectSummary = () => {
             {
               field: "id",
               headerName: "ID",
-              flex: 1,
+              flex: 3,
               disableColumnMenu: true,
               renderCell: (params: muidg.GridCellParams) => (
                 <rrd.Link to={`/projects/${projectId}/images/${params.value}`}>
@@ -126,7 +126,7 @@ export const ProjectSummary = () => {
             {
               field: "filepath",
               headerName: "Path",
-              flex: 5,
+              flex: 4,
             },
             {
               field: "labels",

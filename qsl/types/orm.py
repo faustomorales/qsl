@@ -86,7 +86,7 @@ class LabelOption(BaseModel):
 class Image(BaseModel):
     __tablename__ = "images"
     __table_args__ = (sa.UniqueConstraint("project_id", "filepath"),)
-    id = sa.Column(sa.Integer, primary_key=True)
+    id = sa.Column(sa.String, primary_key=True)
     default_image_label_collection_id = sa.Column(
         sa.Integer,
         sa.ForeignKey("default_image_label_collections.id"),
@@ -216,7 +216,7 @@ class UserImageLabelCollection(BaseModel):
         sa.Integer, sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     image_id = sa.Column(
-        sa.Integer, sa.ForeignKey("images.id", ondelete="CASCADE"), nullable=False
+        sa.String, sa.ForeignKey("images.id", ondelete="CASCADE"), nullable=False
     )
     ignored = sa.Column(sa.Boolean, nullable=False)
     user = sa.orm.relationship("User", back_populates="image_label_collections")

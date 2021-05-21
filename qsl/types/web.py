@@ -123,7 +123,7 @@ class User(BaseModel):
 
 
 class Image(BaseModel):
-    id: typing.Optional[int]
+    id: typing.Optional[str]
     filepath: str
     labels: typing.Optional[int]
     status: typing.Optional[tx.Literal["ignored", "labeled", "unlabeled"]]
@@ -140,7 +140,7 @@ class ExportedUserLabels(BaseModel):
 
 
 class ExportedImageLabels(BaseModel):
-    imageId: typing.Optional[int]
+    imageId: typing.Optional[str]
     filepath: str
     labels: typing.List[ExportedUserLabels]
     defaultLabels: typing.Optional[ImageLabels]

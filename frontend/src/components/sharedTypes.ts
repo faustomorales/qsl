@@ -69,7 +69,7 @@ export interface User {
 }
 
 export interface Image {
-  id: number;
+  id: string;
   filepath?: string;
   labels?: number;
   status?: "ignored" | "labeled" | "unlabeled";

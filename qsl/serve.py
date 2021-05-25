@@ -93,7 +93,6 @@ def add_context(
 
     def middleware(request: fastapi.Request, call_next):
         request.state.engine = engine
-        request.state.s3 = boto3.client("s3")
         request.state.oauth = oauth
         request.state.frontend_port = frontend_port
         request.state.single_project = single_project
@@ -114,9 +113,11 @@ def get_single_project(request: Request) -> typing.Optional[int]:
     return request.state.single_project
 
 
-def get_s3(request: Request):
+def get_s3():
     """Provide an s3 client"""
-    return request.state.s3
+    if not hasattr(tls, "s3"):
+        tls.s3 = boto3.client("s3")
+    return tls.s3
 
 
 def get_oauth(request: Request) -> OAuthConfig:

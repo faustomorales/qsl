@@ -141,7 +141,7 @@ class ExportedUserLabels(BaseModel):
 
 
 class ExportedImageLabels(BaseModel):
-    imageId: typing.Optional[str]
+    imageId: typing.Optional[typing.Union[str, int]]
     filepath: str
     labels: typing.List[ExportedUserLabels]
     defaultLabels: typing.Optional[ImageLabels]

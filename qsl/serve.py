@@ -1313,10 +1313,10 @@ def launch_simple_app(host: str, port: int, project: web.Project):
                 project_id=project_id,
                 session=session,
                 user=user,
+                s3=get_s3(),
             ):
                 assert saved.id is not None, "Failed to get an image ID."
                 filepath_to_id[saved.filepath] = saved.id
-
             # Create images with defaults.
             for defaultSet in default_groups.values():
                 for saved in create_images(
@@ -1327,6 +1327,7 @@ def launch_simple_app(host: str, port: int, project: web.Project):
                     project_id=project_id,
                     session=session,
                     user=user,
+                    s3=get_s3(),
                 ):
                     assert saved.id is not None, "Failed to get an image ID."
                     filepath_to_id[saved.filepath] = saved.id

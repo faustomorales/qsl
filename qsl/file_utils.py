@@ -11,7 +11,10 @@ def get_s3_files_for_pattern(client, pattern: str) -> typing.List[str]:
     bucket = segments[0]
     keypat = "/".join(segments[1:])
     prefix = "/".join(
-        segments[1 : 1 + next(i for i, s in enumerate(segments[1:]) if "*" in s)]
+        segments[
+            1 : 1
+            + next((i for i, s in enumerate(segments[1:]) if "*" in s), len(segments))
+        ]
     )
     keys = []
     for page in client.get_paginator("list_objects_v2").paginate(
@@ -23,7 +26,7 @@ def get_s3_files_for_pattern(client, pattern: str) -> typing.List[str]:
             [
                 e["Key"]
                 for e in page["Contents"]
-                if (e["Key"] != prefix or e["Key"] == pattern)
+                if (e["Key"] != prefix or e["Key"] == keypat)
             ]
         )
     return [f"s3://{bucket}/{key}" for key in keys if fnmatch.fnmatch(key, keypat)]

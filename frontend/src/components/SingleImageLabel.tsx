@@ -504,9 +504,7 @@ export const SingleImageLabel = () => {
       .map((image) => image.id)
       .concat(imageId ? [imageId] : []);
     Promise.all([
-      imageId
-        ? common.getImage(projectId, imageId)
-        : Promise.resolve(null),
+      imageId ? common.getImage(projectId, imageId) : Promise.resolve(null),
       navState.queueSize <= existing.length
         ? Promise.resolve([])
         : common.getImages(
@@ -820,9 +818,8 @@ export const SingleImageLabel = () => {
                 onClick={onBackward}
                 ref={prevButton}
                 disabled={
-                  navState.history.filter(
-                    (entry) => entry.id !== imageId
-                  ).length === 0
+                  navState.history.filter((entry) => entry.id !== imageId)
+                    .length === 0
                 }
               >
                 Previous

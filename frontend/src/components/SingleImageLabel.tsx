@@ -275,7 +275,14 @@ const Image = (props: {
   };
   return (
     <div>
-      <div style={{ position: "relative", display: "inline-block" }}>
+      <div
+        style={{
+          position: "relative",
+          display: "inline-block",
+          marginLeft: 15,
+          marginTop: 15,
+        }}
+      >
         <Box
           onMouseMove={onMouseMove}
           onClick={(event) =>

@@ -279,8 +279,8 @@ const Image = (props: {
         style={{
           position: "relative",
           display: "inline-block",
-          marginLeft: 15,
-          marginTop: 15,
+          marginLeft: 5,
+          marginTop: 5,
         }}
       >
         <Box
@@ -722,7 +722,7 @@ export const SingleImageLabel = () => {
   if (!navState.labels || !project) {
     return redirect;
   }
-  const drawerWidth = 250;
+  const drawerWidth = 275;
   return (
     <div style={{ display: "flex" }}>
       <mui.CssBaseline />
@@ -732,7 +732,9 @@ export const SingleImageLabel = () => {
         Images / {navState.filepath}
       </LabelingStatus>
       <mui.Drawer variant="permanent" style={{ flexShrink: 0 }}>
-        <mui.Box style={{ padding: "10px", width: drawerWidth }}>
+        <mui.Box
+          style={{ padding: "15px", width: drawerWidth, overflowY: "scroll" }}
+        >
           <mui.Toolbar />
           {redirect}
           <mui.Typography style={{ marginBottom: "10px" }} variant={"h6"}>

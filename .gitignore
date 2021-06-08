@@ -38,3 +38,4 @@ dist
 .env
 .env*
 *.json
+.vscode

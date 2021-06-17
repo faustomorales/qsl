@@ -145,6 +145,7 @@ class ExportedImageLabels(BaseModel):
     filepath: str
     labels: typing.List[ExportedUserLabels]
     defaultLabels: typing.Optional[ImageLabels]
+    metadata: typing.Optional[dict]
 
 
 class Project(BaseModel):

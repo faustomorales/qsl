@@ -1297,6 +1297,10 @@ def launch_simple_app(host: str, port: int, project: web.Project):
                     default_groups[image.defaultLabels]["images"].append(image)
                 else:
                     no_defaults.append(image)
+                if image.metadata:
+                    raise ValueError(
+                        "Found metadata. Metadata is not supported in the app at this time."
+                    )
                 if not image.labels:
                     continue
                 if image.labels:

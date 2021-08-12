@@ -188,7 +188,11 @@ def build_images_query(session: sa.orm.Session, project_id=None):
             orm.Image.id.label("image_id"),
             orm.Image.project_id.label("project_id"),
             sa.cast(
-                sa.func.sum(orm.UserImageLabelCollection.id != None) > 0, sa.Integer
+                sa.func.sum(
+                    sa.sql.cast(orm.UserImageLabelCollection.id != None, sa.Integer)
+                )
+                > 0,
+                sa.Integer,
             ).label("labeled"),
         )
         .join(orm.UserImageLabelCollection, isouter=True)
@@ -370,7 +374,9 @@ def list_projects(
             id=project.id, name=project.name, nImages=n_images, nLabeled=n_labeled
         )
         for project, n_images, n_labeled in session.query(
-            orm.Project, sa.func.count(images.c.image_id), sa.func.sum(images.c.labeled)
+            orm.Project,
+            sa.func.count(images.c.image_id),
+            sa.func.sum(sa.sql.cast(images.c.labeled, sa.Integer)),
         )
         .join(images, images.c.project_id == orm.Project.id, isouter=True)
         .group_by(orm.Project.id)
@@ -475,10 +481,10 @@ def list_images(
     status = sa.sql.expression.case(
         [
             (
-                sa.func.max(current_user_labels.ignored) == 1,
+                sa.func.max(sa.sql.cast(current_user_labels.ignored, sa.Integer)) == 1,
                 "ignored",
             ),
-            (sa.func.count(current_user_labels.user_id) == 1, "labeled"),
+            (sa.func.count(current_user_labels.user_id) >= 1, "labeled"),
         ],
         else_="unlabeled",
     )
@@ -782,8 +788,7 @@ def query_labels(
         .join(
             orm.UserImageLabelCollection,
             (orm.UserImageLabelCollection.image_id == orm.Image.id)
-            & orm.UserImageLabelCollection.user_id
-            == user_id,
+            and (orm.UserImageLabelCollection.user_id == user_id),
             isouter=True,
         )
         .filter(*conditions)
@@ -816,7 +821,7 @@ def query_labels(
             sa.sql.expression.case(
                 [
                     (
-                        collections.c.user_collection,
+                        collections.c.user_collection != None,
                         collections.c.user_collection
                         == orm.ImageLevelLabel.user_image_label_collection_id,
                     )
@@ -837,7 +842,7 @@ def query_labels(
             sa.sql.expression.case(
                 [
                     (
-                        collections.c.user_collection,
+                        collections.c.user_collection != None,
                         collections.c.user_collection
                         == orm.Box.user_image_label_collection_id,
                     )

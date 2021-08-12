@@ -42,7 +42,9 @@ def filepaths_from_patterns(patterns: typing.List[str], s3=None) -> typing.List[
             filepaths.extend(
                 get_s3_files_for_pattern(client=s3, pattern=file_or_pattern)
             )
-        elif file_or_pattern.startswith("http://"):
+        elif file_or_pattern.startswith("http://") or file_or_pattern.startswith(
+            "https://"
+        ):
             # We have no way of handling wildcards for HTTP URLs.
             filepaths.append(file_or_pattern)
         else:

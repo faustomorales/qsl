@@ -7,12 +7,12 @@ import logging
 import decimal
 import hashlib
 import sqlite3
-import contextlib
 import threading
 import itertools
 import typing
 
 import boto3
+import botocore.config  # type: ignore
 import uvicorn  # type: ignore
 import pkg_resources
 import fastapi
@@ -29,6 +29,8 @@ from . import file_utils
 
 LOGGER = logging.getLogger(__name__)
 FRONTEND_DIRECTORY = pkg_resources.resource_filename("qsl", "frontend")
+SESSIONMAKER_KWARGS = {"autocommit": False, "autoflush": True}
+DISABLE_SHUFFLING = False
 
 
 class OAuthConfig(typing.NamedTuple):
@@ -36,6 +38,7 @@ class OAuthConfig(typing.NamedTuple):
     client: starlette_client.OAuth
     userinfo_query_key: str
     username_key: str
+    force_https: bool
 
 
 class AppConfig(typing.NamedTuple):
@@ -66,33 +69,10 @@ def paginate(query, page: int, page_size: typing.Optional[int]):
     return query.limit(page_size).offset((page - 1) * page_size).all()
 
 
-@contextlib.contextmanager
-def build_session(engine):
-    """Build a session using a thread-local session maker."""
-    if not hasattr(tls, "create_session"):
-        tls.create_session = sa.orm.sessionmaker(
-            bind=engine,
-            autocommit=False,
-            autoflush=False,
-        )
-    session = sa.orm.scoped_session(tls.create_session)
-    try:
-        yield session
-        session.commit()  # pylint: disable=no-member
-    except:
-        session.rollback()  # pylint: disable=no-member
-        raise
-    finally:
-        session.close()  # pylint: disable=no-member
-
-
-def add_context(
-    engine: sa.engine.Engine, oauth=None, frontend_port=None, single_project: int = None
-):
+def add_context(oauth=None, frontend_port=None, single_project: int = None):
     """Add database, S3, Oauth, and frontend port configuration to requests."""
 
     def middleware(request: fastapi.Request, call_next):
-        request.state.engine = engine
         request.state.oauth = oauth
         request.state.frontend_port = frontend_port
         request.state.single_project = single_project
@@ -104,8 +84,15 @@ def add_context(
 
 def get_session(request: Request):
     """Provide a transactional scope around a series of operations."""
-    with build_session(request.state.engine) as session:
+    session = request.app.state.session_maker()
+    try:
         yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 def get_single_project(request: Request) -> typing.Optional[int]:
@@ -115,9 +102,11 @@ def get_single_project(request: Request) -> typing.Optional[int]:
 
 def get_s3():
     """Provide an s3 client"""
-    if not hasattr(tls, "s3"):
-        tls.s3 = boto3.client("s3")
-    return tls.s3
+    if not hasattr(tls, "aws_session"):
+        tls.aws_session = boto3.session.Session()
+    return tls.aws_session.client(
+        "s3", config=botocore.config.Config(signature_version="s3v4")
+    )
 
 
 def get_oauth(request: Request) -> OAuthConfig:
@@ -467,7 +456,7 @@ def list_images(
             users having labeled them.
         exclude: A list of image IDs to exclude from the list.
     """
-    if shuffle:
+    if shuffle and not DISABLE_SHUFFLING:
         order_by = [
             orm.Image.default_image_label_collection_id.desc(),
             orm.Image.last_access.asc(),
@@ -516,12 +505,11 @@ def list_images(
     if limit is not None:
         query = query.limit(limit)
     entries = paginate(query, page=page, page_size=limit)
-    if shuffle:
+    if shuffle and not DISABLE_SHUFFLING:
         now = time.time()
         for image, _, _ in entries:
             image.last_access = now
     session.commit()
-
     return [
         web.Image(id=image.id, filepath=image.filepath, nLabels=labels, status=status)
         for image, labels, status in entries
@@ -1030,7 +1018,12 @@ def list_users(
 
 async def login(request: Request, oauth=fastapi.Depends(get_oauth)):
     """Log a user in."""
-    redirect_uri = request.url_for("auth")
+    host = (
+        request.url.hostname
+        if not request.url.port
+        else f"{request.url.hostname}:{request.url.port}"
+    )
+    redirect_uri = f"{'https' if oauth and oauth.force_https else request.url.scheme}://{host}/auth/callback"
     if oauth is not None:
         return await oauth.client.provider.authorize_redirect(request, redirect_uri)
     # Authentication is disabled, skip to the auth callback.
@@ -1074,7 +1067,7 @@ async def auth(
     }
     if frontend_port is not None:
         return fastapi.responses.RedirectResponse(
-            url=f"http://{request.headers['Host'].split(':')[0]}:{frontend_port}/"
+            url=f"http://{request.url.hostname}:{frontend_port}/"
         )
     return fastapi.responses.RedirectResponse(url="/")
 
@@ -1090,7 +1083,10 @@ def frontend(path: str):
 
 
 def build_oauth(
-    provider_name: str, single_project: bool = False, **kwargs
+    provider_name: str,
+    single_project: bool = False,
+    force_https: bool = False,
+    **kwargs,
 ) -> typing.Optional[OAuthConfig]:
     """Build an oauth configuration."""
     if provider_name is None:
@@ -1109,6 +1105,7 @@ def build_oauth(
         return OAuthConfig(
             client=client,
             name=provider_name,
+            force_https=force_https,
             userinfo_query_key="user",
             username_key="login",
         )
@@ -1125,6 +1122,7 @@ def build_oauth(
             client=client,
             name=provider_name,
             userinfo_query_key="userinfo",
+            force_https=force_https,
             username_key="email",
         )
     raise NotImplementedError(f"Unsupported Oauth provider: {provider_name}.")
@@ -1153,16 +1151,22 @@ def default_startup(app: fastapi.FastAPI, engine=None):
         initial_user = CONFIG("OAUTH_INITIAL_USER", str, "Default User")
         if engine is None:
             connect_args = {}
+            db_args = {}
             if connection_string.startswith("sqlite://"):
                 connect_args["check_same_thread"] = False
+            if connection_string.startswith("postgresql://"):
+                db_args["pool_size"] = 1
+                db_args["max_overflow"] = 2
             engine = sa.create_engine(
-                connection_string, echo=False, connect_args=connect_args
+                connection_string, echo=False, connect_args=connect_args, **db_args
             )
+        session_maker = sa.orm.sessionmaker(bind=engine, **SESSIONMAKER_KWARGS)
         orm.BaseModel.metadata.create_all(engine)
         oauth = build_oauth(
             provider_name=CONFIG("OAUTH_PROVIDER", str, None),
             client_id=CONFIG("OAUTH_CLIENT_ID", str, None),
             client_secret=CONFIG("OAUTH_CLIENT_SECRET", str, None),
+            force_https=CONFIG("OAUTH_FORCE_HTTPS", bool, False),
         )
 
         if CONFIG("DEVELOPMENT_MODE", bool, False):
@@ -1188,7 +1192,7 @@ def default_startup(app: fastapi.FastAPI, engine=None):
                 allow_headers=["*"],
             )
 
-        with build_session(engine) as session:
+        with session_maker() as session:
             user = next(
                 (
                     user
@@ -1208,7 +1212,6 @@ def default_startup(app: fastapi.FastAPI, engine=None):
                 app.middleware("http")(mock_user_middleware(user))
         app.middleware("http")(
             add_context(
-                engine=engine,
                 oauth=oauth,
                 frontend_port=frontend_port,
                 single_project=CONFIG("SINGLE_PROJECT", int, None),
@@ -1219,6 +1222,7 @@ def default_startup(app: fastapi.FastAPI, engine=None):
             secret_key=CONFIG("SESSION_SECRET_KEY", str, str(uuid.uuid4())),
             session_cookie="qsl-session",
         )
+        app.state.session_maker = session_maker
 
     return startup
 
@@ -1276,7 +1280,8 @@ def launch_simple_app(host: str, port: int, project: web.Project):
         poolclass=sa.pool.StaticPool,
         connect_args={"check_same_thread": False},
     )
-    with build_session(engine) as session:
+    session_maker = sa.orm.sessionmaker(bind=engine, **SESSIONMAKER_KWARGS)
+    with session_maker() as session:
         orm.BaseModel.metadata.create_all(engine)
         project_id = create_project(project=project, session=session).id
         assert project_id is not None, "Did not get a project ID."
@@ -1359,7 +1364,7 @@ def launch_simple_app(host: str, port: int, project: web.Project):
         host=host,
         port=port,
     )
-    with build_session(engine) as session:
+    with session_maker() as session:
         return export_project(user=user, project_id=project_id, session=session)
 
 

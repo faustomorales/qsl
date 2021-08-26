@@ -26,6 +26,7 @@ import sqlalchemy as sa
 
 from .types import web, orm
 from . import file_utils
+from ._version import __version__
 
 LOGGER = logging.getLogger(__name__)
 FRONTEND_DIRECTORY = pkg_resources.resource_filename("qsl", "frontend")
@@ -117,6 +118,10 @@ def get_oauth(request: Request) -> OAuthConfig:
 def get_frontend_port(request: Request):
     """Get the frontend port for the app."""
     return request.state.frontend_port
+
+
+def get_version() -> str:
+    return __version__
 
 
 def get_current_user(
@@ -1232,6 +1237,7 @@ def build_app():
     app = fastapi.FastAPI()
     app.get("/api/v1/projects/{project_id}")(get_project)
     app.post("/api/v1/projects/{project_id}")(update_project)
+    app.get("/api/v1/version")(get_version)
     app.post("/api/v1/projects/{project_id}/images")(create_images)
     app.get("/api/v1/projects/{project_id}/images")(list_images)
     app.get("/api/v1/projects/{project_id}/images/{image_id}")(get_image)

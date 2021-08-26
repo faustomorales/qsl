@@ -51,7 +51,9 @@ pylint = "*"
 pytest-cov = "*"
 sqlalchemy-stubs = "^0.4"
 jupyterlab = "^3.0.7"
-boto3-stubs = {extras = ["s3"], version = "^1.17.16"}
+boto3-stubs = {extras = ["essential"], version = "^1.17.16"}
+types-setuptools = "^57.0.2"
+types-click = "^7.1.5"
 
 
 [tool.poetry-dynamic-versioning]

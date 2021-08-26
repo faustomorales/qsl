@@ -48,13 +48,13 @@ def simple_label(
     """Launch the simplified labeling application."""
     if not os.path.isfile(project_file):
         click.echo("Did not find a project file. Creating a blank one.")
-        with open(project_file, "w") as f:
+        with open(project_file, "w", encoding="utf8") as f:
             f.write(
                 qt.web.Project(
                     name=os.path.splitext(os.path.basename(project_file))[0]
                 ).json()
             )
-    with open(project_file, "r") as f:
+    with open(project_file, "r", encoding="utf8") as f:
         project = qt.web.Project.parse_obj(json.loads(f.read()))
     if project.labels is None:
         project.labels = []
@@ -68,7 +68,7 @@ def simple_label(
         ]
     )
     project = qs.launch_simple_app(host=host, port=port, project=project)
-    with open(project_file, "w") as f:
+    with open(project_file, "w", encoding="utf8") as f:
         f.write(project.json())
 
 

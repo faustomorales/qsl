@@ -1,4 +1,5 @@
 """This module contains the types that are shared with the frontend as SQLAlchemy types (see frontend/src/machine/sharedTypes.ts)"""
+# pylint: disable=abstract-method,inherit-non-class
 import enum
 import typing
 import sqlalchemy as sa

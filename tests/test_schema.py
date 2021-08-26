@@ -13,6 +13,7 @@ def test_project_creation():
     os.environ["DB_CONNECTION_STRING"] = f"sqlite:///{filename}"
     with fastapi.testclient.TestClient(serve.default_app) as client:
         client.get("/auth/login")
+        # If this fails it usually means that you left a .env file somewhere.
         _ = web.User.parse_obj(
             client.post(
                 "/api/v1/users",

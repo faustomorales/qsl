@@ -651,6 +651,8 @@ def get_labels(
                 labels.default = False
             if user_collection is not None:
                 labels.ignored = user_ignored
+            if config is None:
+                continue
             if config.level == orm.Level.image:
                 update_label_group_with_label(
                     label_group=labels.image,

@@ -1,7 +1,11 @@
+import threading
 import glob
 import typing
 import fnmatch
 import boto3
+import botocore
+
+TLS = threading.local()
 
 
 def get_s3_files_for_pattern(client, pattern: str) -> typing.List[str]:
@@ -50,3 +54,12 @@ def filepaths_from_patterns(patterns: typing.List[str], s3=None) -> typing.List[
         else:
             filepaths.extend(glob.glob(file_or_pattern))
     return filepaths
+
+
+def get_s3():
+    """Provide an s3 client"""
+    if not hasattr(TLS, "aws_session"):
+        TLS.aws_session = boto3.session.Session()
+    return TLS.aws_session.client(
+        "s3", config=botocore.config.Config(signature_version="s3v4")
+    )

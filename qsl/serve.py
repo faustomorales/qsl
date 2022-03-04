@@ -7,13 +7,10 @@ import logging
 import decimal
 import hashlib
 import sqlite3
-import threading
 import itertools
 import typing
 import contextlib
 
-import boto3
-import botocore.config
 import uvicorn  # type: ignore
 import pkg_resources
 import fastapi
@@ -32,7 +29,6 @@ from ._version import __version__
 LOGGER = logging.getLogger(__name__)
 FRONTEND_DIRECTORY = pkg_resources.resource_filename("qsl", "frontend")
 SESSIONMAKER_KWARGS = {"autocommit": False, "autoflush": True}
-DISABLE_SHUFFLING = False
 session_maker = None
 
 
@@ -47,8 +43,6 @@ class OAuthConfig(typing.NamedTuple):
 class AppConfig(typing.NamedTuple):
     single_project: typing.Optional[int]
 
-
-tls = threading.local()
 
 # pylint: disable=unused-argument
 @sa.event.listens_for(sa.engine.Engine, "connect")
@@ -105,15 +99,6 @@ def get_session(existing_session=None):
 def get_single_project(request: Request) -> typing.Optional[int]:
     """Get the single project if we are in single project mode."""
     return request.state.single_project
-
-
-def get_s3():
-    """Provide an s3 client"""
-    if not hasattr(tls, "aws_session"):
-        tls.aws_session = boto3.session.Session()
-    return tls.aws_session.client(
-        "s3", config=botocore.config.Config(signature_version="s3v4")
-    )
 
 
 def get_oauth(request: Request) -> OAuthConfig:
@@ -400,7 +385,7 @@ def create_images(
     group: web.ImageGroup,
     project_id: int,
     existing_session=None,
-    s3=fastapi.Depends(get_s3),
+    s3=fastapi.Depends(file_utils.get_s3),
     user: web.User = fastapi.Depends(get_current_user),
 ) -> typing.List[web.Image]:
     """Add images to a project."""
@@ -460,7 +445,6 @@ def list_images(
     max_labels: int = None,
     project_id: int = None,
     exclude: typing.Optional[typing.List[str]] = fastapi.Query(None),
-    shuffle: bool = False,
     exclude_ignored: bool = False,
     user: web.User = fastapi.Depends(get_current_user),
 ) -> typing.List[web.Image]:
@@ -473,14 +457,7 @@ def list_images(
         exclude: A list of image IDs to exclude from the list.
     """
     with get_session() as session:
-        if shuffle and not DISABLE_SHUFFLING:
-            order_by = [
-                orm.Image.default_image_label_collection_id.desc(),
-                orm.Image.last_access.asc(),
-                orm.Image.id,
-            ]
-        else:
-            order_by = [orm.Image.id]
+        order_by = [orm.Image.id]
         unignored_user_labels = sa.orm.aliased(orm.UserImageLabelCollection)
         current_user_labels = sa.orm.aliased(orm.UserImageLabelCollection)
         user_label_count = sa.func.count(unignored_user_labels.user_id)
@@ -523,11 +500,6 @@ def list_images(
         if limit is not None:
             query = query.limit(limit)
         entries = paginate(query, page=page, page_size=limit)
-        if shuffle and not DISABLE_SHUFFLING:
-            now = time.time()
-            for image, _, _ in entries:
-                image.last_access = now
-        session.commit()
         return [
             web.Image(
                 id=image.id, filepath=image.filepath, nLabels=labels, status=status
@@ -539,7 +511,7 @@ def list_images(
 def get_file(
     project_id: int,
     image_id: str,
-    s3=fastapi.Depends(get_s3),
+    s3=fastapi.Depends(file_utils.get_s3),
     user: web.User = fastapi.Depends(get_current_user),
 ) -> typing.Union[fastapi.responses.FileResponse, fastapi.responses.RedirectResponse]:
     """Get an image file."""
@@ -1363,7 +1335,7 @@ def launch_simple_app(host: str, port: int, project: web.Project):
                 project_id=project_id,
                 existing_session=session,
                 user=user,
-                s3=get_s3(),
+                s3=file_utils.get_s3(),
             ):
                 assert saved.id is not None, "Failed to get an image ID."
                 filepath_to_id[saved.filepath] = saved.id
@@ -1377,7 +1349,7 @@ def launch_simple_app(host: str, port: int, project: web.Project):
                     project_id=project_id,
                     existing_session=session,
                     user=user,
-                    s3=get_s3(),
+                    s3=file_utils.get_s3(),
                 ):
                     assert saved.id is not None, "Failed to get an image ID."
                     filepath_to_id[saved.filepath] = saved.id

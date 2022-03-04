@@ -19,7 +19,6 @@ if typing.TYPE_CHECKING:
         def __init__(self, enum: typing.Type[T]) -> None:
             pass
 
-
 else:
     SqlAlchemyEnum = sa.Enum
 

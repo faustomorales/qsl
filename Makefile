@@ -4,15 +4,9 @@ BACKEND_PORT = 5000
 FRONTEND_PORT = 5001
 TEST_SCOPE=tests/
 
-init-poetry: ## Make a poetry virtualenv on the host
-	poetry install
-
-init-yarn:
-	cd frontend && yarn install
-
 init: ## Build local development environment
-	make init-poetry
-	make init-yarn
+	poetry install
+	yarn --cwd frontend install
 	# Folder needs to exist, it can be empty.
 	mkdir -p ./qsl/frontend/static
 
@@ -24,12 +18,10 @@ lab:  ## Launch a jupyter lab instance
 
 format:
 	@$(PYTHON_EXEC) black .
-	cd frontend && yarn format
+	yarn --cwd frontend format
 
-check-frontend:  ## Check frontend code
-	cd frontend && yarn format-check
-
-check-backend:  ## Check backend code
+check:  ## Check code for formatting, linting, etc.
+	yarn --cwd frontend format-check
 	@$(PYTHON_EXEC) pytest -s -v $(TEST_SCOPE)
 	@$(PYTHON_EXEC) mypy --config-file mypy.ini qsl
 	@$(PYTHON_EXEC) pylint qsl
@@ -37,10 +29,12 @@ check-backend:  ## Check backend code
 
 build:  # Build the frontend and integrate into the package
 	rm -rf qsl/frontend
-	cd frontend && yarn build
-	mv frontend/build qsl/frontend
+	@$(PYTHON_EXEC) yarn --cwd frontend build && mv frontend/build qsl/frontend
 
-package: ## Make a local build of the Python package, source dist and wheel
+clean:
+	rm -rf dist build
+
+package: build ## Make a local build of the Python package, source dist and wheel
 	@rm -rf dist
 	@mkdir -p dist
 	@$(EXEC) poetry build

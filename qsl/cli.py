@@ -4,10 +4,10 @@ import typing
 
 import click
 
-import qsl.serve as qs
-import qsl.types as qt
+from . import serve as qs
+from . import types as qt
 
-from ._version import __version__
+from .version import __version__
 from . import file_utils
 
 

@@ -17,6 +17,12 @@ Please note that that QSL is still under development and there are likely to be 
 
 Install `qsl` using `pip install qsl`. _You cannot install `qsl` directly from the GitHub repository because the frontend assets must be built manually._
 
+
+If you are using Jupyter Notebook 5.2 or earlier and wish to use the notebook widget, you may also need to enable the nbextension:
+```bash
+jupyter nbextension enable --py [--sys-prefix|--user|--system] qsl
+```
+
 You can start a simple project labeling files from your machine using a command like the following.
 
 ```bash
@@ -76,8 +82,4 @@ In short, you can launch a full-blown QSL deployment simply by doing the followi
 
 
 # Development
-
-1. Install Poetry.
-2. Clone this repository.
-3. Initialize your development environment using `make init`
-4. Launch a live reloading version of the frontend and backend using `make develop`.
+Create a dev environment using `make init`. Run widget development with live re-building using `make develop-widget`. Run app development using `make develop-app`. Changes to JavaScript/TypeScript require refreshing the browser. Changes to Python requires reloading the kernel (or running with `autoreload`).

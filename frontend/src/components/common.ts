@@ -1,10 +1,10 @@
-import * as sharedTypes from "./sharedTypes";
+import * as sharedTypes from './sharedTypes';
 
-import * as react from "react";
+import * as react from 'react';
 
 export const apiUrl = process.env.REACT_APP_BACKEND_PORT
   ? `http://${window.location.hostname}:${process.env.REACT_APP_BACKEND_PORT}`
-  : "";
+  : '';
 
 export const buildEmptyLabelGroup = (
   configGroup: sharedTypes.LabelConfigurationGroup
@@ -65,11 +65,11 @@ export const configurationIsNotEmpty = (
   );
 };
 
-const getRequestInit = { credentials: "include" as RequestCredentials };
+const getRequestInit = { credentials: 'include' as RequestCredentials };
 const postRequestInit = {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  credentials: "include" as RequestCredentials,
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  credentials: 'include' as RequestCredentials,
 };
 
 export const createUser = (user: sharedTypes.User) =>
@@ -132,7 +132,7 @@ export const createProject = (project: sharedTypes.Project) =>
 export const deleteProject = (projectId: number | string) =>
   fetch(`${apiUrl}/api/v1/projects/${projectId}`, {
     ...getRequestInit,
-    method: "DELETE",
+    method: 'DELETE',
   }).then((r) => r.json());
 
 export const getImageLabels = (
@@ -164,7 +164,7 @@ export const getImages = (
   maxLabels: number = 0,
   page: number = null
 ) => {
-  const exclusionString = excludedIds.map((id) => `exclude=${id}`).join("&");
+  const exclusionString = excludedIds.map((id) => `exclude=${id}`).join('&');
   let url = `${apiUrl}/api/v1/projects/${projectId}/images?shuffle=${shuffle}&limit=${limit}&exclude_ignored=${excludeIgnored}&max_labels=${maxLabels}&${exclusionString}`;
   if (page) {
     url += `&page=${page}`;
@@ -202,7 +202,7 @@ export const deleteLabels = (
 ) =>
   fetch(`${apiUrl}/api/v1/projects/${projectId}/images/${imageId}/labels`, {
     ...getRequestInit,
-    method: "DELETE",
+    method: 'DELETE',
   }).then((r) => r.json());
 
 export const getImageUrl = (

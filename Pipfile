@@ -1,0 +1,25 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+jupyterlab = "*"
+pytest = "*"
+pytest-cov = "*"
+nbval = "*"
+qsl = {editable = true, path = ".", extras=["app"]}
+jupyter-packaging = "*"
+build = "*"
+setuptools = "*"
+black = "*"
+botocore = "*"
+boto3 = "*"
+mypy = "*"
+sqlalchemy-stubs = "*"
+types-setuptools = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.7"

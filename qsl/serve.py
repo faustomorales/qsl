@@ -24,7 +24,7 @@ import sqlalchemy as sa
 
 from .types import web, orm
 from . import file_utils
-from ._version import __version__
+from .version import __version__
 
 LOGGER = logging.getLogger(__name__)
 FRONTEND_DIRECTORY = pkg_resources.resource_filename("qsl", "frontend")

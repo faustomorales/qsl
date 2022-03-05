@@ -73,7 +73,7 @@ export interface Image {
   filepath?: string;
   labels?: ImageLabels;
   nLabels?: number;
-  status?: "ignored" | "labeled" | "unlabeled";
+  status?: 'ignored' | 'labeled' | 'unlabeled';
 }
 
 export interface ImageGroup {
@@ -87,6 +87,6 @@ export interface InitializationConfiguration {
 }
 
 export interface AuthConfig {
-  provider: "github" | "google" | null;
+  provider: 'github' | 'google' | null;
   singleProject?: number;
 }

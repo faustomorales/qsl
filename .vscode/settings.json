@@ -1,0 +1,11 @@
+{
+    "python.formatting.provider": "black",
+    "python.defaultInterpreterPath": ".venv/bin/python",
+    "[python]": {
+        "editor.formatOnSave": true
+    },
+    "[typescript]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    }
+}

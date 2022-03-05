@@ -1,18 +1,18 @@
-import * as common from "./common";
-import * as sharedTypes from "./sharedTypes";
-import * as react from "react";
-import * as mui from "@material-ui/core";
-import * as muic from "@material-ui/icons";
-import * as muidg from "@material-ui/data-grid";
-import * as rrd from "react-router-dom";
-import _ from "lodash";
-import LabelPanel from "./LabelPanel";
-import ShortcutButton from "./ShortcutButton";
-import LabelingStatus from "./LabelingStatus";
+import * as common from './common';
+import * as sharedTypes from './sharedTypes';
+import * as react from 'react';
+import * as mui from '@material-ui/core';
+import * as muic from '@material-ui/icons';
+import * as muidg from '@material-ui/data-grid';
+import * as rrd from 'react-router-dom';
+import _ from 'lodash';
+import LabelPanel from './LabelPanel';
+import ShortcutButton from './ShortcutButton';
+import LabelingStatus from './LabelingStatus';
 
 interface HistoryEntry {
   id: string;
-  status: "Ignored" | "Unlabeled" | "Labeled";
+  status: 'Ignored' | 'Unlabeled' | 'Labeled';
 }
 
 interface DraftBox {
@@ -80,7 +80,7 @@ const labels2string = (labels: sharedTypes.LabelGroup): string =>
   Object.values(labels.single)
     .filter((l) => l !== null)
     .concat(Object.values(labels.text).filter((l) => l !== null))
-    .join(", ");
+    .join(', ');
 
 const click2xy = (event: react.MouseEvent, img: HTMLImageElement) => {
   const { x, y, width, height } = img.getBoundingClientRect();
@@ -121,7 +121,7 @@ const Box = (props: {
     // It's a polygon and we don't have enough points.
     return null;
   }
-  const color = props.draftBox ? "red" : "blue";
+  const color = props.draftBox ? 'red' : 'blue';
   const xmin = !isPolygon
     ? box.x
     : Math.min.apply(
@@ -172,8 +172,8 @@ const Box = (props: {
   } else {
     shape = (
       <rect
-        width={"100%"}
-        height={"100%"}
+        width={'100%'}
+        height={'100%'}
         stroke={color}
         fill="none"
         strokeWidth="4"
@@ -197,8 +197,8 @@ const Box = (props: {
       (props.draftBox.next === 2 && invertedX);
     indicator = (
       <rect
-        x={left ? "0%" : "100%"}
-        y={top ? "0%" : "100%"}
+        x={left ? '0%' : '100%'}
+        y={top ? '0%' : '100%'}
         transform="translate(-5, -5)"
         width={10}
         height={10}
@@ -230,10 +230,10 @@ const Box = (props: {
       onClick={props.onClick}
       onMouseMove={props.onMouseMove}
       style={{
-        position: "absolute",
+        position: 'absolute',
         left: float2css(xmin),
         top: float2css(ymin),
-        overflow: "visible",
+        overflow: 'visible',
       }}
     >
       <text
@@ -277,8 +277,8 @@ const Image = (props: {
     <div>
       <div
         style={{
-          position: "relative",
-          display: "inline-block",
+          position: 'relative',
+          display: 'inline-block',
           marginLeft: 5,
           marginTop: 5,
         }}
@@ -314,7 +314,7 @@ const Image = (props: {
             src={common.getImageUrl(projectId, imageId)}
             alt={`ID: ${imageId}`}
             style={{
-              display: "block",
+              display: 'block',
               width: `${props.zoom * 512}px`,
             }}
           />
@@ -330,7 +330,7 @@ const getNextDesiredImageId = (queue: sharedTypes.Image[]): string => {
 
 const updateHistory = (
   imageId: string,
-  status: "Ignored" | "Unlabeled" | "Labeled",
+  status: 'Ignored' | 'Unlabeled' | 'Labeled',
   current: HistoryEntry[]
 ): HistoryEntry[] => {
   return [
@@ -364,11 +364,11 @@ export const SingleImageLabel = () => {
     queueSize: 20,
     desiredImageId: imageId,
     typing: false,
-    status: "initializing" as
-      | "initializing"
-      | "waiting"
-      | "saving"
-      | "redirecting",
+    status: 'initializing' as
+      | 'initializing'
+      | 'waiting'
+      | 'saving'
+      | 'redirecting',
     usePolygon: false,
     labels: null as sharedTypes.ImageLabels,
     filepath: null as string,
@@ -529,7 +529,7 @@ export const SingleImageLabel = () => {
         labels: image.labels,
         filepath: image.filepath,
         queue: updated,
-        status: imageId ? "waiting" : "redirecting",
+        status: imageId ? 'waiting' : 'redirecting',
         desiredImageId: imageId ? imageId : getNextDesiredImageId(updated),
       });
     });
@@ -548,8 +548,8 @@ export const SingleImageLabel = () => {
           ...navState,
           labels: updated,
           dirty: false,
-          history: updateHistory(imageId, "Unlabeled", navState.history),
-          notice: "Deleted your label and reverted to default.",
+          history: updateHistory(imageId, 'Unlabeled', navState.history),
+          notice: 'Deleted your label and reverted to default.',
         });
       });
     }
@@ -571,8 +571,8 @@ export const SingleImageLabel = () => {
           ...navState,
           labels: updated,
           dirty: false,
-          history: updateHistory(imageId, "Labeled", navState.history),
-          notice: "Saved your labels.",
+          history: updateHistory(imageId, 'Labeled', navState.history),
+          notice: 'Saved your labels.',
         });
         if (navState.advanceOnSave) {
           common.simulateClick(nextButton);
@@ -606,8 +606,8 @@ export const SingleImageLabel = () => {
             ...navState,
             labels: updated,
             dirty: false,
-            history: updateHistory(imageId, "Ignored", navState.history),
-            notice: "Ignored this image.",
+            history: updateHistory(imageId, 'Ignored', navState.history),
+            notice: 'Ignored this image.',
           });
         });
     }
@@ -623,14 +623,14 @@ export const SingleImageLabel = () => {
       history: updateHistory(
         imageId,
         navState.labels.ignored
-          ? "Ignored"
+          ? 'Ignored'
           : navState.labels.default
-          ? "Unlabeled"
-          : "Labeled",
+          ? 'Unlabeled'
+          : 'Labeled',
         navState.history
       ),
-      notice: "Advancing to next image.",
-      status: "redirecting",
+      notice: 'Advancing to next image.',
+      status: 'redirecting',
     });
   }, [imageId, navState.labels, navState]);
 
@@ -644,7 +644,7 @@ export const SingleImageLabel = () => {
         navState.history.length > 0 ? navState.history[0].id.toString() : null,
       history: navState.history.slice(1),
       queue: [{ id: imageId }].concat(navState.queue),
-      status: "redirecting",
+      status: 'redirecting',
     });
   }, [imageId, navState]);
 
@@ -668,21 +668,21 @@ export const SingleImageLabel = () => {
     const handler = async (event: KeyboardEvent) => {
       let target: react.MutableRefObject<HTMLButtonElement> = null;
       switch (event.key) {
-        case "ArrowRight":
+        case 'ArrowRight':
           target = nextButton;
           break;
-        case "ArrowLeft":
+        case 'ArrowLeft':
           target = prevButton;
           break;
-        case "Enter":
+        case 'Enter':
           if (!boxMode) {
             target = event.shiftKey ? ignoreButton : saveButton;
           } else {
             target = setBoxButton;
           }
           break;
-        case "Backspace":
-        case "Delete":
+        case 'Backspace':
+        case 'Delete':
           target = boxMode && !navState.typing ? deleteBoxButton : null;
           break;
         default:
@@ -692,9 +692,9 @@ export const SingleImageLabel = () => {
         common.simulateClick(target);
       }
     };
-    document.addEventListener("keydown", handler, false);
+    document.addEventListener('keydown', handler, false);
     return () => {
-      document.removeEventListener("keydown", handler, false);
+      document.removeEventListener('keydown', handler, false);
     };
   }, [
     navState,
@@ -708,7 +708,7 @@ export const SingleImageLabel = () => {
     deleteButton,
   ]);
   const redirect =
-    navState.status === "redirecting" ? (
+    navState.status === 'redirecting' ? (
       <rrd.Redirect
         to={
           navState.desiredImageId
@@ -724,21 +724,21 @@ export const SingleImageLabel = () => {
   }
   const drawerWidth = 275;
   return (
-    <div style={{ display: "flex" }}>
+    <div style={{ display: 'flex' }}>
       <mui.CssBaseline />
-      <LabelingStatus project={project} position={"fixed"}>
-        <rrd.Link to={`/`}>QSL</rrd.Link> /{" "}
+      <LabelingStatus project={project} position={'fixed'}>
+        <rrd.Link to={`/`}>QSL</rrd.Link> /{' '}
         <rrd.Link to={`/projects/${projectId}`}>{project.name}</rrd.Link> /
         Images / {navState.filepath}
       </LabelingStatus>
       <mui.Drawer variant="permanent" style={{ flexShrink: 0 }}>
         <mui.Box
-          style={{ padding: "15px", width: drawerWidth, overflowY: "scroll" }}
+          style={{ padding: '15px', width: drawerWidth, overflowY: 'scroll' }}
         >
           <mui.Toolbar />
           {redirect}
-          <mui.Typography style={{ marginBottom: "10px" }} variant={"h6"}>
-            {boxMode ? "Box-Level Labels" : "Image-Level Labels"}
+          <mui.Typography style={{ marginBottom: '10px' }} variant={'h6'}>
+            {boxMode ? 'Box-Level Labels' : 'Image-Level Labels'}
           </mui.Typography>
           <LabelPanel
             configGroup={configGroup}
@@ -746,15 +746,15 @@ export const SingleImageLabel = () => {
             setLabelGroup={setLabelGroup}
             setTyping={(typing) => setNavState({ ...navState, typing })}
           />
-          <mui.Divider style={{ marginTop: "10px" }} />
-          <mui.Typography variant={"h6"}>View Settings</mui.Typography>
+          <mui.Divider style={{ marginTop: '10px' }} />
+          <mui.Typography variant={'h6'}>View Settings</mui.Typography>
           <mui.FormControl
-            style={{ margin: "10px 0px", width: "100%" }}
+            style={{ margin: '10px 0px', width: '100%' }}
             component="fieldset"
           >
             <mui.FormLabel component="legend">Zoom</mui.FormLabel>
             <mui.Slider
-              style={{ margin: "0 5px" }}
+              style={{ margin: '0 5px' }}
               valueLabelDisplay="auto"
               aria-labelledby="zoom-slider"
               value={zoom}
@@ -764,19 +764,19 @@ export const SingleImageLabel = () => {
             />
           </mui.FormControl>
           <mui.Divider />
-          <mui.Typography style={{ marginBottom: "10px" }} variant={"h6"}>
+          <mui.Typography style={{ marginBottom: '10px' }} variant={'h6'}>
             Label Actions
           </mui.Typography>
           <mui.ButtonGroup
             size="small"
             orientation="vertical"
             color="primary"
-            style={{ width: "100%" }}
+            style={{ width: '100%' }}
             aria-label="acton button group"
           >
             {boxMode ? (
               <ShortcutButton
-                startIcon={"\u23CE"}
+                startIcon={'\u23CE'}
                 onClick={onSetBox}
                 ref={setBoxButton}
               >
@@ -785,7 +785,7 @@ export const SingleImageLabel = () => {
             ) : null}
             {boxMode ? (
               <ShortcutButton
-                startIcon={"\u232B"}
+                startIcon={'\u232B'}
                 onClick={onDeleteBox}
                 ref={deleteBoxButton}
               >
@@ -794,7 +794,7 @@ export const SingleImageLabel = () => {
             ) : null}
             {boxMode ? null : (
               <ShortcutButton
-                startIcon={"\u23CE"}
+                startIcon={'\u23CE'}
                 disabled={!navState.labels.default && !navState.dirty}
                 onClick={onSave}
                 ref={saveButton}
@@ -804,7 +804,7 @@ export const SingleImageLabel = () => {
             )}
             {boxMode ? null : (
               <ShortcutButton
-                startIcon={"\u21E7\u23CE"}
+                startIcon={'\u21E7\u23CE'}
                 disabled={navState.labels.ignored}
                 onClick={onIgnore}
                 ref={ignoreButton}
@@ -840,7 +840,7 @@ export const SingleImageLabel = () => {
                 ref={deleteButton}
                 onClick={onDelete}
               >
-                {navState.labels.ignored ? "Unignore" : "Remove Label"}
+                {navState.labels.ignored ? 'Unignore' : 'Remove Label'}
               </ShortcutButton>
             )}
           </mui.ButtonGroup>
@@ -880,9 +880,9 @@ export const SingleImageLabel = () => {
             }
             label="Show only unlabeled / unignored images?"
           />
-          <mui.Divider style={{ marginBottom: "10px" }} />
-          <mui.Typography variant={"h6"}>History</mui.Typography>
-          <mui.Typography variant={"caption"}>
+          <mui.Divider style={{ marginBottom: '10px' }} />
+          <mui.Typography variant={'h6'}>History</mui.Typography>
+          <mui.Typography variant={'caption'}>
             Ten most recently reviewed images.
           </mui.Typography>
           <muidg.DataGrid
@@ -897,8 +897,8 @@ export const SingleImageLabel = () => {
             autoHeight
             columns={[
               {
-                field: "id",
-                headerName: "ID",
+                field: 'id',
+                headerName: 'ID',
                 flex: 4,
                 renderCell: (params: muidg.GridCellParams) => (
                   <rrd.Link
@@ -910,8 +910,8 @@ export const SingleImageLabel = () => {
               },
 
               {
-                field: "status",
-                headerName: "Status",
+                field: 'status',
+                headerName: 'Status',
                 flex: 3,
               },
             ]}
@@ -935,8 +935,8 @@ export const SingleImageLabel = () => {
 
         <mui.Snackbar
           anchorOrigin={{
-            vertical: "bottom",
-            horizontal: "left",
+            vertical: 'bottom',
+            horizontal: 'left',
           }}
           open={navState.notice !== null}
           autoHideDuration={1500}

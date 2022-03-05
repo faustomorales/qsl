@@ -1,13 +1,13 @@
-import * as common from "./common";
-import * as sharedTypes from "./sharedTypes";
-import * as rrd from "react-router-dom";
-import * as react from "react";
-import * as mui from "@material-ui/core";
-import * as muidg from "@material-ui/data-grid";
+import * as common from './common';
+import * as sharedTypes from './sharedTypes';
+import * as rrd from 'react-router-dom';
+import * as react from 'react';
+import * as mui from '@material-ui/core';
+import * as muidg from '@material-ui/data-grid';
 
 const ProjectList = () => {
   // Set state variables
-  const [name, setName] = react.useState("");
+  const [name, setName] = react.useState('');
   const [projects, setProjects] = react.useState([]);
 
   // Implement backend API operations
@@ -20,7 +20,7 @@ const ProjectList = () => {
       .createProject({ name, id: null, labelingConfiguration: null })
       .then((project) => {
         setProjects(projects.concat([project]));
-        setName("");
+        setName('');
       });
   }, [name, projects, setProjects]);
 
@@ -50,8 +50,8 @@ const ProjectList = () => {
           autoHeight
           columns={[
             {
-              field: "id",
-              headerName: "ID",
+              field: 'id',
+              headerName: 'ID',
               flex: 1,
               renderCell: (params: muidg.GridCellParams) => (
                 <rrd.Link to={`/projects/${params.value}`}>
@@ -61,29 +61,29 @@ const ProjectList = () => {
             },
 
             {
-              field: "name",
-              headerName: "Name",
+              field: 'name',
+              headerName: 'Name',
               flex: 3,
             },
             {
-              field: "nImages",
-              headerName: "Number of Images",
+              field: 'nImages',
+              headerName: 'Number of Images',
               flex: 1,
             },
             {
-              field: "nLabeled",
-              headerName: "Labeled Images",
+              field: 'nLabeled',
+              headerName: 'Labeled Images',
               flex: 1,
             },
             {
-              field: "Actions",
+              field: 'Actions',
               renderCell: (params: muidg.GridCellParams) => (
                 <div>
                   <mui.Button
-                    variant={"outlined"}
+                    variant={'outlined'}
                     component={rrd.Link}
                     to={`/projects/${params.row.id}/edit-project`}
-                    style={{ marginRight: "10px" }}
+                    style={{ marginRight: '10px' }}
                   >
                     Edit
                   </mui.Button>
@@ -106,14 +106,14 @@ const ProjectList = () => {
         <mui.Box>
           <mui.Input
             value={name}
-            placeholder={"New project name"}
+            placeholder={'New project name'}
             onChange={(event) => setName(event.target.value)}
-            style={{ marginRight: "10px" }}
+            style={{ marginRight: '10px' }}
           />
           <mui.Button
             variant="contained"
             color="primary"
-            disabled={name === ""}
+            disabled={name === ''}
             onClick={createProject}
           >
             Create Project

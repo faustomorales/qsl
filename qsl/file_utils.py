@@ -2,8 +2,13 @@ import threading
 import glob
 import typing
 import fnmatch
-import boto3
-import botocore
+
+try:
+    import boto3
+    import botocore
+except ImportError:
+    boto3 = None
+    botocore = None
 
 TLS = threading.local()
 
@@ -58,6 +63,8 @@ def filepaths_from_patterns(patterns: typing.List[str], s3=None) -> typing.List[
 
 def get_s3():
     """Provide an s3 client"""
+    if boto3 is None:
+        raise ImportError("You must `pip install boto3 botocore` to use S3 files.")
     if not hasattr(TLS, "aws_session"):
         TLS.aws_session = boto3.session.Session()
     return TLS.aws_session.client(

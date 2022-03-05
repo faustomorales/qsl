@@ -1,13 +1,13 @@
-import * as mui from "@material-ui/core";
-import * as muis from "@material-ui/styles";
+import * as mui from '@material-ui/core';
+import * as muis from '@material-ui/styles';
 
 const ShortcutButton = muis.withStyles({
   startIcon: {
-    position: "absolute",
-    left: "8px",
+    position: 'absolute',
+    left: '8px',
   },
   label: {
-    paddingLeft: "40px",
+    paddingLeft: '40px',
   },
 })(mui.Button);
 

@@ -1,19 +1,19 @@
-import * as sharedTypes from "./sharedTypes";
-import LabelPanel from "./LabelPanel";
-import ShortcutButton from "./ShortcutButton";
-import LabelingStatus from "./LabelingStatus";
+import * as sharedTypes from './sharedTypes';
+import LabelPanel from './LabelPanel';
+import ShortcutButton from './ShortcutButton';
+import LabelingStatus from './LabelingStatus';
 
-import * as react from "react";
-import * as rrd from "react-router-dom";
-import * as mui from "@material-ui/core";
-import * as muic from "@material-ui/icons";
-import * as muidg from "@material-ui/data-grid";
-import * as muis from "@material-ui/core/styles";
-import * as common from "./common";
+import * as react from 'react';
+import * as rrd from 'react-router-dom';
+import * as mui from '@material-ui/core';
+import * as muic from '@material-ui/icons';
+import * as muidg from '@material-ui/data-grid';
+import * as muis from '@material-ui/core/styles';
+import * as common from './common';
 
-type LabelAction = "ignore" | "save" | "delete";
-type ChangedRemoteStatus = "ignored" | "labeled";
-type RemoteStatus = ChangedRemoteStatus | "unknown";
+type LabelAction = 'ignore' | 'save' | 'delete';
+type ChangedRemoteStatus = 'ignored' | 'labeled';
+type RemoteStatus = ChangedRemoteStatus | 'unknown';
 interface Status {
   selected: boolean;
   remoteStatus: RemoteStatus;
@@ -36,22 +36,22 @@ const statusesFromBatch = (images: sharedTypes.Image[]): BatchStatuses => {
   return Object.fromEntries(
     images.map((image) => [
       image.id,
-      { selected: true, remoteStatus: "unknown" as RemoteStatus },
+      { selected: true, remoteStatus: 'unknown' as RemoteStatus },
     ])
   );
 };
 
 const useStyles = muis.makeStyles((theme) => ({
   checkbox: {
-    left: "50%",
-    top: "50%",
-    transform: "translate(-50%, -50%)",
+    left: '50%',
+    top: '50%',
+    transform: 'translate(-50%, -50%)',
   },
   checked: {
-    color: "rgba(0, 150, 0, 1)",
+    color: 'rgba(0, 150, 0, 1)',
   },
   unchecked: {
-    color: "rgba(150, 0, 0, 1)",
+    color: 'rgba(150, 0, 0, 1)',
   },
 }));
 
@@ -85,14 +85,14 @@ const BatchImageGrid = (props: {
         <mui.ImageListItem key={item.image.id} cols={1}>
           <img
             style={{
-              maxWidth: "100%",
-              maxHeight: "100%",
-              height: "100%",
-              width: "100%",
-              objectFit: "contain",
-              transform: "none",
-              margin: "auto",
-              position: "absolute",
+              maxWidth: '100%',
+              maxHeight: '100%',
+              height: '100%',
+              width: '100%',
+              objectFit: 'contain',
+              transform: 'none',
+              margin: 'auto',
+              position: 'absolute',
               top: 0,
               bottom: 0,
               left: 0,
@@ -143,7 +143,7 @@ export const BatchImageLabel = () => {
   const getFilteredHistory = react.useCallback(
     () =>
       navState.history.filter(
-        (entry) => entry.images.map((image) => image.id).join(",") !== imageIds
+        (entry) => entry.images.map((image) => image.id).join(',') !== imageIds
       ),
     [navState, imageIds]
   );
@@ -156,8 +156,8 @@ export const BatchImageLabel = () => {
       let promises: Promise<sharedTypes.ImageLabels>[];
       let remoteStatus: RemoteStatus;
       switch (action) {
-        case "ignore":
-          remoteStatus = "ignored";
+        case 'ignore':
+          remoteStatus = 'ignored';
           promises = changing.map((image) =>
             common.setLabels(projectId, image.id, {
               ...navState.labels,
@@ -165,14 +165,14 @@ export const BatchImageLabel = () => {
             })
           );
           break;
-        case "delete":
-          remoteStatus = "unknown";
+        case 'delete':
+          remoteStatus = 'unknown';
           promises = changing.map((image) =>
             common.deleteLabels(projectId, image.id)
           );
           break;
-        case "save":
-          remoteStatus = "labeled";
+        case 'save':
+          remoteStatus = 'labeled';
           promises = changing.map((image) =>
             common.setLabels(projectId, image.id, navState.labels)
           );
@@ -195,7 +195,7 @@ export const BatchImageLabel = () => {
         if (
           navState.advanceOnSave &&
           Object.entries(updated.currentBatchStatus).filter(
-            ([id, status]) => (status as Status).remoteStatus !== "unknown"
+            ([id, status]) => (status as Status).remoteStatus !== 'unknown'
           ).length === updated.currentBatch.length
         ) {
           common.simulateClick(nextButton);
@@ -251,7 +251,7 @@ export const BatchImageLabel = () => {
             id,
             {
               ...status,
-              selected: status.remoteStatus === "unknown" ? true : false,
+              selected: status.remoteStatus === 'unknown' ? true : false,
             },
           ])
         ),
@@ -275,7 +275,7 @@ export const BatchImageLabel = () => {
 
   react.useEffect(() => {
     // Runs whenever the image IDs or project ID in the URL change.
-    const currentBatch = imageIds.split(",").map((id) => {
+    const currentBatch = imageIds.split(',').map((id) => {
       return { id: id };
     });
     const currentBatchStatus = statusesFromBatch(currentBatch);
@@ -313,23 +313,23 @@ export const BatchImageLabel = () => {
     const handler = async (event: KeyboardEvent) => {
       let target: react.MutableRefObject<HTMLButtonElement> = null;
       switch (event.key) {
-        case "A":
+        case 'A':
           target = event.ctrlKey && event.shiftKey ? selectNoneButton : null;
           break;
-        case "a":
+        case 'a':
           target = event.ctrlKey && !event.shiftKey ? selectAllButton : null;
           break;
-        case "ArrowRight":
+        case 'ArrowRight':
           target = nextButton;
           break;
-        case "ArrowLeft":
+        case 'ArrowLeft':
           target = prevButton;
           break;
-        case "Enter":
+        case 'Enter':
           target = event.shiftKey ? ignoreButton : saveButton;
           break;
-        case "Backspace":
-        case "Delete":
+        case 'Backspace':
+        case 'Delete':
           target = deleteButton;
           break;
         default:
@@ -339,9 +339,9 @@ export const BatchImageLabel = () => {
         common.simulateClick(target);
       }
     };
-    document.addEventListener("keydown", handler, false);
+    document.addEventListener('keydown', handler, false);
     return () => {
-      document.removeEventListener("keydown", handler, false);
+      document.removeEventListener('keydown', handler, false);
     };
   }, [
     navState,
@@ -358,7 +358,7 @@ export const BatchImageLabel = () => {
   if (navState.redirecting) {
     const expectedImageIds = navState.currentBatch
       .map((image) => image.id)
-      .join(",");
+      .join(',');
     if (!expectedImageIds) {
       redirect = <rrd.Redirect to={`/projects/${projectId}`} push={true} />;
     } else if (expectedImageIds !== imageIds) {
@@ -377,11 +377,11 @@ export const BatchImageLabel = () => {
   }
 
   const nLabeled = Object.entries(navState.currentBatchStatus).reduce(
-    (memo, [id, status]) => memo + (status.remoteStatus === "labeled" ? 1 : 0),
+    (memo, [id, status]) => memo + (status.remoteStatus === 'labeled' ? 1 : 0),
     0
   );
   const nIgnored = Object.entries(navState.currentBatchStatus).reduce(
-    (memo, [id, status]) => memo + (status.remoteStatus === "ignored" ? 1 : 0),
+    (memo, [id, status]) => memo + (status.remoteStatus === 'ignored' ? 1 : 0),
     0
   );
   const nSelected = Object.entries(navState.currentBatchStatus).reduce(
@@ -393,17 +393,17 @@ export const BatchImageLabel = () => {
       <mui.Grid container spacing={2}>
         <mui.Grid item xs={12}>
           <LabelingStatus project={navState.project}>
-            <rrd.Link to={`/`}>QSL</rrd.Link> /{" "}
+            <rrd.Link to={`/`}>QSL</rrd.Link> /{' '}
             <rrd.Link to={`/projects/${projectId}`}>
               {navState.project.name}
-            </rrd.Link>{" "}
+            </rrd.Link>{' '}
             / Batches
           </LabelingStatus>
         </mui.Grid>
         <mui.Grid item xs={3}>
           <mui.Grid item>
             {redirect}
-            <mui.Typography style={{ marginBottom: "10px" }} variant={"h6"}>
+            <mui.Typography style={{ marginBottom: '10px' }} variant={'h6'}>
               Image-Level Labels
             </mui.Typography>
             {navState.labels && navState.project ? (
@@ -426,7 +426,7 @@ export const BatchImageLabel = () => {
             <mui.Divider />
           </mui.Grid>
           <mui.Grid item>
-            <mui.Typography variant={"h6"}>View Settings</mui.Typography>
+            <mui.Typography variant={'h6'}>View Settings</mui.Typography>
             <mui.Typography id="batch-size-selector" gutterBottom>
               Target Batch Size
             </mui.Typography>
@@ -460,46 +460,46 @@ export const BatchImageLabel = () => {
             <mui.Divider />
           </mui.Grid>
           <mui.Grid item>
-            <mui.Typography style={{ marginBottom: "10px" }} variant={"h6"}>
+            <mui.Typography style={{ marginBottom: '10px' }} variant={'h6'}>
               Label Actions
             </mui.Typography>
             <mui.ButtonGroup
               size="small"
               orientation="vertical"
               color="primary"
-              style={{ width: "100%" }}
+              style={{ width: '100%' }}
               aria-label="acton button group"
             >
               <ShortcutButton
-                startIcon={"\u23CE"}
+                startIcon={'\u23CE'}
                 disabled={
                   nLabeled + nIgnored === navState.currentBatch.length ||
                   nSelected === 0
                 }
-                onClick={() => onIgnoreDeleteSave("save")}
+                onClick={() => onIgnoreDeleteSave('save')}
                 ref={saveButton}
               >
                 Save
               </ShortcutButton>
               <ShortcutButton
-                startIcon={"\u21E7\u23CE"}
+                startIcon={'\u21E7\u23CE'}
                 disabled={
                   nLabeled + nIgnored === navState.currentBatch.length ||
                   nSelected === 0
                 }
-                onClick={() => onIgnoreDeleteSave("ignore")}
+                onClick={() => onIgnoreDeleteSave('ignore')}
                 ref={ignoreButton}
               >
                 Ignore
               </ShortcutButton>
               <ShortcutButton
-                startIcon={"\u232B"}
+                startIcon={'\u232B'}
                 ref={deleteButton}
                 disabled={
                   nLabeled + nIgnored === navState.currentBatch.length ||
                   nSelected === 0
                 }
-                onClick={() => onIgnoreDeleteSave("delete")}
+                onClick={() => onIgnoreDeleteSave('delete')}
               >
                 Remove Labels
               </ShortcutButton>
@@ -522,13 +522,13 @@ export const BatchImageLabel = () => {
               <ShortcutButton
                 disabled={nSelected === navState.currentBatch.length - nLabeled}
                 onClick={selectAll}
-                startIcon={"\u2303A"}
+                startIcon={'\u2303A'}
                 ref={selectAllButton}
               >
                 Select All
               </ShortcutButton>
               <ShortcutButton
-                startIcon={"\u2303\u21E7A"}
+                startIcon={'\u2303\u21E7A'}
                 disabled={nSelected === 0}
                 onClick={selectNone}
                 ref={selectNoneButton}
@@ -556,16 +556,16 @@ export const BatchImageLabel = () => {
             ) : null}
           </mui.Grid>
           <mui.Grid item>
-            <mui.Divider style={{ marginBottom: "10px" }} />
-            <mui.Typography variant={"h6"}>History</mui.Typography>
-            <mui.Typography variant={"caption"}>
+            <mui.Divider style={{ marginBottom: '10px' }} />
+            <mui.Typography variant={'h6'}>History</mui.Typography>
+            <mui.Typography variant={'caption'}>
               Ten most recently reviewed batches.
             </mui.Typography>
             <muidg.DataGrid
               rows={navState.history.map((entry) => {
                 return {
                   ...entry,
-                  id: entry.images.map((image) => image.id).join(","),
+                  id: entry.images.map((image) => image.id).join(','),
                 };
               })}
               hideFooterPagination
@@ -578,8 +578,8 @@ export const BatchImageLabel = () => {
               autoHeight
               columns={[
                 {
-                  field: "images",
-                  headerName: "ID",
+                  field: 'images',
+                  headerName: 'ID',
                   flex: 1,
                   renderCell: (params: muidg.GridCellParams) => {
                     const ids = (params.value as sharedTypes.Image[]).map(
@@ -587,10 +587,10 @@ export const BatchImageLabel = () => {
                     );
                     return (
                       <rrd.Link
-                        to={`/projects/${projectId}/images/${ids.join(",")}`}
+                        to={`/projects/${projectId}/images/${ids.join(',')}`}
                       >
-                        {ids.slice(0, 5).join(", ") +
-                          (ids.length > 5 ? ", ..." : "")}
+                        {ids.slice(0, 5).join(', ') +
+                          (ids.length > 5 ? ', ...' : '')}
                       </rrd.Link>
                     );
                   },
@@ -598,10 +598,10 @@ export const BatchImageLabel = () => {
               ]}
             />
             {redirect}
-            <mui.Divider style={{ marginBottom: "10px" }} />
+            <mui.Divider style={{ marginBottom: '10px' }} />
             <mui.Link
               component={rrd.Link}
-              variant={"body1"}
+              variant={'body1'}
               to={`/projects/${projectId}`}
             >
               Return to Project Menu
@@ -616,7 +616,7 @@ export const BatchImageLabel = () => {
                   .filter(
                     (image) =>
                       navState.currentBatchStatus[image.id].remoteStatus ===
-                      "unknown"
+                      'unknown'
                   )
                   .map((image) => {
                     return {
@@ -639,10 +639,10 @@ export const BatchImageLabel = () => {
                   })
                 }
               />
-              <mui.Divider style={{ marginBottom: "10px" }} />
+              <mui.Divider style={{ marginBottom: '10px' }} />
             </mui.Box>
           ) : null}
-          <mui.Grid container direction={"row"} alignItems="center" spacing={1}>
+          <mui.Grid container direction={'row'} alignItems="center" spacing={1}>
             <mui.Grid item>
               <mui.Button
                 onClick={onReset}
@@ -653,7 +653,7 @@ export const BatchImageLabel = () => {
               </mui.Button>
             </mui.Grid>
             <mui.Grid item>
-              <mui.Typography variant={"body1"}>
+              <mui.Typography variant={'body1'}>
                 Hiding {nLabeled} labeled and {nIgnored} ignored images.
               </mui.Typography>
             </mui.Grid>

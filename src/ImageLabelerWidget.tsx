@@ -99,7 +99,7 @@ const Widget: React.FC<{
         onSaveConfig: buttons['config'] ? setConfig : undefined,
         onNext: buttons['next'] ? () => setAction('next') : undefined,
         onPrev: buttons['prev'] ? () => setAction('prev') : undefined,
-        onDelete: buttons['delete'] ? () => setAction('delete') : undefined
+        onDelete: buttons['delete'] ? () => setAction('delete') : undefined,
       }}
       options={{ progress, mode }}
     />

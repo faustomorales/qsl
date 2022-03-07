@@ -18,6 +18,7 @@ boto3 = "*"
 mypy = "*"
 sqlalchemy-stubs = "*"
 types-setuptools = "*"
+pylint = "*"
 
 [dev-packages]
 

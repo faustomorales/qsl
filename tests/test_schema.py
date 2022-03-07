@@ -3,7 +3,8 @@ import tempfile
 
 import fastapi.testclient
 
-from qsl import serve, testing
+from qsl import serve
+from qsl.testing.config import TEST_CONFIGURATION
 from qsl.types import orm, web
 
 
@@ -20,7 +21,7 @@ def test_project_creation():
                 data=web.User(name="new-test-user", isAdmin=True).json(),
             ).json()
         )
-        project_x = testing.TEST_CONFIGURATION.project
+        project_x = TEST_CONFIGURATION.project
         project_id = web.Project.parse_obj(
             client.post(
                 "/api/v1/projects", data=web.Project(name=project_x.name).json()
@@ -53,10 +54,10 @@ def test_project_creation():
                     f"/api/v1/projects/{project_y.id}/images", data=g.json()
                 ).json()
             ]
-            for g in testing.TEST_CONFIGURATION.imageGroups
+            for g in TEST_CONFIGURATION.imageGroups
         ]
-        assert len(groups[0]) == len(testing.TEST_CONFIGURATION.imageGroups[0].files)
-        assert len(groups[1]) == len(testing.TEST_CONFIGURATION.imageGroups[1].files)
+        assert len(groups[0]) == len(TEST_CONFIGURATION.imageGroups[0].files)
+        assert len(groups[1]) == len(TEST_CONFIGURATION.imageGroups[1].files)
 
         id1 = groups[0][0].id
         id2 = groups[1][-1].id

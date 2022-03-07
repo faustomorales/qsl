@@ -14,6 +14,7 @@ include qsl/labextension/*.tgz
 graft qsl/nbextension
 graft qsl/frontend
 graft qsl/testing/data
+graft qsl/assets
 graft src
 graft css
 prune **/node_modules

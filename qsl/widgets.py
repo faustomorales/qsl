@@ -1,15 +1,19 @@
+# pylint: disable=missing-function-docstring,unused-argument,too-many-return-statements
 import os
 import json
+import base64
 import typing
 import pathlib
+import logging
 import threading
-import pkg_resources
 import urllib.parse as up
+import pkg_resources
 import ipywidgets
 import traitlets as t
 from . import file_utils
 
 TLS = threading.local()
+LOGGER = logging.getLogger(__name__)
 
 
 module_name = "qslwidgets"
@@ -105,6 +109,18 @@ class BaseImageLabeler(ipywidgets.DOMWidget):
     metadata = t.Dict(value_trait=t.Unicode(), key_trait=t.Unicode()).tag(sync=True)
 
 
+def file2str(filepath: str):
+    file_size = os.stat(filepath)
+    if file_size.st_size > 10e6:
+        encoded = base64.b64encode(
+            pkg_resources.resource_string("qsl", "assets/local-file-error.png")
+        ).decode("utf8")
+    else:
+        with open(filepath, "rb") as f:
+            encoded = base64.b64encode(f.read()).decode("utf8")
+    return "data:image;charset=utf-8;base64," + encoded
+
+
 def build_url(target: str, base: dict):
     """Build a notebook file URL using notebook configuration and a filepath or URL."""
     if target is None:
@@ -119,14 +135,16 @@ def build_url(target: str, base: dict):
         )
     if target.startswith("http://") or target.startswith("https://"):
         return target
+    if target.startswith("data:"):
+        return target
     if os.path.isfile(target):
-        if not base or "serverRoot" not in base or "url" not in base:
-            raise ValueError(
-                "A filepath was provided but we failed to find the notebook base configuration."
-            )
+        if not base or not base.get("serverRoot") or not base.get("url"):
+            return file2str(target)
         relpath = os.path.relpath(target, os.path.expanduser(base["serverRoot"]))
         if os.name == "nt":
             relpath = pathlib.PureWindowsPath(relpath).as_posix()
+        if ".." in relpath:
+            return file2str(target)
         return up.urljoin(
             base["url"],
             os.path.join(
@@ -208,7 +226,7 @@ class ImageLabeler(BaseImageLabeler):
 
     @property
     def allow_config_change(self):
-        return self._on_save
+        return self._allow_config_change
 
     @allow_config_change.setter
     def allow_config_change(self, allow_config_change):
@@ -222,7 +240,8 @@ class ImageLabeler(BaseImageLabeler):
     @target.setter
     def target(self, target):
         self._target = target
-        self.url = build_url(self.target, self.base)
+        if self.base:
+            self.url = build_url(self.target, self.base)
 
     def handle_base_change(self, change):
         """Handles setting a correct URL for a local file, if and when
@@ -233,40 +252,47 @@ class ImageLabeler(BaseImageLabeler):
         """Handles changes to the action state."""
         if not change["new"]:
             return
-        if self.on_next and change["new"] == "next":
-            self.on_next()
-        if self.on_prev and change["new"] == "prev":
-            self.on_prev()
-        if self.on_delete and change["new"] == "delete":
-            self.on_delete()
+        if self._on_next and change["new"] == "next":
+            self._on_next()
+        if self._on_prev and change["new"] == "prev":
+            self._on_prev()
+        if self._on_delete and change["new"] == "delete":
+            self._on_delete()
         self.action = ""
 
     def handle_updated_change(self, change):
         """Handles changes to the timestamp sentinel for saves."""
-        if self.on_save:
-            self.on_save()
+        if self._on_save:
+            self._on_save()
 
 
 class ImageSeriesLabeler(ImageLabeler):
-    def __init__(self, images, config=None):
-        super().__init__(config=config)
+    def __init__(self, images, config=None, allow_config_change=True):
+        super().__init__(
+            config=config,
+            allow_config_change=allow_config_change,
+            on_next=self.next,
+            on_prev=self.prev,
+            on_save=self.save,
+            on_delete=self.delete,
+        )
         self.images = images
         self.idx = 0
         self.update()
 
-    def on_next(self):
+    def next(self):
         self.idx += 1
         self.update()
 
-    def on_prev(self):
+    def prev(self):
         self.idx -= 1
         self.update()
 
-    def on_save(self):
+    def save(self):
         self.images[self.idx]["labels"] = self.labels
-        self.on_next()
+        self.next()
 
-    def on_delete(self):
+    def delete(self):
         if "labels" in self.images[self.idx]:
             del self.images[self.idx]["labels"]
         self.update()
@@ -278,10 +304,10 @@ class ImageSeriesLabeler(ImageLabeler):
         self.labels = image.get("labels", image.get("defaults", {}))
         self.metadata = image.get("metadata", {})
         self.buttons = {
-            "prev": False if self.idx == 0 else True,
-            "next": False if self.idx == (len(self.images) - 1) else True,
+            "prev": self.idx != 0,
+            "next": self.idx != (len(self.images) - 1),
             "save": True,
-            "config": True,
+            "config": self.allow_config_change,
             "delete": "labels" in image,
         }
         self.progress = (

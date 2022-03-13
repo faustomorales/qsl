@@ -2,13 +2,13 @@
 
 ![QSL Screenshot](https://raw.githubusercontent.com/faustomorales/qsl/main/docs/screenshot.png)
 
-
-QSL is a simple, open-source image labeling tool. It supports:
+QSL is a simple, open-source image labeling tool that you can use as a standalone labeling application or as a Jupyter widget. It supports:
 
 - Bounding box and polygon labeling.
+- Segmentation mask labeling (Jupyter Widget only)
 - Configurable keyboard shortcuts for labels.
 - Loading images stored locally, on the web, or in cloud storage (currently only AWS S3).
-- Pre-loading images in a queue to speed up labeling.
+- Pre-loading images in a queue to speed up labeling (standalone app only).
 - Deployment as shared service with support for OAuth (currently only GitHub and Google)
 
 Please note that that QSL is still under development and there are likely to be major bugs, breaking changes, etc. Bug reports and contributions are welcome!
@@ -17,11 +17,11 @@ Please note that that QSL is still under development and there are likely to be 
 
 Install `qsl` using `pip install qsl`. _You cannot install `qsl` directly from the GitHub repository because the frontend assets must be built manually._
 
+### Jupyter Widget
 
-If you are using Jupyter Notebook 5.2 or earlier and wish to use the notebook widget, you may also need to enable the nbextension:
-```bash
-jupyter nbextension enable --py [--sys-prefix|--user|--system] qsl
-```
+Check out the [Colab Notebook](https://colab.research.google.com/drive/1FUFt3fDs7BYpGI1E2z44L-zSRdoDtF8O?usp=sharing) for an example of how to use the Jupyter Widget.
+
+### Standalone App
 
 You can start a simple project labeling files from your machine using a command like the following.
 
@@ -50,36 +50,6 @@ image_level_labels = pd.DataFrame(project.image_level_labels())
 box_level_labels = pd.DataFrame(project.box_level_labels())
 ```
 
-### Labeling Remotely Hosted Files
+## Development
 
-Note that QSL also supports labeling files hosted remotely in cloud storage (only AWS S3 is supported right now) or at a public URL. So, for example, if you want to label some files in an S3 bucket and on a web site, you can use the following command:
-
-```bash
-qsl simple-label 's3://my-bucket/images/*.jpg' 's3://my-bucket/other/*.jpg' 'http://my-site/image.jpg' my-qsl-project.json
-```
-
-Please note that paths like this must meet some criteria.
-
-- On most platforms / shells, you must use quotes (as shown in the example).
-- Your AWS credentials must be available in a form compatible with the default `boto3` credential-finding methods and those credentials must be permitted to use the `ListBucket` and `GetObject` actions.
-
-### Advanced Use Cases
-Documentation for the more advanced use cases is not yet available though they are implemented in the package. Advanced use cases include things like:
-
-- Hosting a central QSL server with multiple users and projects
-- Authentication with Google or GitHub OAuth providers
-- Batched labeling for images with shared default labels
-
-In short, you can launch a full-blown QSL deployment simply by doing the following.
-
-1. Set the following environment variables to configure the application.
-    - `DB_CONNECTION_STRING`: A database connection string, used to host the application data. If not provided, a SQLite database will be used in the current working directory called `qsl-labeling.db`.
-    - `OAUTH_INITIAL_USER`: The initial user that will be an administrator for the QSL instance.
-    - `OAUTH_PROVIDER`: The OAuth provider to use (currently `github` and `google` are supported)
-    - `OAUTH_CLIENT_SECRET`: The OAuth client secret.
-    - `OAUTH_CLIENT_ID`: The OAuth client ID.
-2. Execute `qsl label` (instead of `qsl simple-label`) to launch the application (use `--host` and `--port` to modify how the application listens for connections).
-
-
-# Development
 Create a dev environment using `make init`. Run widget development with live re-building using `make develop-widget`. Run app development using `make develop-app`. Changes to JavaScript/TypeScript require refreshing the browser. Changes to Python requires reloading the kernel (or running with `autoreload`).

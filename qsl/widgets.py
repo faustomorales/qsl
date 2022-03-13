@@ -21,71 +21,6 @@ module_version = json.loads(
     pkg_resources.resource_string("qsl", "labextension/package.json")
 )["version"]
 
-Point = t.Dict(per_key_traits={"x": t.Float(), "y": t.Float()})
-LabelData = t.Dict(value_trait=t.List(t.Unicode()), key_trait=t.Unicode())
-PolygonLabel = t.Dict(per_key_traits={"labels": LabelData, "points": t.List(Point)})
-BoxLabel = t.Dict(per_key_traits={"labels": LabelData, "pt1": Point, "pt2": Point})
-LabelConfig = t.Dict(
-    per_key_traits={
-        "name": t.Unicode(),
-        "displayName": t.Unicode(),
-        "options": t.List(
-            t.Dict(
-                per_key_traits={
-                    "name": t.Unicode(),
-                    "displayName": t.Unicode(),
-                    "shortcut": t.Unicode(),
-                }
-            )
-        ),
-        "multiple": t.Bool(False),
-        "freeform": t.Bool(False),
-    }
-)
-
-Config = t.Dict(
-    per_key_traits={"image": t.List(LabelConfig), "regions": t.List(LabelConfig)}
-)
-MaskLabel = t.Dict(
-    per_key_traits={
-        "map": t.Dict(
-            per_key_traits={
-                "dimensions": t.Dict(
-                    per_key_traits={"width": t.Int(), "height": t.Int()}
-                ),
-                "serialized": t.Unicode(),
-            }
-        ),
-        "labels": LabelData,
-    }
-)
-
-Labels = t.Dict(
-    per_key_traits={
-        "image": LabelData,
-        "polygons": t.List(PolygonLabel),
-        "masks": t.List(MaskLabel),
-        "boxes": t.List(BoxLabel),
-    }
-)
-Base = t.Dict(
-    per_key_traits={
-        "url": t.Unicode(),
-        "serverRoot": t.Unicode(),
-    }
-)
-
-Buttons = t.Dict(
-    {"next": True, "prev": True, "save": True, "config": True, "delete": True},
-    per_key_traits={
-        "next": t.Bool().tag(sync=True),
-        "prev": t.Bool(),
-        "save": t.Bool(),
-        "config": t.Bool(),
-        "delete": t.Bool(),
-    },
-)
-
 
 class BaseImageLabeler(ipywidgets.DOMWidget):
     """A widget for labeling a single image."""
@@ -98,15 +33,32 @@ class BaseImageLabeler(ipywidgets.DOMWidget):
     _view_module_version = t.Unicode(module_version).tag(sync=True)
 
     url = t.Unicode(allow_none=True).tag(sync=True)
-    config = Config.tag(sync=True)
-    labels = Labels.tag(sync=True)
+    config = t.Dict({"image": [], "regions": []}).tag(sync=True)
+    labels = t.Dict(
+        {"image": {}, "polygons": [], "masks": [], "boxes": [], "dimensions": None}
+    ).tag(sync=True)
     updated = t.Float().tag(sync=True)
     action = t.Unicode("").tag(sync=True)
-    base = Base.tag(sync=True)
+    base = t.Dict(
+        {
+            "url": None,
+            "serverRoot": None,
+        }
+    ).tag(sync=True)
     progress = t.Float(-1).tag(sync=True)
     mode = t.Unicode("light").tag(sync=True)
-    buttons = Buttons.tag(sync=True)
-    metadata = t.Dict(value_trait=t.Unicode(), key_trait=t.Unicode()).tag(sync=True)
+    buttons = t.Dict(
+        {
+            "next": True,
+            "prev": True,
+            "save": True,
+            "config": True,
+            "delete": True,
+            "ignore": True,
+            "unignore": True,
+        },
+    ).tag(sync=True)
+    metadata = t.Dict({}, value_trait=t.Unicode(), key_trait=t.Unicode()).tag(sync=True)
 
 
 def file2str(filepath: str):

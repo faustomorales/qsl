@@ -145,6 +145,7 @@ $RECYCLE.BIN/
 **/node_modules/
 qsl/nbextension/index.*
 qsl/labextension/*.tgz
+qsl/slextension/
 qsl/frontend
 
 # Coverage data

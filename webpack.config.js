@@ -1,23 +1,44 @@
 const path = require('path');
 const version = require('./package.json').version;
-
-// Custom webpack rules
-const rules = [
-  { test: /\.ts$/, loader: 'ts-loader' },
-  { test: /\.[t|j]sx$/, loader: 'babel-loader' },
-  { test: /\.js$/, loader: 'source-map-loader' },
-  { test: /\.css$/, use: ['style-loader', 'css-loader']}
-];
-
-// Packages that shouldn't be bundled but loaded at runtime
-const externals = ['@jupyter-widgets/base'];
-
-const resolve = {
-  // Add '.ts' and '.tsx' as resolvable extensions.
-  extensions: [".webpack.js", ".web.js", ".ts", ".js", '.tsx', 'jsx']
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const defaults = {
+  module: {
+    rules: [
+      { test: /\.ts$/, loader: 'ts-loader' },
+      { test: /\.[t|j]sx$/, loader: 'babel-loader' },
+      { test: /\.js$/, loader: 'source-map-loader' },
+      { test: /\.css$/, use: ['style-loader', 'css-loader'] },
+    ],
+  },
+  ignoreWarnings: [/Failed to parse source map/],
+  devtool: 'source-map',
+  externals: ['@jupyter-widgets/base'],
+  resolve: {
+    // Add '.ts' and '.tsx' as resolvable extensions.
+    extensions: ['.webpack.js', '.web.js', '.ts', '.js', '.tsx', 'jsx'],
+  },
 };
 
 module.exports = [
+  /**
+   * streamlit extension
+   *
+   * Same as the lab bundle but without the public path bits.
+   */
+  {
+    entry: './src/slindex.tsx',
+    output: {
+      filename: 'index.js',
+      path: path.resolve(__dirname, 'qsl', 'slextension'),
+    },
+    plugins: [
+      new HtmlWebpackPlugin({
+        template: './src/index.html',
+      }),
+    ],
+    ...defaults,
+  },
+
   /**
    * Notebook extension
    *
@@ -32,13 +53,7 @@ module.exports = [
       libraryTarget: 'amd',
       publicPath: '',
     },
-    module: {
-      rules: rules
-    },
-    ignoreWarnings: [/Failed to parse source map/],
-    devtool: 'source-map',
-    externals,
-    resolve,
+    ...defaults,
   },
 
   /**
@@ -54,18 +69,12 @@ module.exports = [
   {
     entry: './src/index.ts',
     output: {
-        filename: 'index.js',
-        path: path.resolve(__dirname, 'dist'),
-        libraryTarget: 'amd',
-        library: "qsl",
-        publicPath: 'https://unpkg.com/qsl@' + version + '/dist/'
+      filename: 'index.js',
+      path: path.resolve(__dirname, 'dist'),
+      libraryTarget: 'amd',
+      library: 'qsl',
+      publicPath: 'https://unpkg.com/qsl@' + version + '/dist/',
     },
-    devtool: 'source-map',
-    module: {
-        rules: rules
-    },
-    ignoreWarnings: [/Failed to parse source map/],
-    externals,
-    resolve,
+    ...defaults,
   },
 ];

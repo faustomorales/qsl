@@ -19,6 +19,7 @@ mypy = "*"
 sqlalchemy-stubs = "*"
 types-setuptools = "*"
 pylint = "*"
+streamlit = "*"
 
 [dev-packages]
 

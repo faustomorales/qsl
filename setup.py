@@ -29,11 +29,10 @@ cmdclass = jp.wrap_installers(
 )
 setup_args = dict(
     name=name,
-    description="Widgets for the QSL image labeling package.",
+    description="A package for labeling image data quickly",
     version=jp.get_version(os.path.join(name, "version.py")),
     scripts=glob.glob(os.path.join("scripts", "*")),
     cmdclass=cmdclass,
-    packages=setuptools.find_packages(),
     data_files=jp.get_data_files(
         data_specs=[
             ("share/jupyter/nbextensions/qslwidgets", "qsl/nbextension", "**"),
@@ -42,44 +41,9 @@ setup_args = dict(
             ("etc/jupyter/nbconfig/notebook.d", ".", "qsl.json"),
         ]
     ),
-    author="Fausto Morales",
-    author_email="fausto@robinbay.com",
-    url="https://github.com/faustomorales/qsl",
-    license="BSD",
     platforms="Linux, Mac OS X, Windows",
     keywords=["Jupyter", "Widgets", "IPython"],
-    classifiers=[
-        "Intended Audience :: Developers",
-        "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Framework :: Jupyter",
-    ],
-    include_package_data=True,
     python_requires=">=3.6",
-    install_requires=["ipywidgets>=7.0.0", "typing_extensions"],
-    extras_require={
-        "app": [
-            "pydantic",
-            "fastapi",
-            "uvicorn[standard]",
-            "click",
-            "aiofiles",
-            "filetype",
-            "async-exit-stack",
-            "async-generator",
-            "boto3",
-            "sqlalchemy",
-            "authlib",
-            "itsdangerous",
-            "httpx",
-        ],
-    },
     entry_points="""
         [console_scripts]
         qsl=qsl.cli:cli

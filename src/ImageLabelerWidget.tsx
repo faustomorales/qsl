@@ -18,9 +18,17 @@ const DEFAULT_PROPERTIES = {
   config: { image: [], regions: [] } as Config,
   labels: { image: {}, polygons: [], masks: [], boxes: [] } as Labels,
   updated: Date.now(),
-  action: '' as 'next' | 'prev' | 'delete' | '',
+  action: '' as 'next' | 'prev' | 'delete' | 'ignore' | 'unignore' | '',
   metadata: {} as { [key: string]: string },
-  buttons: { next: true, prev: true, save: true, config: true, delete: true },
+  buttons: {
+    next: true,
+    prev: true,
+    save: true,
+    config: true,
+    delete: true,
+    ignore: true,
+    unignore: true,
+  },
   base: {
     serverRoot: '',
     url: '',
@@ -89,6 +97,7 @@ const Widget: React.FC<{
       config={config}
       labels={labels}
       metadata={metadata}
+      style={{ padding: 16 }}
       callbacks={{
         onSave: buttons['save']
           ? (labels) => {
@@ -100,6 +109,10 @@ const Widget: React.FC<{
         onNext: buttons['next'] ? () => setAction('next') : undefined,
         onPrev: buttons['prev'] ? () => setAction('prev') : undefined,
         onDelete: buttons['delete'] ? () => setAction('delete') : undefined,
+        onIgnore: buttons['ignore'] ? () => setAction('ignore') : undefined,
+        onUnignore: buttons['unignore']
+          ? () => setAction('unignore')
+          : undefined,
       }}
       options={{ progress, mode }}
     />

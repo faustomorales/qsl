@@ -165,6 +165,8 @@ class ImageLabeler(BaseImageLabeler):
         on_prev: typing.Callable = None,
         on_save: typing.Callable = None,
         on_delete: typing.Callable = None,
+        on_ignore: typing.Callable = None,
+        on_unignore: typing.Callable = None,
         allow_config_change: bool = True,
     ):
         super().__init__(
@@ -176,6 +178,8 @@ class ImageLabeler(BaseImageLabeler):
                 "prev": on_prev is not None,
                 "save": on_save is not None,
                 "delete": on_delete is not None,
+                "ignore": on_ignore is not None,
+                "unignore": on_unignore is not None,
             },
         )
         self._target = target
@@ -183,6 +187,8 @@ class ImageLabeler(BaseImageLabeler):
         self._on_prev = on_prev
         self._on_save = on_save
         self._on_delete = on_delete
+        self._on_ignore = on_ignore
+        self._on_unignore = on_unignore
         self._allow_config_change = allow_config_change
         self.observe(self.handle_base_change, ["base"])
         self.observe(self.handle_action_change, ["action"])
@@ -196,6 +202,24 @@ class ImageLabeler(BaseImageLabeler):
     def on_next(self, on_next):
         self._on_next = on_next
         self.buttons = {**self.buttons, "next": on_next is not None}
+
+    @property
+    def on_ignore(self):
+        return self._on_ignore
+
+    @on_ignore.setter
+    def on_ignore(self, on_ignore):
+        self._on_ignore = on_ignore
+        self.buttons = {**self.buttons, "ignore": on_ignore is not None}
+
+    @property
+    def on_unignore(self):
+        return self._on_unignore
+
+    @on_unignore.setter
+    def on_unignore(self, on_unignore):
+        self._on_unignore = on_unignore
+        self.buttons = {**self.buttons, "unignore": on_unignore is not None}
 
     @property
     def on_delete(self):
@@ -258,6 +282,10 @@ class ImageLabeler(BaseImageLabeler):
             self._on_prev()
         if self._on_delete and change["new"] == "delete":
             self._on_delete()
+        if self._on_ignore and change["new"] == "ignore":
+            self._on_ignore()
+        if self._on_unignore and change["new"] == "unignore":
+            self._on_unignore()
         self.action = ""
 
     def handle_updated_change(self, change):
@@ -275,6 +303,8 @@ class ImageSeriesLabeler(ImageLabeler):
             on_prev=self.prev,
             on_save=self.save,
             on_delete=self.delete,
+            on_ignore=self.ignore,
+            on_unignore=self.unignore,
         )
         self.images = images
         self.idx = 0
@@ -297,9 +327,20 @@ class ImageSeriesLabeler(ImageLabeler):
             del self.images[self.idx]["labels"]
         self.update()
 
+    def ignore(self):
+        self.images[self.idx]["ignore"] = True
+        if "labels" in self.images[self.idx]:
+            del self.images[self.idx]["labels"]
+        self.next()
+
+    def unignore(self):
+        self.images[self.idx]["ignore"] = False
+        self.update()
+
     def update(self):
         self.idx = max(min(self.idx, len(self.images) - 1), 0)
         image = self.images[self.idx]
+        ignore = image.get("ignore", False)
         self.target = image["target"]
         self.labels = image.get("labels", image.get("defaults", {}))
         self.metadata = image.get("metadata", {})
@@ -309,9 +350,16 @@ class ImageSeriesLabeler(ImageLabeler):
             "save": True,
             "config": self.allow_config_change,
             "delete": "labels" in image,
+            "ignore": not ignore and "labels" not in image,
+            "unignore": ignore,
         }
         self.progress = (
             100
-            * sum([1 if "labels" in image else 0 for image in self.images])
+            * sum(
+                [
+                    1 if "labels" in image or image.get("ignore", False) else 0
+                    for image in self.images
+                ]
+            )
             / len(self.images)
         )

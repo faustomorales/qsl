@@ -33,14 +33,20 @@ class BaseImageLabeler(ipywidgets.DOMWidget):
     _view_module_version = t.Unicode(module_version).tag(sync=True)
 
     url = t.Unicode(allow_none=True).tag(sync=True)
-    config = t.Dict({"image": [], "regions": []}).tag(sync=True)
+    config = t.Dict(default_value={"image": [], "regions": []}).tag(sync=True)
     labels = t.Dict(
-        {"image": {}, "polygons": [], "masks": [], "boxes": [], "dimensions": None}
+        default_value={
+            "image": {},
+            "polygons": [],
+            "masks": [],
+            "boxes": [],
+            "dimensions": None,
+        }
     ).tag(sync=True)
     updated = t.Float().tag(sync=True)
     action = t.Unicode("").tag(sync=True)
     base = t.Dict(
-        {
+        default_value={
             "url": None,
             "serverRoot": None,
         }
@@ -48,7 +54,7 @@ class BaseImageLabeler(ipywidgets.DOMWidget):
     progress = t.Float(-1).tag(sync=True)
     mode = t.Unicode("light").tag(sync=True)
     buttons = t.Dict(
-        {
+        default_value={
             "next": True,
             "prev": True,
             "save": True,
@@ -58,7 +64,9 @@ class BaseImageLabeler(ipywidgets.DOMWidget):
             "unignore": True,
         },
     ).tag(sync=True)
-    metadata = t.Dict({}, value_trait=t.Unicode(), key_trait=t.Unicode()).tag(sync=True)
+    metadata = t.Dict(
+        default_value={}, value_trait=t.Unicode(), key_trait=t.Unicode()
+    ).tag(sync=True)
 
 
 def file2str(filepath: str):

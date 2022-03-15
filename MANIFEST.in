@@ -11,6 +11,7 @@ include webpack.config.js
 include qsl/labextension/*.tgz
 
 # Javascript files
+graft qsl/slextension
 graft qsl/nbextension
 graft qsl/frontend
 graft qsl/testing/data

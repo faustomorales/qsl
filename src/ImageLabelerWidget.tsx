@@ -95,7 +95,7 @@ const Widget: React.FC<{
     <ImageLabeler
       src={url}
       config={config}
-      labels={labels}
+      labels={labels || {}}
       metadata={metadata}
       style={{ padding: 16 }}
       callbacks={{

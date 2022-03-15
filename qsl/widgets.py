@@ -1,4 +1,4 @@
-# pylint: disable=missing-function-docstring,unused-argument,too-many-return-statements
+# pylint: disable=too-many-ancestors,missing-function-docstring,unused-argument,too-many-return-statements
 import os
 import json
 import base64
@@ -33,7 +33,9 @@ class BaseImageLabeler(ipywidgets.DOMWidget):
     _view_module_version = t.Unicode(module_version).tag(sync=True)
 
     url = t.Unicode(allow_none=True).tag(sync=True)
-    config = t.Dict(default_value={"image": [], "regions": []}).tag(sync=True)
+    config = t.Dict(default_value={"image": [], "regions": []}, allow_none=True).tag(
+        sync=True
+    )
     labels = t.Dict(
         default_value={
             "image": {},
@@ -41,7 +43,8 @@ class BaseImageLabeler(ipywidgets.DOMWidget):
             "masks": [],
             "boxes": [],
             "dimensions": None,
-        }
+        },
+        allow_none=True,
     ).tag(sync=True)
     updated = t.Float().tag(sync=True)
     action = t.Unicode("").tag(sync=True)
@@ -130,8 +133,8 @@ class ImageLabeler(BaseImageLabeler):
         allow_config_change: bool = True,
     ):
         super().__init__(
-            config=config or {"image": [], "regions": []},
-            labels=labels or {},
+            config=config,
+            labels=labels,
             buttons={
                 "config": allow_config_change,
                 "next": on_next is not None,
@@ -271,11 +274,11 @@ class ImageSeriesLabeler(ImageLabeler):
         self.update()
 
     def next(self):
-        self.idx += 1
+        self.idx = max(min(self.idx + 1, len(self.images) - 1), 0)
         self.update()
 
     def prev(self):
-        self.idx -= 1
+        self.idx = max(min(self.idx - 1, len(self.images) - 1), 0)
         self.update()
 
     def save(self):
@@ -283,13 +286,13 @@ class ImageSeriesLabeler(ImageLabeler):
         self.next()
 
     def delete(self):
-        if "labels" in self.images[self.idx]:
+        if self.images[self.idx].get("labels"):
             del self.images[self.idx]["labels"]
         self.update()
 
     def ignore(self):
         self.images[self.idx]["ignore"] = True
-        if "labels" in self.images[self.idx]:
+        if self.images[self.idx].get("labels"):
             del self.images[self.idx]["labels"]
         self.next()
 
@@ -298,9 +301,9 @@ class ImageSeriesLabeler(ImageLabeler):
         self.update()
 
     def update(self):
-        self.idx = max(min(self.idx, len(self.images) - 1), 0)
         image = self.images[self.idx]
         ignore = image.get("ignore", False)
+        has_labels = image.get("labels", None) is not None
         self.target = image["target"]
         self.labels = image.get("labels", image.get("defaults", {}))
         self.metadata = image.get("metadata", {})
@@ -309,17 +312,74 @@ class ImageSeriesLabeler(ImageLabeler):
             "next": self.idx != (len(self.images) - 1),
             "save": True,
             "config": self.allow_config_change,
-            "delete": "labels" in image,
-            "ignore": not ignore and "labels" not in image,
+            "delete": has_labels,
+            "ignore": not ignore and not has_labels,
             "unignore": ignore,
         }
         self.progress = (
             100
             * sum(
                 [
-                    1 if "labels" in image or image.get("ignore", False) else 0
+                    1
+                    if image.get("labels") is not None or image.get("ignore", False)
+                    else 0
                     for image in self.images
                 ]
             )
             / len(self.images)
         )
+
+
+def json_or_none(filepath: str):
+    """Try to load JSON from a path, returning None upon failure."""
+    try:
+        labels = (
+            json.loads(pathlib.Path(filepath).read_text(encoding="utf8"))
+            if os.path.isfile(filepath)
+            else None
+        )
+    except json.JSONDecodeError:
+        os.remove(filepath)
+        labels = None
+    return labels
+
+
+class ImageSeriesLabelerJSON(ImageSeriesLabeler):
+    def __init__(self, images, **kwargs):
+        assert all(
+            bool(image.get("jsonpath")) for image in images
+        ), "All images must have a jsonpath key."
+        super().__init__(
+            [
+                {
+                    **image,
+                    "labels": json_or_none(image["jsonpath"]),
+                }
+                for image in images
+            ],
+            **kwargs,
+        )
+
+    def write(self, labels):
+        filepath = self.images[self.idx]["jsonpath"]
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        with open(filepath, "w", encoding="utf8") as f:
+            f.write(json.dumps(labels))
+
+    def save(self):
+        self.write(self.labels)
+        super().save()
+
+    def delete(self):
+        filepath = self.images[self.idx]["jsonpath"]
+        if os.path.isfile(filepath):
+            os.remove(filepath)
+        super().delete()
+
+    def ignore(self):
+        self.write({**self.images[self.idx], "ignore": True, "labels": None})
+        super().ignore()
+
+    def unignore(self):
+        self.write({**self.images[self.idx], "ignore": False, "labels": None})
+        super().unignore()

@@ -321,9 +321,9 @@ class ImageSeriesLabeler(ImageLabeler):
             "ignore": not ignore and not has_labels,
             "unignore": ignore,
         }
-        if self.base:
+        if self.base and self.idx + 1 < len(self.images):
             preload = []
-            for preloadCandidate in self.images[self.idx :]:
+            for preloadCandidate in self.images[self.idx + 1 :]:
                 preloadUrl = build_url(
                     preloadCandidate["target"], base=self.base, allow_base64=False
                 )
@@ -331,7 +331,10 @@ class ImageSeriesLabeler(ImageLabeler):
                     preload.append(preloadUrl)
                 if len(preload) == self.max_preload:
                     break
-                self.preload = preload
+            self.preload = preload
+        self.update_progress()
+
+    def update_progress(self):
         self.progress = (
             100
             * sum(

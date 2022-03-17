@@ -45,7 +45,6 @@ const ImageLabelerComponent: React.FC<{ args: State }> = ({ args }) => {
     window.matchMedia('(prefers-color-scheme: dark)').matches
       ? 'dark'
       : 'light';
-  console.log('state', state);
   React.useEffect(() => Streamlit.setFrameHeight());
   return (
     <div>

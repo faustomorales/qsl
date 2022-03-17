@@ -11,8 +11,6 @@ import ImageLabeler, { Labels, Config } from 'react-image-labeler';
 import { useModelState } from './hooks';
 import { MODULE_NAME, MODULE_VERSION } from './version';
 
-// Your widget state goes here. Make sure to update the corresponding
-// Python state in example.py
 const DEFAULT_PROPERTIES = {
   url: '' as string,
   config: { image: [], regions: [] } as Config,
@@ -20,6 +18,10 @@ const DEFAULT_PROPERTIES = {
   updated: Date.now(),
   action: '' as 'next' | 'prev' | 'delete' | 'ignore' | 'unignore' | '',
   metadata: {} as { [key: string]: string },
+  fixedLayout: undefined as 'horizontal' | 'vertical' | undefined,
+  preload: [] as string[],
+  showNavigation: true,
+  maxCanvasSize: 512 as number,
   buttons: {
     next: true,
     prev: true,
@@ -33,7 +35,6 @@ const DEFAULT_PROPERTIES = {
     serverRoot: '',
     url: '',
   },
-
   progress: -1,
   mode: 'light' as 'light' | 'dark',
 };
@@ -84,6 +85,26 @@ const Widget: React.FC<{
     'metadata',
     model
   );
+  // @ts-ignore
+  const [preload, setPreload] = useModelState<WidgetState, 'preload'>(
+    'preload',
+    model
+  );
+  // @ts-ignore
+  const [fixedLayout, setFixedLayout] = useModelState<
+    WidgetState,
+    'fixedLayout'
+  >('fixedLayout', model);
+  // @ts-ignore
+  const [maxCanvasSize, setMaxCanvasSize] = useModelState<
+    WidgetState,
+    'maxCanvasSize'
+  >('maxCanvasSize', model);
+  // @ts-ignore
+  const [showNavigation, setShowNavigation] = useModelState<
+    WidgetState,
+    'showNavigation'
+  >('showNavigation', model);
 
   React.useEffect(() => {
     setBase({
@@ -114,7 +135,8 @@ const Widget: React.FC<{
           ? () => setAction('unignore')
           : undefined,
       }}
-      options={{ progress, mode }}
+      preload={preload}
+      options={{ progress, mode, fixedLayout, maxCanvasSize, showNavigation }}
     />
   );
 };

@@ -7451,10 +7451,10 @@ react-dom@^17.0.2:
     object-assign "^4.1.1"
     scheduler "^0.20.2"
 
-react-image-labeler@0.0.1-alpha.16:
-  version "0.0.1-alpha.16"
-  resolved "https://registry.yarnpkg.com/react-image-labeler/-/react-image-labeler-0.0.1-alpha.16.tgz#e4f83754168bc43191c9c02e0a1172e9d8858b18"
-  integrity sha512-l7hVGict8dqsz4x+zWayaKL3WFs3D7CFHZJ1sIUwwt11Do+wUMMe5Mn756ilNsZtPiReR+JvA9twfBZAp9uVUQ==
+react-image-labeler@0.0.1-alpha.19:
+  version "0.0.1-alpha.19"
+  resolved "https://registry.yarnpkg.com/react-image-labeler/-/react-image-labeler-0.0.1-alpha.19.tgz#a5544aada44718f491e95b004a9a2ec7620da45f"
+  integrity sha512-L2guiw2u6HqZhRRS2R+dzNet+SRUhE+GjnXqWNtDGx2uKVVP+bYDGbTgnfazjblkO9ff3fm0MNiem2mWEj7+0Q==
   dependencies:
     "@emotion/react" "^11.8.1"
     "@emotion/styled" "^11.8.1"

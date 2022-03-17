@@ -54,6 +54,10 @@ class BaseImageLabeler(ipywidgets.DOMWidget):
             "serverRoot": None,
         }
     ).tag(sync=True)
+    preload = t.List(trait=t.Unicode(), allow_none=True).tag(sync=True)
+    fixedLayout = t.Unicode().tag(sync=True)
+    maxCanvasSize = t.Integer(default_value=512).tag(sync=True)
+    showNavigation = t.Bool(default_value=True).tag(sync=True)
     progress = t.Float(-1).tag(sync=True)
     mode = t.Unicode("light").tag(sync=True)
     buttons = t.Dict(
@@ -84,7 +88,7 @@ def file2str(filepath: str):
     return "data:image;charset=utf-8;base64," + encoded
 
 
-def build_url(target: str, base: dict):
+def build_url(target: str, base: dict, allow_base64=True):
     """Build a notebook file URL using notebook configuration and a filepath or URL."""
     if target is None:
         return None
@@ -102,12 +106,12 @@ def build_url(target: str, base: dict):
         return target
     if os.path.isfile(target):
         if not base or not base.get("serverRoot") or not base.get("url"):
-            return file2str(target)
+            return file2str(target) if allow_base64 else None
         relpath = os.path.relpath(target, os.path.expanduser(base["serverRoot"]))
         if os.name == "nt":
             relpath = pathlib.PureWindowsPath(relpath).as_posix()
         if ".." in relpath:
-            return file2str(target)
+            return file2str(target) if allow_base64 else None
         return up.urljoin(
             base["url"],
             os.path.join(
@@ -271,6 +275,7 @@ class ImageSeriesLabeler(ImageLabeler):
         )
         self.images = images
         self.idx = 0
+        self.max_preload = 3
         self.update()
 
     def next(self):
@@ -309,13 +314,24 @@ class ImageSeriesLabeler(ImageLabeler):
         self.metadata = image.get("metadata", {})
         self.buttons = {
             "prev": self.idx != 0,
-            "next": self.idx != (len(self.images) - 1),
+            "next": has_labels and self.idx != (len(self.images) - 1),
             "save": True,
             "config": self.allow_config_change,
             "delete": has_labels,
             "ignore": not ignore and not has_labels,
             "unignore": ignore,
         }
+        if self.base:
+            preload = []
+            for preloadCandidate in self.images[self.idx :]:
+                preloadUrl = build_url(
+                    preloadCandidate["target"], base=self.base, allow_base64=False
+                )
+                if preloadUrl:
+                    preload.append(preloadUrl)
+                if len(preload) == self.max_preload:
+                    break
+                self.preload = preload
         self.progress = (
             100
             * sum(

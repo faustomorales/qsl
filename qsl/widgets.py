@@ -310,7 +310,7 @@ class ImageSeriesLabeler(ImageLabeler):
         ignore = image.get("ignore", False)
         has_labels = image.get("labels", None) is not None
         self.target = image["target"]
-        self.labels = image.get("labels", image.get("defaults", {}))
+        self.labels = image.get("labels") or image.get("defaults") or {}
         self.metadata = image.get("metadata", {})
         self.buttons = {
             "prev": self.idx != 0,

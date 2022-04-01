@@ -1,5 +1,5 @@
-import React from 'react';
-import { WidgetModel } from '@jupyter-widgets/base';
+import React from "react";
+import { WidgetModel } from "@jupyter-widgets/base";
 
 /**
  *

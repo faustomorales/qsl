@@ -1,13 +1,13 @@
 // Copyright (c) Fausto Morales
 // Distributed under the terms of the MIT License.
 
-import { Application, IPlugin } from '@phosphor/application';
-import { Widget } from '@phosphor/widgets';
-import { IJupyterWidgetRegistry } from '@jupyter-widgets/base';
-import { MODULE_NAME, MODULE_VERSION } from './version';
-import { ImageLabelerModel, ImageLabelerView } from './ImageLabelerWidget';
+import { Application, IPlugin } from "@phosphor/application";
+import { Widget } from "@phosphor/widgets";
+import { IJupyterWidgetRegistry } from "@jupyter-widgets/base";
+import { MODULE_NAME, MODULE_VERSION } from "./version";
+import { ImageLabelerModel, ImageLabelerView } from "./ImageLabelerWidget";
 
-const EXTENSION_ID = 'qsl:plugin';
+const EXTENSION_ID = "qsl:plugin";
 
 /**
  * The example plugin.

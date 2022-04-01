@@ -37,8 +37,8 @@ setup_args = dict(
         data_specs=[
             ("share/jupyter/nbextensions/qslwidgets", "qsl/nbextension", "**"),
             ("share/jupyter/labextensions/qslwidgets", "qsl/labextension", "**"),
-            ("share/jupyter/labextensions/qslwidgets", ".", "install.json"),
-            ("etc/jupyter/nbconfig/notebook.d", ".", "qsl.json"),
+            ("share/jupyter/labextensions/qslwidgets", "qsl/assets", "install.json"),
+            ("etc/jupyter/nbconfig/notebook.d", "qsl/assets", "qsl.json"),
         ]
     ),
     platforms="Linux, Mac OS X, Windows",

@@ -381,7 +381,9 @@ class ImageSeriesLabelerJSON(ImageSeriesLabeler):
 
     def write(self, labels):
         filepath = self.images[self.idx]["jsonpath"]
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        dirname = os.path.dirname(filepath)
+        if dirname:
+            os.makedirs(dirname, exist_ok=True)
         with open(filepath, "w", encoding="utf8") as f:
             f.write(json.dumps(labels))
 

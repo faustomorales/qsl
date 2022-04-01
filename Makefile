@@ -22,7 +22,7 @@ check:  ## Check code for formatting, linting, etc.
 	@$(PYTHON_EXEC) pylint qsl
 	@$(PYTHON_EXEC) black --diff --check .
 develop-widget:
-	@$(PYTHON_EXEC) yarn watch
+	@$(PYTHON_EXEC) yarn --cwd qslwidgets watch
 develop-app: ## Start local development on frontend and backend
 	FRONTEND_PORT=$(FRONTEND_PORT) $(PYTHON_EXEC) qsl label --dev --host 0.0.0.0 --port $(BACKEND_PORT) & cd frontend && PORT=$(FRONTEND_PORT) REACT_APP_BACKEND_PORT=$(BACKEND_PORT) yarn start
 clean:
@@ -37,7 +37,7 @@ format:  ## Format all files.
 	yarn --cwd frontend format
 build:  # Build the frontend and integrate into the package
 	rm -rf dist
-	@$(PYTHON_EXEC) yarn build
+	@$(PYTHON_EXEC) yarn --cwd qslwidgets build
 	rm -rf qsl/frontend
 	SKIP_PREFLIGHT_CHECK=true yarn --cwd frontend build
 	mv frontend/build qsl/frontend

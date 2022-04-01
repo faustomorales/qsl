@@ -29,7 +29,7 @@ module.exports = [
     entry: './src/slindex.tsx',
     output: {
       filename: 'index.js',
-      path: path.resolve(__dirname, 'qsl', 'slextension'),
+      path: path.resolve(__dirname, '..', 'qsl', 'slextension'),
     },
     plugins: [
       new HtmlWebpackPlugin({
@@ -49,7 +49,7 @@ module.exports = [
     entry: './src/extension.ts',
     output: {
       filename: 'index.js',
-      path: path.resolve(__dirname, 'qsl', 'nbextension'),
+      path: path.resolve(__dirname, '..', 'qsl', 'nbextension'),
       libraryTarget: 'amd',
       publicPath: '',
     },

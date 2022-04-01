@@ -5,22 +5,31 @@ include setup.py
 include pyproject.toml
 include .coverage.rc
 
-include tsconfig.json
-include package.json
-include webpack.config.js
-include qsl/labextension/*.tgz
-
-# Javascript files
+# Widgets
+include qslwidgets/tsconfig.json
+include qslwidgets/package.json
+include qslwidgets/webpack.config.js
+prune qslwidgets/lib
+prune qslwidgets/dist
+graft qslwidgets/src
 graft qsl/slextension
 graft qsl/nbextension
+graft qsl/labextension
+
+# Frontend
 graft qsl/frontend
-graft qsl/testing/data
+
+# Static assets
 graft qsl/assets
-graft src
-graft css
+graft qsl/testing/data
+
+# Unwanted JavaScript
 prune **/node_modules
 prune coverage
-prune lib
+
+
+# Testing data
+graft qsl/testing/data
 
 # Patterns to exclude from any directory
 global-exclude *~

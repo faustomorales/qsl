@@ -101,7 +101,7 @@
   },
   "jupyterlab": {
     "extension": "lib/plugin",
-    "outputDir": "qsl/labextension/",
+    "outputDir": "../qsl/labextension/",
     "sharedPackages": {
       "@jupyter-widgets/base": {
         "bundled": false,

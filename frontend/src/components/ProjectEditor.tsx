@@ -1,10 +1,10 @@
-import * as sharedTypes from './sharedTypes';
-import * as common from './common';
-import * as react from 'react';
-import * as rrd from 'react-router-dom';
-import * as mui from '@material-ui/core';
-import LabelPanel from './LabelPanel';
-import LabelingStatus from './LabelingStatus';
+import * as sharedTypes from "./sharedTypes";
+import * as common from "./common";
+import * as react from "react";
+import * as rrd from "react-router-dom";
+import * as mui from "@material-ui/core";
+import LabelPanel from "./LabelPanel";
+import LabelingStatus from "./LabelingStatus";
 
 export const ProjectEditor = (props: { allowDelete: boolean }) => {
   // Get context variables.
@@ -53,7 +53,7 @@ export const ProjectEditor = (props: { allowDelete: boolean }) => {
     <mui.Grid container spacing={2}>
       <mui.Grid item xs={12}>
         <LabelingStatus>
-          <rrd.Link to={'/'}>QSL</rrd.Link> /{' '}
+          <rrd.Link to={"/"}>QSL</rrd.Link> /{" "}
           <rrd.Link to={`/projects/${projectId}`}>{project.name}</rrd.Link> /
           Edit
         </LabelingStatus>

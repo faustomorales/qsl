@@ -1,14 +1,14 @@
-import * as sharedTypes from './sharedTypes';
-import * as common from './common';
+import * as sharedTypes from "./sharedTypes";
+import * as common from "./common";
 
-import * as react from 'react';
-import * as mui from '@material-ui/core';
-import * as muidg from '@material-ui/data-grid';
+import * as react from "react";
+import * as mui from "@material-ui/core";
+import * as muidg from "@material-ui/data-grid";
 
 const UserList = () => {
   // Set state variables
   const [state, setState] = react.useState({
-    newUserName: '',
+    newUserName: "",
     users: [] as sharedTypes.User[],
     myUser: null as sharedTypes.User,
     authConfig: null as sharedTypes.AuthConfig,
@@ -41,7 +41,7 @@ const UserList = () => {
       .then((newUser) => {
         setState({
           ...state,
-          newUserName: '',
+          newUserName: "",
           users: state.users.concat([newUser]),
         });
       });
@@ -52,15 +52,15 @@ const UserList = () => {
   return (
     <mui.Grid container spacing={2}>
       <mui.Grid item xs={12}>
-        <mui.Typography variant={'body1'}>
-          {state.authConfig.provider === 'github'
-            ? 'You are using GitHub as the authentication provider. Usernames should match GitHub usernames.'
+        <mui.Typography variant={"body1"}>
+          {state.authConfig.provider === "github"
+            ? "You are using GitHub as the authentication provider. Usernames should match GitHub usernames."
             : null}
-          {state.authConfig.provider === 'google'
-            ? 'You are using Google as the authentication provider. Usernames should match email addresses.'
+          {state.authConfig.provider === "google"
+            ? "You are using Google as the authentication provider. Usernames should match email addresses."
             : null}
           {state.authConfig.provider === null
-            ? 'You are not using an authentication provider. You will always be logged in as the first user.'
+            ? "You are not using an authentication provider. You will always be logged in as the first user."
             : null}
         </mui.Typography>
       </mui.Grid>
@@ -70,23 +70,23 @@ const UserList = () => {
           autoHeight
           columns={[
             {
-              field: 'id',
-              headerName: 'ID',
+              field: "id",
+              headerName: "ID",
               flex: 1,
               disableColumnMenu: true,
             },
             {
-              field: 'name',
-              headerName: 'Name',
+              field: "name",
+              headerName: "Name",
               flex: 5,
               disableColumnMenu: true,
             },
             {
-              field: 'isAdmin',
-              headerName: 'Adminstrator',
+              field: "isAdmin",
+              headerName: "Adminstrator",
               flex: 2,
               valueFormatter: (params: muidg.GridValueFormatterParams) =>
-                params.value ? 'Yes' : 'No',
+                params.value ? "Yes" : "No",
               disableColumnMenu: true,
             },
           ]}
@@ -94,13 +94,13 @@ const UserList = () => {
       </mui.Grid>
       <mui.Grid item xs={12}>
         {state.myUser.isAdmin ? (
-          <mui.Grid container direction={'row'}>
+          <mui.Grid container direction={"row"}>
             <mui.Input
               value={state.newUserName}
               onChange={(event) =>
                 setState({ ...state, newUserName: event.target.value })
               }
-              placeholder={'New user name'}
+              placeholder={"New user name"}
             />
             <mui.FormControlLabel
               control={
@@ -115,7 +115,7 @@ const UserList = () => {
               label="Administrator"
             />
             <mui.Button
-              disabled={state.newUserName === ''}
+              disabled={state.newUserName === ""}
               onClick={createUser}
             >
               Create User

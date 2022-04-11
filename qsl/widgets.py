@@ -36,15 +36,20 @@ class BaseImageLabeler(ipywidgets.DOMWidget):
     config = t.Dict(default_value={"image": [], "regions": []}, allow_none=True).tag(
         sync=True
     )
-    labels = t.Dict(
-        default_value={
-            "image": {},
-            "polygons": [],
-            "masks": [],
-            "boxes": [],
-            "dimensions": None,
-        },
-        allow_none=True,
+    labels = t.Union(
+        [
+            t.Dict(
+                default_value={
+                    "image": {},
+                    "polygons": [],
+                    "masks": [],
+                    "boxes": [],
+                    "dimensions": None,
+                },
+                allow_none=True,
+            ),
+            t.List(default_value=[]),
+        ]
     ).tag(sync=True)
     updated = t.Float().tag(sync=True)
     action = t.Unicode("").tag(sync=True)
@@ -55,11 +60,11 @@ class BaseImageLabeler(ipywidgets.DOMWidget):
         }
     ).tag(sync=True)
     preload = t.List(trait=t.Unicode(), allow_none=True).tag(sync=True)
-    fixedLayout = t.Unicode().tag(sync=True)
     maxCanvasSize = t.Integer(default_value=512).tag(sync=True)
     showNavigation = t.Bool(default_value=True).tag(sync=True)
     progress = t.Float(-1).tag(sync=True)
     mode = t.Unicode("light").tag(sync=True)
+    type = t.Unicode("image").tag(sync=True)
     buttons = t.Dict(
         default_value={
             "next": True,
@@ -288,7 +293,10 @@ class ImageSeriesLabeler(ImageLabeler):
 
     def save(self):
         self.images[self.idx]["labels"] = self.labels
-        self.next()
+        if self.type == "image":
+            self.next()
+        else:
+            self.update()
 
     def delete(self):
         if self.images[self.idx].get("labels"):
@@ -310,7 +318,12 @@ class ImageSeriesLabeler(ImageLabeler):
         ignore = image.get("ignore", False)
         has_labels = image.get("labels", None) is not None
         self.target = image["target"]
-        self.labels = image.get("labels") or image.get("defaults") or {}
+        self.labels = (
+            image.get("labels")
+            or image.get("defaults")
+            or ({} if self.type == "image" else [])
+        )
+        self.type = image.get("type", "image")
         self.metadata = image.get("metadata", {})
         self.buttons = {
             "prev": self.idx != 0,

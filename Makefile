@@ -33,7 +33,7 @@ notebook:  ## Launch a jupyter notebook instance
 	@$(PYTHON_EXEC) jupyter notebook
 format:  ## Format all files.
 	@$(PYTHON_EXEC) black qsl
-	yarn format
+	yarn --cwd qslwidgets format
 	yarn --cwd frontend format
 build:  # Build the frontend and integrate into the package
 	rm -rf dist

@@ -7,18 +7,62 @@ import {
   DOMWidgetView,
   ISerializers,
 } from "@jupyter-widgets/base";
-import ImageLabeler, { Labels, Config } from "react-image-labeler";
+import {
+  ImageLabeler,
+  VideoLabeler,
+  Labels,
+  Config,
+  TimestampedLabel,
+} from "react-image-labeler";
 import { useModelState } from "./hooks";
 import { MODULE_NAME, MODULE_VERSION } from "./version";
 
-const DEFAULT_PROPERTIES = {
+interface BaseWidgetState {
+  url: string;
+  config: Config;
+  updated: number;
+  action: "next" | "prev" | "delete" | "ignore" | "unignore" | "";
+  metadata: { [key: string]: string };
+  preload: string[];
+  showNavigation: boolean;
+  maxCanvasSize: number;
+  buttons: {
+    next: boolean;
+    prev: boolean;
+    save: boolean;
+    config: boolean;
+    delete: boolean;
+    ignore: boolean;
+    unignore: boolean;
+  };
+  base: {
+    serverRoot: string;
+    url: string;
+  };
+  progress: number;
+  mode: "light" | "dark";
+}
+
+interface ImageWidgetState extends BaseWidgetState {
+  type: "image";
+  labels: Labels;
+}
+
+interface VideoWidgetState extends BaseWidgetState {
+  type: "video";
+  labels: TimestampedLabel[];
+}
+
+type WidgetState = VideoWidgetState | ImageWidgetState;
+
+const DEFAULT_PROPERTIES: WidgetState = {
+  type: "image",
   url: "" as string,
   config: { image: [], regions: [] } as Config,
   labels: { image: {}, polygons: [], masks: [], boxes: [] } as Labels,
   updated: Date.now(),
   action: "" as "next" | "prev" | "delete" | "ignore" | "unignore" | "",
   metadata: {} as { [key: string]: string },
-  fixedLayout: undefined as "horizontal" | "vertical" | undefined,
   preload: [] as string[],
   showNavigation: true,
   maxCanvasSize: 512 as number,
@@ -38,8 +82,6 @@ const DEFAULT_PROPERTIES = {
   progress: -1,
   mode: "light" as "light" | "dark",
 };
-
-type WidgetState = typeof DEFAULT_PROPERTIES;
 
 const Widget: React.FC<{
   model: WidgetModel;
@@ -67,6 +109,8 @@ const Widget: React.FC<{
     model
   );
   // @ts-ignore
+  const [type, setType] = useModelState<WidgetState, "type">("type", model);
+  // @ts-ignore
   const [base, setBase] = useModelState<WidgetState, "base">("base", model);
   // @ts-ignore
   const [progress, setProgress] = useModelState<WidgetState, "progress">(
@@ -91,11 +135,6 @@ const Widget: React.FC<{
     model
   );
   // @ts-ignore
-  const [fixedLayout, setFixedLayout] = useModelState<
-    WidgetState,
-    "fixedLayout"
-  >("fixedLayout", model);
-  // @ts-ignore
   const [maxCanvasSize, setMaxCanvasSize] = useModelState<
     WidgetState,
     "maxCanvasSize"
@@ -112,32 +151,43 @@ const Widget: React.FC<{
       url: PageConfig.getBaseUrl(),
     });
   });
+  const props = {
+    src: url,
+    config,
+    metadata,
+    callbacks: {
+      onSave: buttons["save"]
+        ? (labels: any) => {
+            setLabels(labels);
+            setUpdated(Date.now());
+          }
+        : undefined,
+      onSaveConfig: buttons["config"] ? setConfig : undefined,
+      onNext: buttons["next"] ? () => setAction("next") : undefined,
+      onPrev: buttons["prev"] ? () => setAction("prev") : undefined,
+      onDelete: buttons["delete"] ? () => setAction("delete") : undefined,
+      onIgnore: buttons["ignore"] ? () => setAction("ignore") : undefined,
+      onUnignore: buttons["unignore"] ? () => setAction("unignore") : undefined,
+    },
+    preload,
+    options: { progress, mode, maxCanvasSize, showNavigation },
+  };
   return (
-    <ImageLabeler
-      src={url}
-      config={config}
-      labels={labels || {}}
-      metadata={metadata}
-      style={{ padding: 16 }}
-      callbacks={{
-        onSave: buttons["save"]
-          ? (labels) => {
-              setLabels(labels);
-              setUpdated(Date.now());
-            }
-          : undefined,
-        onSaveConfig: buttons["config"] ? setConfig : undefined,
-        onNext: buttons["next"] ? () => setAction("next") : undefined,
-        onPrev: buttons["prev"] ? () => setAction("prev") : undefined,
-        onDelete: buttons["delete"] ? () => setAction("delete") : undefined,
-        onIgnore: buttons["ignore"] ? () => setAction("ignore") : undefined,
-        onUnignore: buttons["unignore"]
-          ? () => setAction("unignore")
-          : undefined,
+    <div
+      style={{
+        padding: 16,
+        backgroundColor: mode == "dark" ? "black" : "white",
       }}
-      preload={preload}
-      options={{ progress, mode, fixedLayout, maxCanvasSize, showNavigation }}
-    />
+    >
+      {type == "image" ? (
+        <ImageLabeler labels={(labels || {}) as Labels} {...props} />
+      ) : (
+        <VideoLabeler
+          labels={(Array.isArray(labels) ? labels : []) as TimestampedLabel[]}
+          {...props}
+        />
+      )}
+    </div>
   );
 };
 

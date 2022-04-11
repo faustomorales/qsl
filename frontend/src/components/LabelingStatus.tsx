@@ -1,12 +1,12 @@
-import * as sharedTypes from './sharedTypes';
-import * as mui from '@material-ui/core';
-import * as muis from '@material-ui/core/styles';
+import * as sharedTypes from "./sharedTypes";
+import * as mui from "@material-ui/core";
+import * as muis from "@material-ui/core/styles";
 
 const useStyles = muis.makeStyles((theme) => ({
   root: {
-    '& a': {
-      color: 'white',
-      textDecoration: 'none',
+    "& a": {
+      color: "white",
+      textDecoration: "none",
     },
   },
 }));
@@ -14,7 +14,7 @@ const useStyles = muis.makeStyles((theme) => ({
 const LabelingStatus = (props: {
   project?: sharedTypes.Project;
   children: React.ReactNode;
-  position?: 'static' | 'fixed';
+  position?: "static" | "fixed";
 }) => {
   const progress =
     props.project && props.project.nImages !== 0
@@ -22,12 +22,12 @@ const LabelingStatus = (props: {
       : null;
   const classes = useStyles();
   return (
-    <mui.AppBar position={props.position ?? 'static'} style={{ zIndex: 1201 }}>
+    <mui.AppBar position={props.position ?? "static"} style={{ zIndex: 1201 }}>
       <mui.Toolbar>
         {progress !== null ? (
           <mui.Box position="relative" display="inline-flex">
             <mui.CircularProgress
-              style={{ color: 'white' }}
+              style={{ color: "white" }}
               variant="determinate"
               size={40}
               color="secondary"
@@ -46,14 +46,14 @@ const LabelingStatus = (props: {
               <mui.Typography
                 variant="caption"
                 component="div"
-                style={{ color: 'white' }}
+                style={{ color: "white" }}
               >{`${progress}%`}</mui.Typography>
             </mui.Box>
           </mui.Box>
         ) : null}
         <mui.Typography
           variant="h6"
-          style={{ marginLeft: '10px' }}
+          style={{ marginLeft: "10px" }}
           className={classes.root}
         >
           {props.children}

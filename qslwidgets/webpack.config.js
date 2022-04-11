@@ -21,25 +21,6 @@ const defaults = {
 
 module.exports = [
   /**
-   * streamlit extension
-   *
-   * Same as the lab bundle but without the public path bits.
-   */
-  {
-    entry: './src/slindex.tsx',
-    output: {
-      filename: 'index.js',
-      path: path.resolve(__dirname, '..', 'qsl', 'slextension'),
-    },
-    plugins: [
-      new HtmlWebpackPlugin({
-        template: './src/index.html',
-      }),
-    ],
-    ...defaults,
-  },
-
-  /**
    * Notebook extension
    *
    * This bundle only contains the part of the JavaScript that is run on load of

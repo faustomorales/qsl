@@ -1,12 +1,12 @@
-import * as sharedTypes from './sharedTypes';
-import * as common from './common';
+import * as sharedTypes from "./sharedTypes";
+import * as common from "./common";
 
-import LabelingStatus from './LabelingStatus';
+import LabelingStatus from "./LabelingStatus";
 
-import * as react from 'react';
-import * as rrd from 'react-router-dom';
-import * as mui from '@material-ui/core';
-import * as muidg from '@material-ui/data-grid';
+import * as react from "react";
+import * as rrd from "react-router-dom";
+import * as mui from "@material-ui/core";
+import * as muidg from "@material-ui/data-grid";
 
 export const ProjectSummary = () => {
   // Get context variables.
@@ -51,7 +51,7 @@ export const ProjectSummary = () => {
     <mui.Grid container spacing={2}>
       <mui.Grid item xs={12}>
         <LabelingStatus project={project}>
-          <rrd.Link to="/">QSL</rrd.Link> /{' '}
+          <rrd.Link to="/">QSL</rrd.Link> /{" "}
           <rrd.Link to={`/projects/${projectId}`}>{project.name}</rrd.Link>
         </LabelingStatus>
       </mui.Grid>
@@ -61,12 +61,12 @@ export const ProjectSummary = () => {
             <li>
               {queue.length > 0 ? (
                 <rrd.Link to={`/projects/${projectId}/images/${queue[0].id}`}>
-                  <mui.Typography variant={'body1'}>
+                  <mui.Typography variant={"body1"}>
                     Start labeling individual images
                   </mui.Typography>
                 </rrd.Link>
               ) : (
-                <mui.Typography variant={'body1'}>
+                <mui.Typography variant={"body1"}>
                   No images remain for labeling.
                 </mui.Typography>
               )}
@@ -79,9 +79,9 @@ export const ProjectSummary = () => {
               <rrd.Link
                 to={`/projects/${projectId}/batches/${queue
                   .map((image) => image.id)
-                  .join(',')}`}
+                  .join(",")}`}
               >
-                <mui.Typography variant={'body1'}>
+                <mui.Typography variant={"body1"}>
                   Start labeling image batches
                 </mui.Typography>
               </rrd.Link>
@@ -89,16 +89,16 @@ export const ProjectSummary = () => {
           )}
           <li>
             <rrd.Link to={`/projects/${projectId}/edit-project`}>
-              <mui.Typography variant={'body1'}>
+              <mui.Typography variant={"body1"}>
                 {projectConfigured
-                  ? 'Edit project configuration'
-                  : 'Configure project'}
+                  ? "Edit project configuration"
+                  : "Configure project"}
               </mui.Typography>
             </rrd.Link>
           </li>
           <li>
             <a href={common.getExportUrl(projectId)}>
-              <mui.Typography variant={'body1'}>Export project</mui.Typography>
+              <mui.Typography variant={"body1"}>Export project</mui.Typography>
             </a>
           </li>
         </ul>
@@ -113,8 +113,8 @@ export const ProjectSummary = () => {
           disableColumnFilter
           columns={[
             {
-              field: 'id',
-              headerName: 'ID',
+              field: "id",
+              headerName: "ID",
               flex: 3,
               disableColumnMenu: true,
               renderCell: (params: muidg.GridCellParams) => (
@@ -124,20 +124,20 @@ export const ProjectSummary = () => {
               ),
             },
             {
-              field: 'filepath',
-              headerName: 'Path',
+              field: "filepath",
+              headerName: "Path",
               flex: 4,
             },
             {
-              field: 'nLabels',
-              headerName: '# Labels',
+              field: "nLabels",
+              headerName: "# Labels",
               flex: 1,
             },
             {
-              field: 'status',
-              headerName: 'Status',
+              field: "status",
+              headerName: "Status",
               renderCell: (params: muidg.GridCellParams) => (
-                <span style={{ textTransform: 'capitalize' }}>
+                <span style={{ textTransform: "capitalize" }}>
                   {params.value}
                 </span>
               ),

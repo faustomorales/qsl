@@ -1,8 +1,8 @@
-import * as mui from '@material-ui/core';
-import * as sharedTypes from './sharedTypes';
-import React, * as react from 'react';
+import * as mui from "@material-ui/core";
+import * as sharedTypes from "./sharedTypes";
+import React, * as react from "react";
 
-type LabelTypes = 'single' | 'multiple' | 'text';
+type LabelTypes = "single" | "multiple" | "text";
 
 const SingleOrMultipleLabel = (props: {
   optionName: string;
@@ -22,8 +22,8 @@ const NewConfig = (props: {
   addConfig: (configName: string, configType: LabelTypes) => void;
   configGroup: sharedTypes.LabelConfigurationGroup;
 }) => {
-  const [configName, setConfigName] = react.useState('');
-  const [configType, setConfigType] = react.useState('single' as LabelTypes);
+  const [configName, setConfigName] = react.useState("");
+  const [configType, setConfigType] = react.useState("single" as LabelTypes);
   return (
     <mui.Grid container spacing={3}>
       <mui.Grid item xs={6}>
@@ -31,7 +31,7 @@ const NewConfig = (props: {
           value={configName}
           placeholder="New label name"
           onChange={(event) => setConfigName(event.target.value)}
-          style={{ width: '100%' }}
+          style={{ width: "100%" }}
         />
       </mui.Grid>
       <mui.Grid item xs={3}>
@@ -41,22 +41,22 @@ const NewConfig = (props: {
           label="New label type"
           value={configType}
           onChange={(event) => setConfigType(event.target.value as LabelTypes)}
-          style={{ width: '100%' }}
+          style={{ width: "100%" }}
         >
-          <mui.MenuItem value={'single'}>Single</mui.MenuItem>
-          <mui.MenuItem value={'multiple'}>Multiple</mui.MenuItem>
-          <mui.MenuItem value={'text'}>Text</mui.MenuItem>
+          <mui.MenuItem value={"single"}>Single</mui.MenuItem>
+          <mui.MenuItem value={"multiple"}>Multiple</mui.MenuItem>
+          <mui.MenuItem value={"text"}>Text</mui.MenuItem>
         </mui.Select>
       </mui.Grid>
       <mui.Grid item xs={3}>
         <mui.Button
           variant="contained"
-          color={'primary'}
+          color={"primary"}
           onClick={() => {
             props.addConfig(configName, configType);
-            setConfigName('');
+            setConfigName("");
           }}
-          style={{ width: '100%' }}
+          style={{ width: "100%" }}
           disabled={
             !configName ||
             props.configGroup[configType].hasOwnProperty(configName)
@@ -73,21 +73,21 @@ const NewSingleOrMultipleLabel = (props: {
   addOption: (optionName: string, shortcut: string) => void;
   isShortcutValid: (optionName: string, shortcut: string) => boolean;
 }) => {
-  const [name, setName] = react.useState('');
-  const [shortcut, setShortcut] = react.useState('');
+  const [name, setName] = react.useState("");
+  const [shortcut, setShortcut] = react.useState("");
   return (
-    <mui.Box style={{ marginBottom: '10px' }}>
+    <mui.Box style={{ marginBottom: "10px" }}>
       <mui.Input
         value={name}
         onChange={(event) => setName(event.target.value)}
-        placeholder={'New option name'}
-        style={{ marginRight: '10px' }}
+        placeholder={"New option name"}
+        style={{ marginRight: "10px" }}
       />
       <mui.Input
         value={shortcut}
         onChange={(event) => setShortcut(event.target.value)}
-        placeholder={'Keyboard shortcut'}
-        style={{ marginRight: '10px' }}
+        placeholder={"Keyboard shortcut"}
+        style={{ marginRight: "10px" }}
       />
       <mui.Button
         disabled={
@@ -99,8 +99,8 @@ const NewSingleOrMultipleLabel = (props: {
         color="primary"
         onClick={() => {
           props.addOption(name, shortcut);
-          setName('');
-          setShortcut('');
+          setName("");
+          setShortcut("");
         }}
       >
         Add Option
@@ -248,7 +248,7 @@ const InputLabelPanel = (props: {
 
 interface ShortcutSubconfiguration {
   [key: string]: {
-    type: 'single' | 'multiple';
+    type: "single" | "multiple";
     configName: string;
     optionName: string;
   };
@@ -258,7 +258,7 @@ const isShortcutValid = (
   shortcuts: ShortcutSubconfiguration,
   configName: string,
   optionName: string,
-  type: 'single' | 'multiple',
+  type: "single" | "multiple",
   shortcut: string
 ): boolean => {
   if (!shortcuts.hasOwnProperty(shortcut)) {
@@ -283,14 +283,14 @@ const buildShortcutMap = (
     .map(([configName, config]): [
       string,
       sharedTypes.SelectLabelConfiguration,
-      'single' | 'multiple'
-    ] => [configName, config, 'single'])
+      "single" | "multiple"
+    ] => [configName, config, "single"])
     .concat(
       Object.entries(configGroup.multiple).map(([configName, config]): [
         string,
         sharedTypes.SelectLabelConfiguration,
-        'single' | 'multiple'
-      ] => [configName, config, 'multiple'])
+        "single" | "multiple"
+      ] => [configName, config, "multiple"])
     )
     .map(([configName, config, configType]) => {
       return Object.entries(config.options).map(
@@ -365,7 +365,7 @@ const LabelPanel = (props: {
           [configName]: { id: null },
         },
       };
-      if (configType === 'multiple' || configType === 'single') {
+      if (configType === "multiple" || configType === "single") {
         updated[configType][configName].options = {};
       }
       setConfigGroup(updated);
@@ -378,10 +378,10 @@ const LabelPanel = (props: {
         return;
       }
       let updated: sharedTypes.LabelGroup;
-      if (configType === 'single' || configType === 'text') {
+      if (configType === "single" || configType === "text") {
         let newValue: string;
         if (
-          configType === 'single' &&
+          configType === "single" &&
           labels[configType][configName] === value
         ) {
           // We're unsetting this label.
@@ -393,7 +393,7 @@ const LabelPanel = (props: {
           ...labels,
           [configType]: { ...labels[configType], [configName]: newValue },
         };
-      } else if (configType === 'multiple') {
+      } else if (configType === "multiple") {
         const currentSelections = [...labels[configType][configName]];
         const currentLocation = currentSelections.indexOf(value);
         if (currentLocation >= 0) {
@@ -429,34 +429,34 @@ const LabelPanel = (props: {
         handleLabelChange(configName, type, optionName);
       } else if (
         onEnter &&
-        event.key === 'Enter' &&
+        event.key === "Enter" &&
         !event.shiftKey &&
         !event.ctrlKey
       ) {
         onEnter();
       } else if (
         onShiftEnter &&
-        event.key === 'Enter' &&
+        event.key === "Enter" &&
         event.shiftKey &&
         !event.ctrlKey
       ) {
         onShiftEnter();
       } else if (
         onCtrlEnter &&
-        event.key === 'Enter' &&
+        event.key === "Enter" &&
         !event.shiftKey &&
         event.ctrlKey
       ) {
         onCtrlEnter();
-      } else if (onEsc && event.key === 'Escape') {
+      } else if (onEsc && event.key === "Escape") {
         onEsc();
-      } else if (onDel && event.key === 'Delete') {
+      } else if (onDel && event.key === "Delete") {
         onDel();
       }
     };
-    document.addEventListener('keydown', handler, false);
+    document.addEventListener("keydown", handler, false);
     return () => {
-      document.removeEventListener('keydown', handler, false);
+      document.removeEventListener("keydown", handler, false);
     };
   }, [onEnter, setLabelGroup, shortcuts, shortcutsDisabled, handleLabelChange]);
   return (
@@ -465,8 +465,8 @@ const LabelPanel = (props: {
         <div>
           <NewConfig addConfig={handleAddConfig} configGroup={configGroup} />
           <mui.Divider
-            style={{ marginTop: '10px', marginBottom: '10px' }}
-          />{' '}
+            style={{ marginTop: "10px", marginBottom: "10px" }}
+          />{" "}
         </div>
       ) : null}
       {Object.entries(configGroup.single).map(([configName, config]) => (
@@ -475,13 +475,13 @@ const LabelPanel = (props: {
           key={configName}
           onChange={
             setLabelGroup
-              ? (event, value) => handleLabelChange(configName, 'single', value)
+              ? (event, value) => handleLabelChange(configName, "single", value)
               : null
           }
           setConfig={
             props.setConfigGroup
               ? (configName, config) =>
-                  handleConfigChange(configName, 'single', config)
+                  handleConfigChange(configName, "single", config)
               : null
           }
           isShortcutValid={(optionName, shortcut) =>
@@ -489,7 +489,7 @@ const LabelPanel = (props: {
               shortcuts,
               configName,
               optionName,
-              'single',
+              "single",
               shortcut
             )
           }
@@ -503,14 +503,14 @@ const LabelPanel = (props: {
           onChange={
             setLabelGroup
               ? (event, value) =>
-                  handleLabelChange(configName, 'multiple', value)
+                  handleLabelChange(configName, "multiple", value)
               : null
           }
           key={configName}
           setConfig={
             props.setConfigGroup
               ? (configName, config) =>
-                  handleConfigChange(configName, 'multiple', config)
+                  handleConfigChange(configName, "multiple", config)
               : null
           }
           isShortcutValid={(optionName, shortcut) =>
@@ -518,7 +518,7 @@ const LabelPanel = (props: {
               shortcuts,
               configName,
               optionName,
-              'multiple',
+              "multiple",
               shortcut
             )
           }
@@ -531,7 +531,7 @@ const LabelPanel = (props: {
           key={configName}
           onChange={
             setLabelGroup
-              ? (event, value) => handleLabelChange(configName, 'text', value)
+              ? (event, value) => handleLabelChange(configName, "text", value)
               : null
           }
           onFocus={() => {
@@ -547,7 +547,7 @@ const LabelPanel = (props: {
             }
           }}
           configName={configName}
-          value={props.labels ? props.labels.text[configName] || '' : ''}
+          value={props.labels ? props.labels.text[configName] || "" : ""}
         />
       ))}
     </div>

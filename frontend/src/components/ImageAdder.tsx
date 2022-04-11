@@ -1,10 +1,10 @@
-import * as sharedTypes from './sharedTypes';
-import * as common from './common';
-import ChipInput from 'material-ui-chip-input';
-import * as react from 'react';
-import * as rrd from 'react-router-dom';
-import * as mui from '@material-ui/core';
-import LabelPanel from './LabelPanel';
+import * as sharedTypes from "./sharedTypes";
+import * as common from "./common";
+import ChipInput from "material-ui-chip-input";
+import * as react from "react";
+import * as rrd from "react-router-dom";
+import * as mui from "@material-ui/core";
+import LabelPanel from "./LabelPanel";
 
 export const ImageAdder = () => {
   // Get context variables.
@@ -47,7 +47,7 @@ export const ImageAdder = () => {
         <mui.Button
           onClick={addFiles}
           disabled={files.length === 0}
-          style={{ width: '100%' }}
+          style={{ width: "100%" }}
           variant="contained"
           color="primary"
         >
@@ -65,8 +65,8 @@ export const ImageAdder = () => {
             setFiles(
               files.concat(
                 event.clipboardData
-                  .getData('Text')
-                  .split('\n')
+                  .getData("Text")
+                  .split("\n")
                   .filter((t) => t.length > 0)
               )
             );

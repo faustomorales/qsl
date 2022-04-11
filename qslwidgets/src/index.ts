@@ -3,4 +3,3 @@
 
 export * from "./version";
 export * from "./ImageLabelerWidget";
-export * from "./ImageLabelerComponent";

@@ -176,7 +176,7 @@ const Widget: React.FC<{
     <div
       style={{
         padding: 16,
-        backgroundColor: mode == "dark" ? "black" : "white",
+        backgroundColor: mode == "dark" ? "rgb(18, 18, 18)" : "white",
       }}
     >
       {type == "image" ? (

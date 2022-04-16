@@ -7,6 +7,12 @@ import pathlib
 import logging
 import threading
 import urllib.parse as up
+
+try:
+    import cv2
+    import numpy as np
+except ImportError:
+    cv2, np = None, None
 import pkg_resources
 import ipywidgets
 import traitlets as t
@@ -14,6 +20,7 @@ from . import file_utils
 
 TLS = threading.local()
 LOGGER = logging.getLogger(__name__)
+BASE64_PATTERN = "data:{type};charset=utf-8;base64,{data}"
 
 
 module_name = "qslwidgets"
@@ -81,7 +88,7 @@ class BaseImageLabeler(ipywidgets.DOMWidget):
     ).tag(sync=True)
 
 
-def file2str(filepath: str):
+def file2str(filepath: str, filetype: str):
     file_size = os.stat(filepath)
     if file_size.st_size > 10e6:
         encoded = base64.b64encode(
@@ -90,13 +97,27 @@ def file2str(filepath: str):
     else:
         with open(filepath, "rb") as f:
             encoded = base64.b64encode(f.read()).decode("utf8")
-    return "data:image;charset=utf-8;base64," + encoded
+    return BASE64_PATTERN.format(type=filetype, data=encoded)
 
 
-def build_url(target: str, base: dict, allow_base64=True):
+def arr2str(image: "np.ndarray"):
+    return BASE64_PATTERN.format(
+        type="image",
+        data=base64.b64encode(cv2.imencode(".png", image)[1].tobytes()).decode("utf8"),
+    )
+
+
+def build_url(
+    target: typing.Union[str, "np.ndarray"],
+    base: dict,
+    filetype: str,
+    allow_base64=True,
+):
     """Build a notebook file URL using notebook configuration and a filepath or URL."""
     if target is None:
         return None
+    if np is not None and isinstance(target, np.ndarray):
+        return arr2str(target)
     if target.lower().startswith("s3://"):
         s3 = file_utils.get_s3()
         segments = target.lower().replace("s3://", "").split("/")
@@ -111,12 +132,12 @@ def build_url(target: str, base: dict, allow_base64=True):
         return target
     if os.path.isfile(target):
         if not base or not base.get("serverRoot") or not base.get("url"):
-            return file2str(target) if allow_base64 else None
+            return file2str(target, filetype) if allow_base64 else None
         relpath = os.path.relpath(target, os.path.expanduser(base["serverRoot"]))
         if os.name == "nt":
             relpath = pathlib.PureWindowsPath(relpath).as_posix()
         if ".." in relpath:
-            return file2str(target) if allow_base64 else None
+            return file2str(target, filetype) if allow_base64 else None
         return up.urljoin(
             base["url"],
             os.path.join(
@@ -237,12 +258,12 @@ class ImageLabeler(BaseImageLabeler):
     def target(self, target):
         self._target = target
         if self.base:
-            self.url = build_url(self.target, self.base)
+            self.url = build_url(target=self.target, base=self.base, filetype=self.type)
 
     def handle_base_change(self, change):
         """Handles setting a correct URL for a local file, if and when
         the the page base configuration is received."""
-        self.url = build_url(self.target, self.base)
+        self.url = build_url(target=self.target, base=self.base, filetype=self.type)
 
     def handle_action_change(self, change):
         """Handles changes to the action state."""
@@ -338,7 +359,10 @@ class ImageSeriesLabeler(ImageLabeler):
             preload = []
             for preloadCandidate in self.images[self.idx + 1 :]:
                 preloadUrl = build_url(
-                    preloadCandidate["target"], base=self.base, allow_base64=False
+                    preloadCandidate["target"],
+                    base=self.base,
+                    filetype=preloadCandidate.get("type", "image"),
+                    allow_base64=False,
                 )
                 if preloadUrl:
                     preload.append(preloadUrl)

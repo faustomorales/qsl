@@ -12,7 +12,7 @@ try:
     import cv2
     import numpy as np
 except ImportError:
-    cv2, np = None, None
+    cv2, np = None, None  # type: ignore
 import pkg_resources
 import ipywidgets
 import traitlets as t
@@ -100,6 +100,7 @@ def file2str(filepath: str, filetype: str):
     return BASE64_PATTERN.format(type=filetype, data=encoded)
 
 
+# pylint: disable=no-member
 def arr2str(image: "np.ndarray"):
     return BASE64_PATTERN.format(
         type="image",

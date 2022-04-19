@@ -1,6 +1,7 @@
 # pylint: disable=too-many-ancestors,missing-function-docstring,unused-argument,too-many-return-statements
 import os
 import json
+import math
 import base64
 import typing
 import pathlib
@@ -39,10 +40,12 @@ class BaseImageLabeler(ipywidgets.DOMWidget):
     _view_module = t.Unicode(module_name).tag(sync=True)
     _view_module_version = t.Unicode(module_version).tag(sync=True)
 
-    url = t.Unicode(allow_none=True).tag(sync=True)
     config = t.Dict(default_value={"image": [], "regions": []}, allow_none=True).tag(
         sync=True
     )
+    states = t.List(default_value=[]).tag(sync=True)
+    urls = t.List(default_value=[]).tag(sync=True)
+    type = t.Unicode(default_value="image").tag(sync=True)
     labels = t.Union(
         [
             t.Dict(
@@ -71,7 +74,6 @@ class BaseImageLabeler(ipywidgets.DOMWidget):
     showNavigation = t.Bool(default_value=True).tag(sync=True)
     progress = t.Float(-1).tag(sync=True)
     mode = t.Unicode("light").tag(sync=True)
-    type = t.Unicode("image").tag(sync=True)
     buttons = t.Dict(
         default_value={
             "next": True,
@@ -152,9 +154,7 @@ def build_url(
 class ImageLabeler(BaseImageLabeler):
     def __init__(
         self,
-        target: str = None,
-        config=None,
-        labels=None,
+        config,
         on_next: typing.Callable = None,
         on_prev: typing.Callable = None,
         on_save: typing.Callable = None,
@@ -165,7 +165,6 @@ class ImageLabeler(BaseImageLabeler):
     ):
         super().__init__(
             config=config,
-            labels=labels,
             buttons={
                 "config": allow_config_change,
                 "next": on_next is not None,
@@ -176,17 +175,18 @@ class ImageLabeler(BaseImageLabeler):
                 "unignore": on_unignore is not None,
             },
         )
-        self._target = target
         self._on_next = on_next
         self._on_prev = on_prev
         self._on_save = on_save
         self._on_delete = on_delete
         self._on_ignore = on_ignore
         self._on_unignore = on_unignore
+        self._targets = []
         self._allow_config_change = allow_config_change
         self.observe(self.handle_base_change, ["base"])
         self.observe(self.handle_action_change, ["action"])
         self.observe(self.handle_updated_change, ["updated"])
+        self.observe(self.handle_states_change, ["states"])
 
     @property
     def on_next(self):
@@ -252,19 +252,38 @@ class ImageLabeler(BaseImageLabeler):
         self.buttons = {**self.buttons, "config": allow_config_change}
 
     @property
-    def target(self):
-        return self._target
+    def targets(self):
+        return self._targets
 
-    @target.setter
-    def target(self, target):
-        self._target = target
+    @targets.setter
+    def targets(self, targets):
+        self._targets = targets
+        self.states = [{**target, "target": None} for target in targets]
+
+    def set_urls_and_type(self):
         if self.base:
-            self.url = build_url(target=self.target, base=self.base, filetype=self.type)
+            assert (
+                len(set(c["type"] for c in self.targets)) <= 1
+            ), "Only one type of media is permitted in each batch."
+            assert len(self.targets) <= 1 or all(
+                [c["type"] == "image" for c in self.targets]
+            ), "Only images can be be batch labeled."
+            self.type = self.targets[0]["type"] if len(self.targets) > 0 else "image"
+            self.urls = [
+                build_url(target=t["target"], base=self.base, filetype=t["type"])
+                for t in self.targets
+            ]
+
+    def handle_states_change(self, change):
+        self._targets = [
+            {**state, "target": target["target"]}
+            for target, state in zip(self.targets, self.states)
+        ]
 
     def handle_base_change(self, change):
         """Handles setting a correct URL for a local file, if and when
         the the page base configuration is received."""
-        self.url = build_url(target=self.target, base=self.base, filetype=self.type)
+        self.set_urls_and_type()
 
     def handle_action_change(self, change):
         """Handles changes to the action state."""
@@ -289,7 +308,7 @@ class ImageLabeler(BaseImageLabeler):
 
 
 class ImageSeriesLabeler(ImageLabeler):
-    def __init__(self, images, config=None, allow_config_change=True):
+    def __init__(self, images, config=None, allow_config_change=True, batch_size=1):
         super().__init__(
             config=config,
             allow_config_change=allow_config_change,
@@ -302,63 +321,106 @@ class ImageSeriesLabeler(ImageLabeler):
         )
         self.images = images
         self.idx = 0
+        self.batch_size = batch_size
         self.max_preload = 3
-        self.update()
+        self.update(True)
+
+    @property
+    def total(self):
+        return math.ceil(len(self.images) / self.batch_size)
 
     def next(self):
-        self.idx = max(min(self.idx + 1, len(self.images) - 1), 0)
-        self.update()
+        self.idx = max(min(self.idx + 1, self.total - 1), 0)
+        self.update(True)
 
     def prev(self):
-        self.idx = max(min(self.idx - 1, len(self.images) - 1), 0)
-        self.update()
+        self.idx = max(min(self.idx - 1, self.total - 1), 0)
+        self.update(True)
+
+    @property
+    def idxs(self):
+        start = self.idx * self.batch_size
+        end = min(start + self.batch_size, len(self.images))
+        return range(start, end)
+
+    @property
+    def targets_and_images(self):
+        for tIdx, iIdx in enumerate(self.idxs):
+            yield self.targets[tIdx], self.images[iIdx]
 
     def save(self):
-        self.images[self.idx]["labels"] = self.labels
-        if self.type == "image":
+        for target, image in self.targets_and_images:
+            if target["visible"] and target["selected"]:
+                image["labels"] = self.labels
+                target["visible"] = False
+        if self.type == "image" and not any(t["visible"] for t in self.targets):
             self.next()
         else:
-            self.update()
+            self.update(False)
 
     def delete(self):
-        if self.images[self.idx].get("labels"):
-            del self.images[self.idx]["labels"]
-        self.update()
+        for target, image in self.targets_and_images:
+            if target["visible"] and target["selected"] and image.get("labels"):
+                del image["labels"]
+        self.update(False)
 
     def ignore(self):
-        self.images[self.idx]["ignore"] = True
-        if self.images[self.idx].get("labels"):
-            del self.images[self.idx]["labels"]
-        self.next()
+        for target, image in self.targets_and_images:
+            if target["visible"] and target["selected"]:
+                image["ignore"] = True
+                target["visible"] = False
+                if image.get("labels"):
+                    del image["labels"]
+        if self.type == "image" and not any(t["visible"] for t in self.targets):
+            self.next()
+        else:
+            self.update(False)
 
     def unignore(self):
-        self.images[self.idx]["ignore"] = False
-        self.update()
+        for target, image in self.targets_and_images:
+            if target["visible"] and target["selected"]:
+                image["ignore"] = False
+        self.update(False)
 
-    def update(self):
-        image = self.images[self.idx]
-        ignore = image.get("ignore", False)
-        has_labels = image.get("labels", None) is not None
-        self.target = image["target"]
+    def update(self, reset: bool):
+        start = self.idx * self.batch_size
+        self.targets = [
+            {
+                "target": self.images[idx]["target"],
+                "type": self.images[idx].get("type", "image"),
+                "metadata": self.images[idx].get("metadata", {}),
+                "selected": True if reset else self.targets[idx - start]["selected"],
+                "ignored": self.images[idx].get("ignore", False),
+                "labeled": self.images[idx].get("labels") is not None,
+                "visible": True if reset else self.targets[idx - start]["visible"],
+            }
+            for idx in self.idxs
+        ]
+        if reset:
+            self.set_urls_and_type()
+        base_image = next(t for t in self.targets if t["visible"])
         self.labels = (
-            image.get("labels")
-            or image.get("defaults")
-            or ({} if self.type == "image" else [])
+            (
+                base_image.get("labels")
+                or base_image.get("defaults")
+                or ({} if self.type == "image" else [])
+            )
+            if reset
+            else self.labels
         )
-        self.type = image.get("type", "image")
-        self.metadata = image.get("metadata", {})
         self.buttons = {
             "prev": self.idx != 0,
-            "next": has_labels and self.idx != (len(self.images) - 1),
-            "save": True,
+            "next": all(t["labeled"] or t["ignored"] for t in self.targets)
+            and self.idx != (self.total - 1),
+            "save": any(t["selected"] for t in self.targets),
             "config": self.allow_config_change,
-            "delete": has_labels,
-            "ignore": not ignore and not has_labels,
-            "unignore": ignore,
+            "delete": any(t["labeled"] and t["visible"] for t in self.targets),
+            "ignore": any(not t["ignored"] and t["visible"] for t in self.targets),
+            "unignore": any(t["ignored"] and t["visible"] for t in self.targets),
         }
-        if self.base and self.idx + 1 < len(self.images):
+        if self.base and start + 1 < len(self.images):
             preload = []
-            for preloadCandidate in self.images[self.idx + 1 :]:
+            for preloadCandidate in self.images[start + 1 :]:
                 preloadUrl = build_url(
                     preloadCandidate["target"],
                     base=self.base,

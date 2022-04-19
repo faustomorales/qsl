@@ -12,14 +12,24 @@ import {
   VideoLabeler,
   Labels,
   Config,
+  BatchImageLabeler,
   TimestampedLabel,
 } from "react-image-labeler";
 import { useModelState } from "./hooks";
 import { MODULE_NAME, MODULE_VERSION } from "./version";
 
-interface BaseWidgetState {
-  url: string;
+interface BaseWidgetState<T, U> {
+  states: {
+    metadata: { [key: string]: string };
+    selected: boolean;
+    visible: boolean;
+    ignored: boolean;
+    labeled: boolean;
+  }[];
+  urls: string[];
+  type: T;
   config: Config;
+  labels: U;
   updated: number;
   action: "next" | "prev" | "delete" | "ignore" | "unignore" | "";
   metadata: { [key: string]: string };
@@ -43,21 +53,14 @@ interface BaseWidgetState {
   mode: "light" | "dark";
 }
 
-interface ImageWidgetState extends BaseWidgetState {
-  type: "image";
-  labels: Labels;
-}
-
-interface VideoWidgetState extends BaseWidgetState {
-  type: "video";
-  labels: TimestampedLabel[];
-}
-
+type ImageWidgetState = BaseWidgetState<"image", Labels>;
+type VideoWidgetState = BaseWidgetState<"video", TimestampedLabel[]>;
 type WidgetState = VideoWidgetState | ImageWidgetState;
 
 const DEFAULT_PROPERTIES: WidgetState = {
+  states: [],
+  urls: [],
   type: "image",
-  url: "" as string,
   config: { image: [], regions: [] } as Config,
   labels: { image: {}, polygons: [], masks: [], boxes: [] } as Labels,
   updated: Date.now(),
@@ -92,7 +95,14 @@ const Widget: React.FC<{
     model
   );
   // @ts-ignore
-  const [url, setUrl] = useModelState<WidgetState, "url">("url", model);
+  const [states, setStates] = useModelState<WidgetState, "states">(
+    "states",
+    model
+  );
+  // @ts-ignore
+  const [urls, setUrls] = useModelState<WidgetState, "urls">("urls", model);
+  // @ts-ignore
+  const [type, setType] = useModelState<WidgetState, "type">("type", model);
   // @ts-ignore
   const [labels, setLabels] = useModelState<WidgetState, "labels">(
     "labels",
@@ -109,8 +119,6 @@ const Widget: React.FC<{
     model
   );
   // @ts-ignore
-  const [type, setType] = useModelState<WidgetState, "type">("type", model);
-  // @ts-ignore
   const [base, setBase] = useModelState<WidgetState, "base">("base", model);
   // @ts-ignore
   const [progress, setProgress] = useModelState<WidgetState, "progress">(
@@ -122,11 +130,6 @@ const Widget: React.FC<{
   // @ts-ignore
   const [buttons, setButtons] = useModelState<WidgetState, "buttons">(
     "buttons",
-    model
-  );
-  // @ts-ignore
-  const [metadata, setMetadata] = useModelState<WidgetState, "metadata">(
-    "metadata",
     model
   );
   // @ts-ignore
@@ -151,10 +154,10 @@ const Widget: React.FC<{
       url: PageConfig.getBaseUrl(),
     });
   });
-  const props = {
-    src: url,
+  const common = {
     config,
-    metadata,
+    preload,
+    options: { progress, mode, maxCanvasSize, showNavigation },
     callbacks: {
       onSave: buttons["save"]
         ? (labels: any) => {
@@ -169,26 +172,46 @@ const Widget: React.FC<{
       onIgnore: buttons["ignore"] ? () => setAction("ignore") : undefined,
       onUnignore: buttons["unignore"] ? () => setAction("unignore") : undefined,
     },
-    preload,
-    options: { progress, mode, maxCanvasSize, showNavigation },
   };
-  return (
-    <div
-      style={{
-        padding: 16,
-        backgroundColor: mode == "dark" ? "rgb(18, 18, 18)" : "white",
-      }}
-    >
-      {type == "image" ? (
-        <ImageLabeler labels={(labels || {}) as Labels} {...props} />
-      ) : (
-        <VideoLabeler
-          labels={(Array.isArray(labels) ? labels : []) as TimestampedLabel[]}
-          {...props}
+  const style = {
+    padding: 16,
+    backgroundColor: mode == "dark" ? "rgb(18, 18, 18)" : "white",
+  };
+  if (states.length === 0) {
+    return null;
+  } else if (states.length === 1) {
+    const props = {
+      target: urls[0],
+      metadata: states[0].metadata,
+      ...common,
+    };
+    return (
+      <div style={style}>
+        {type == "image" ? (
+          <ImageLabeler labels={(labels || {}) as Labels} {...props} />
+        ) : (
+          <VideoLabeler
+            labels={(Array.isArray(labels) ? labels : []) as TimestampedLabel[]}
+            {...props}
+          />
+        )}
+      </div>
+    );
+  } else {
+    if (type !== "image") {
+      return <p>Videos cannot be batch labeled.</p>;
+    }
+    return (
+      <div style={style}>
+        <BatchImageLabeler
+          {...common}
+          target={urls}
+          states={states}
+          setStates={(states) => setStates(states)}
         />
-      )}
-    </div>
-  );
+      </div>
+    );
+  }
 };
 
 class ImageLabelerModel extends DOMWidgetModel {

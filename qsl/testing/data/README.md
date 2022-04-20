@@ -11,3 +11,6 @@ These images were obtained from Wikimedia Commons.
 - [Image 8](https://commons.wikimedia.org/wiki/Commons:Picture_of_the_day#/media/File:Panoramic_sunset_in_Conques_02.jpg)
 - [Image 9](https://commons.wikimedia.org/wiki/Commons:Picture_of_the_day#/media/File:Catedral_de_San_Basilio,_Mosc%C3%BA,_Rusia,_2016-10-03,_DD_05-06_HDR.jpg)
 - [Image 10](https://commons.wikimedia.org/wiki/Commons:Picture_of_the_day#/media/File:Tupolev_Tu-160_overflying_Moscow_fix.jpg)
+
+# Sample videos
+Video from https://www.youtube.com/watch?v=84Er4LnWXtI under Creative Commons Attribution License.

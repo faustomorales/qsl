@@ -8,12 +8,15 @@ import { WidgetModel } from "@jupyter-widgets/base";
  */
 const useModelState = <
   WidgetModelState extends { [key: string]: any },
-  T extends keyof WidgetModelState
+  T extends keyof WidgetModelState & string
 >(
-  name: string & T,
+  name: T,
   model: WidgetModel
-): [WidgetModelState[T], (val: WidgetModelState[T], options?: any) => void] => {
-  const [state, setState] = React.useState<WidgetModelState[T]>(
+): {
+  value: WidgetModelState[T];
+  set: (val: WidgetModelState[T], options?: any) => void;
+} => {
+  const [value, setState] = React.useState<WidgetModelState[T]>(
     model?.get(name)
   );
   useModelEvent(
@@ -25,12 +28,22 @@ const useModelState = <
     [name]
   );
 
-  function updateModel(val: WidgetModelState[T], options?: any) {
+  function set(val: WidgetModelState[T], options?: any) {
     model?.set(name, val, options);
     model?.save_changes();
   }
 
-  return [state, updateModel];
+  return { value, set };
+};
+
+export const useModelStateExtractor = <
+  WidgetModelState extends { [key: string]: any }
+>(
+  model: WidgetModel
+) => {
+  return <T extends keyof WidgetModelState & string>(name: T) => {
+    return useModelState<WidgetModelState, T>(name, model);
+  };
 };
 
 /**

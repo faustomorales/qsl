@@ -14,8 +14,10 @@ import {
   Config,
   BatchImageLabeler,
   TimestampedLabel,
+  Labeler,
 } from "react-image-labeler";
-import { useModelState } from "./hooks";
+import { useModelStateExtractor } from "./hooks";
+import { uniqueId } from "lodash";
 import { MODULE_NAME, MODULE_VERSION } from "./version";
 
 interface BaseWidgetState<T, U> {
@@ -25,14 +27,15 @@ interface BaseWidgetState<T, U> {
     visible: boolean;
     ignored: boolean;
     labeled: boolean;
+    labels: Labels;
   }[];
   urls: string[];
   type: T;
   config: Config;
+  transitioning: boolean;
   labels: U;
   updated: number;
   action: "next" | "prev" | "delete" | "ignore" | "unignore" | "";
-  metadata: { [key: string]: string };
   preload: string[];
   showNavigation: boolean;
   maxCanvasSize: number;
@@ -61,11 +64,11 @@ const DEFAULT_PROPERTIES: WidgetState = {
   states: [],
   urls: [],
   type: "image",
+  transitioning: false,
   config: { image: [], regions: [] } as Config,
   labels: { image: {}, polygons: [], masks: [], boxes: [] } as Labels,
   updated: Date.now(),
   action: "" as "next" | "prev" | "delete" | "ignore" | "unignore" | "",
-  metadata: {} as { [key: string]: string },
   preload: [] as string[],
   showNavigation: true,
   maxCanvasSize: 512 as number,
@@ -89,129 +92,102 @@ const DEFAULT_PROPERTIES: WidgetState = {
 const Widget: React.FC<{
   model: WidgetModel;
 }> = ({ model }) => {
-  // @ts-ignore
-  const [config, setConfig] = useModelState<WidgetState, "config">(
-    "config",
-    model
-  );
-  // @ts-ignore
-  const [states, setStates] = useModelState<WidgetState, "states">(
-    "states",
-    model
-  );
-  // @ts-ignore
-  const [urls, setUrls] = useModelState<WidgetState, "urls">("urls", model);
-  // @ts-ignore
-  const [type, setType] = useModelState<WidgetState, "type">("type", model);
-  // @ts-ignore
-  const [labels, setLabels] = useModelState<WidgetState, "labels">(
-    "labels",
-    model
-  );
-  // @ts-ignore
-  const [updated, setUpdated] = useModelState<WidgetState, "updated">(
-    "updated",
-    model
-  );
-  // @ts-ignore
-  const [action, setAction] = useModelState<WidgetState, "action">(
-    "action",
-    model
-  );
-  // @ts-ignore
-  const [base, setBase] = useModelState<WidgetState, "base">("base", model);
-  // @ts-ignore
-  const [progress, setProgress] = useModelState<WidgetState, "progress">(
-    "progress",
-    model
-  );
-  // @ts-ignore
-  const [mode, setMode] = useModelState<WidgetState, "mode">("mode", model);
-  // @ts-ignore
-  const [buttons, setButtons] = useModelState<WidgetState, "buttons">(
-    "buttons",
-    model
-  );
-  // @ts-ignore
-  const [preload, setPreload] = useModelState<WidgetState, "preload">(
-    "preload",
-    model
-  );
-  // @ts-ignore
-  const [maxCanvasSize, setMaxCanvasSize] = useModelState<
-    WidgetState,
-    "maxCanvasSize"
-  >("maxCanvasSize", model);
-  // @ts-ignore
-  const [showNavigation, setShowNavigation] = useModelState<
-    WidgetState,
-    "showNavigation"
-  >("showNavigation", model);
+  const extract = useModelStateExtractor<WidgetState>(model);
+  const config = extract("config");
+  const states = extract("states");
+  const transitioning = extract("transitioning");
+  const urls = extract("urls");
+  const type = extract("type");
+  const labels = extract("labels");
+  const updated = extract("updated");
+  const action = extract("action");
+  const base = extract("base");
+  const progress = extract("progress");
+  const mode = extract("mode");
+  const buttons = extract("buttons");
+  const preload = extract("preload");
+  const maxCanvasSize = extract("maxCanvasSize");
+  const showNavigation = extract("showNavigation");
+  const id = React.useMemo(() => uniqueId("qslwidgetid"), []);
 
   React.useEffect(() => {
-    setBase({
+    base.set({
       serverRoot: PageConfig.getOption("serverRoot"),
       url: PageConfig.getBaseUrl(),
     });
   });
   const common = {
-    config,
-    preload,
-    options: { progress, mode, maxCanvasSize, showNavigation },
+    config: {
+      image: config.value.image || [],
+      regions: config.value.regions || [],
+    },
+    preload: preload.value,
+    options: {
+      progress: progress.value,
+      maxCanvasSize: maxCanvasSize.value,
+      showNavigation: showNavigation.value,
+    },
     callbacks: {
-      onSave: buttons["save"]
-        ? (labels: any) => {
-            setLabels(labels);
-            setUpdated(Date.now());
+      onSave: buttons.value["save"]
+        ? (newLabels: any) => {
+            labels.set(newLabels);
+            updated.set(Date.now());
           }
         : undefined,
-      onSaveConfig: buttons["config"] ? setConfig : undefined,
-      onNext: buttons["next"] ? () => setAction("next") : undefined,
-      onPrev: buttons["prev"] ? () => setAction("prev") : undefined,
-      onDelete: buttons["delete"] ? () => setAction("delete") : undefined,
-      onIgnore: buttons["ignore"] ? () => setAction("ignore") : undefined,
-      onUnignore: buttons["unignore"] ? () => setAction("unignore") : undefined,
+      onSaveConfig: buttons.value["config"] ? config.set : undefined,
+      onNext: buttons.value["next"] ? () => action.set("next") : undefined,
+      onPrev: buttons.value["prev"] ? () => action.set("prev") : undefined,
+      onDelete: buttons.value["delete"]
+        ? () => action.set("delete")
+        : undefined,
+      onIgnore: buttons.value["ignore"]
+        ? () => action.set("ignore")
+        : undefined,
+      onUnignore: buttons.value["unignore"]
+        ? () => action.set("unignore")
+        : undefined,
     },
   };
-  const style = {
-    padding: 16,
-    backgroundColor: mode == "dark" ? "rgb(18, 18, 18)" : "white",
-  };
-  if (states.length === 0) {
-    return null;
-  } else if (states.length === 1) {
-    const props = {
-      target: urls[0],
-      metadata: states[0].metadata,
-      ...common,
-    };
-    return (
-      <div style={style}>
-        {type == "image" ? (
-          <ImageLabeler labels={(labels || {}) as Labels} {...props} />
+  return (
+    <Labeler
+      style={{
+        padding: 16,
+        backgroundColor: mode.value == "dark" ? "rgb(18, 18, 18)" : "white",
+      }}
+      mode={mode.value}
+      id={id}
+    >
+      {states.value.length === 0 ? null : states.value.length == 1 ? (
+        type.value === "image" ? (
+          <ImageLabeler
+            {...common}
+            labels={(labels.value || {}) as Labels}
+            target={urls.value[0]}
+            metadata={transitioning.value ? {} : states.value[0].metadata}
+          />
         ) : (
           <VideoLabeler
-            labels={(Array.isArray(labels) ? labels : []) as TimestampedLabel[]}
-            {...props}
+            {...common}
+            labels={
+              (Array.isArray(labels.value)
+                ? labels.value
+                : []) as TimestampedLabel[]
+            }
+            target={urls.value[0]}
+            metadata={transitioning.value ? {} : states.value[0].metadata}
           />
-        )}
-      </div>
-    );
-  } else {
-    if (type !== "image") {
-      return <p>Videos cannot be batch labeled.</p>;
-    }
-    return (
-      <div style={style}>
+        )
+      ) : (
         <BatchImageLabeler
           {...common}
-          target={urls}
-          states={states}
-          setStates={(states) => setStates(states)}
+          labels={(labels.value || {}) as Labels}
+          target={urls.value}
+          states={transitioning.value ? [] : states.value}
+          setStates={(newStates) => states.set(newStates)}
         />
-      </div>
-    );
-  }
+      )}
+    </Labeler>
+  );
 };
 
 class ImageLabelerModel extends DOMWidgetModel {

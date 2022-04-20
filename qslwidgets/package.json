@@ -51,9 +51,10 @@
   },
   "dependencies": {
     "@jupyter-widgets/base": "^1.1.10 || ^2.0.0 || ^3.0.0 || ^4.0.0",
+    "lodash": "^4.17.21",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-image-labeler": "../../react-image-labeler",
+    "react-image-labeler": "0.0.1-alpha.37",
     "streamlit-component-lib": "^1.4.0"
   },
   "devDependencies": {

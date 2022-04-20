@@ -1,5 +1,8 @@
+import os
 import threading
 import glob
+import json
+import pathlib
 import typing
 import fnmatch
 
@@ -69,3 +72,17 @@ def filepaths_from_patterns(patterns: typing.List[str], s3=None) -> typing.List[
         else:
             filepaths.extend(glob.glob(file_or_pattern))
     return filepaths
+
+
+def json_or_none(filepath: str):
+    """Try to load JSON from a path, returning None upon failure."""
+    try:
+        labels = (
+            json.loads(pathlib.Path(filepath).read_text(encoding="utf8"))
+            if os.path.isfile(filepath)
+            else None
+        )
+    except json.JSONDecodeError:
+        os.remove(filepath)
+        labels = None
+    return labels

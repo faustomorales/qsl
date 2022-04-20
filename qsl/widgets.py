@@ -1,7 +1,6 @@
 # pylint: disable=too-many-ancestors,missing-function-docstring,unused-argument,too-many-return-statements
 import os
 import json
-import math
 import base64
 import typing
 import pathlib
@@ -16,13 +15,27 @@ except ImportError:
     cv2, np = None, None  # type: ignore
 import pkg_resources
 import ipywidgets
+import typing_extensions as tx
 import traitlets as t
 from . import file_utils
 
 TLS = threading.local()
 LOGGER = logging.getLogger(__name__)
 BASE64_PATTERN = "data:{type};charset=utf-8;base64,{data}"
-
+Target = tx.TypedDict(
+    "Target",
+    {
+        "idx": int,
+        "target": typing.Union[str, np.ndarray],
+        "type": tx.Literal["video", "image"],
+        "metadata": dict,
+        "visible": bool,
+        "selected": bool,
+        "ignored": bool,
+        "labeled": bool,
+        "labels": dict,
+    },
+)
 
 module_name = "qslwidgets"
 module_version = json.loads(
@@ -46,6 +59,7 @@ class BaseImageLabeler(ipywidgets.DOMWidget):
     states = t.List(default_value=[]).tag(sync=True)
     urls = t.List(default_value=[]).tag(sync=True)
     type = t.Unicode(default_value="image").tag(sync=True)
+    transitioning = t.Bool(default_value=False).tag(sync=True)
     labels = t.Union(
         [
             t.Dict(
@@ -84,9 +98,6 @@ class BaseImageLabeler(ipywidgets.DOMWidget):
             "ignore": True,
             "unignore": True,
         },
-    ).tag(sync=True)
-    metadata = t.Dict(
-        default_value={}, value_trait=t.Unicode(), key_trait=t.Unicode()
     ).tag(sync=True)
 
 
@@ -181,7 +192,7 @@ class ImageLabeler(BaseImageLabeler):
         self._on_delete = on_delete
         self._on_ignore = on_ignore
         self._on_unignore = on_unignore
-        self._targets = []
+        self._targets: typing.List[Target] = []
         self._allow_config_change = allow_config_change
         self.observe(self.handle_base_change, ["base"])
         self.observe(self.handle_action_change, ["action"])
@@ -252,13 +263,32 @@ class ImageLabeler(BaseImageLabeler):
         self.buttons = {**self.buttons, "config": allow_config_change}
 
     @property
-    def targets(self):
+    def targets(self) -> typing.List[Target]:
         return self._targets
 
     @targets.setter
-    def targets(self, targets):
+    def targets(self, targets: typing.List[Target]):
         self._targets = targets
         self.states = [{**target, "target": None} for target in targets]
+        self.set_buttons()
+
+    def set_buttons(self):
+        self.buttons = {
+            **self.buttons,
+            "save": any(t["selected"] for t in self.states),
+            "config": self.allow_config_change,
+            "delete": any(
+                t["labeled"] and t["visible"] and t["selected"] for t in self.states
+            ),
+            "ignore": all(
+                not (t["ignored"] or t["labeled"])
+                for t in self.states
+                if t["visible"] and t["selected"]
+            ),
+            "unignore": any(
+                t["ignored"] and t["visible"] and t["selected"] for t in self.states
+            ),
+        }
 
     def set_urls_and_type(self):
         if self.base:
@@ -266,19 +296,22 @@ class ImageLabeler(BaseImageLabeler):
                 len(set(c["type"] for c in self.targets)) <= 1
             ), "Only one type of media is permitted in each batch."
             assert len(self.targets) <= 1 or all(
-                [c["type"] == "image" for c in self.targets]
+                c["type"] == "image" for c in self.targets
             ), "Only images can be be batch labeled."
             self.type = self.targets[0]["type"] if len(self.targets) > 0 else "image"
             self.urls = [
                 build_url(target=t["target"], base=self.base, filetype=t["type"])
+                if t.get("target") is not None
+                else None
                 for t in self.targets
             ]
 
     def handle_states_change(self, change):
         self._targets = [
-            {**state, "target": target["target"]}
+            {**state, "target": target.get("target")}
             for target, state in zip(self.targets, self.states)
         ]
+        self.set_buttons()
 
     def handle_base_change(self, change):
         """Handles setting a correct URL for a local file, if and when
@@ -325,23 +358,34 @@ class ImageSeriesLabeler(ImageLabeler):
         self.max_preload = 3
         self.update(True)
 
-    @property
-    def total(self):
-        return math.ceil(len(self.images) / self.batch_size)
-
     def next(self):
-        self.idx = max(min(self.idx + 1, self.total - 1), 0)
-        self.update(True)
+        next_idx = self.targets[-1]["idx"] + 1
+        if next_idx < len(self.images):
+            self.idx = next_idx
+            self.update(True)
 
     def prev(self):
-        self.idx = max(min(self.idx - 1, self.total - 1), 0)
+        self.idx = max(self.idx - self.batch_size, 0)
         self.update(True)
 
     @property
     def idxs(self):
-        start = self.idx * self.batch_size
-        end = min(start + self.batch_size, len(self.images))
-        return range(start, end)
+        includes_video = False
+        for count, idx in enumerate(
+            range(self.idx, min(self.idx + self.batch_size, len(self.images)))
+        ):
+            includes_video = (
+                includes_video or self.images[idx].get("type", "image") == "video"
+            )
+            if count == 0:
+                # We can always include at least one.
+                yield idx
+            elif not includes_video:
+                # We can include an arbitrary number of non-videos.
+                yield idx
+            else:
+                # We've hit a video in a batch. Do not allow this.
+                break
 
     @property
     def targets_and_images(self):
@@ -352,7 +396,8 @@ class ImageSeriesLabeler(ImageLabeler):
         for target, image in self.targets_and_images:
             if target["visible"] and target["selected"]:
                 image["labels"] = self.labels
-                target["visible"] = False
+                if self.type == "image":
+                    target["visible"] = False
         if self.type == "image" and not any(t["visible"] for t in self.targets):
             self.next()
         else:
@@ -383,22 +428,26 @@ class ImageSeriesLabeler(ImageLabeler):
         self.update(False)
 
     def update(self, reset: bool):
-        start = self.idx * self.batch_size
+        if reset:
+            self.transitioning = True
         self.targets = [
             {
-                "target": self.images[idx]["target"],
+                "idx": idx,
+                "target": self.images[idx].get("target"),
                 "type": self.images[idx].get("type", "image"),
                 "metadata": self.images[idx].get("metadata", {}),
-                "selected": True if reset else self.targets[idx - start]["selected"],
+                "selected": True if reset else self.targets[idx - self.idx]["selected"],
                 "ignored": self.images[idx].get("ignore", False),
                 "labeled": self.images[idx].get("labels") is not None,
-                "visible": True if reset else self.targets[idx - start]["visible"],
+                "labels": self.images[idx].get("labels", {}),
+                "visible": True if reset else self.targets[idx - self.idx]["visible"],
             }
             for idx in self.idxs
         ]
         if reset:
             self.set_urls_and_type()
-        base_image = next(t for t in self.targets if t["visible"])
+            self.transitioning = False
+        base_image = next(i for t, i in self.targets_and_images if t["visible"])
         self.labels = (
             (
                 base_image.get("labels")
@@ -408,19 +457,18 @@ class ImageSeriesLabeler(ImageLabeler):
             if reset
             else self.labels
         )
-        self.buttons = {
-            "prev": self.idx != 0,
-            "next": all(t["labeled"] or t["ignored"] for t in self.targets)
-            and self.idx != (self.total - 1),
-            "save": any(t["selected"] for t in self.targets),
-            "config": self.allow_config_change,
-            "delete": any(t["labeled"] and t["visible"] for t in self.targets),
-            "ignore": any(not t["ignored"] and t["visible"] for t in self.targets),
-            "unignore": any(t["ignored"] and t["visible"] for t in self.targets),
-        }
-        if self.base and start + 1 < len(self.images):
+        self.on_prev = self.prev if self.idx != 0 else None
+        self.on_next = (
+            self.next
+            if (
+                all(t["labeled"] or t["ignored"] for t in self.targets)
+                and self.idx + 1 < len(self.images)
+            )
+            else None
+        )
+        if self.base and self.idx + 1 < len(self.images):
             preload = []
-            for preloadCandidate in self.images[start + 1 :]:
+            for preloadCandidate in self.images[self.idx + 1 :]:
                 preloadUrl = build_url(
                     preloadCandidate["target"],
                     base=self.base,
@@ -449,20 +497,6 @@ class ImageSeriesLabeler(ImageLabeler):
         )
 
 
-def json_or_none(filepath: str):
-    """Try to load JSON from a path, returning None upon failure."""
-    try:
-        labels = (
-            json.loads(pathlib.Path(filepath).read_text(encoding="utf8"))
-            if os.path.isfile(filepath)
-            else None
-        )
-    except json.JSONDecodeError:
-        os.remove(filepath)
-        labels = None
-    return labels
-
-
 class ImageSeriesLabelerJSON(ImageSeriesLabeler):
     def __init__(self, images, **kwargs):
         assert all(
@@ -472,15 +506,15 @@ class ImageSeriesLabelerJSON(ImageSeriesLabeler):
             [
                 {
                     **image,
-                    "labels": json_or_none(image["jsonpath"]),
+                    "labels": file_utils.json_or_none(image["jsonpath"]),
                 }
                 for image in images
             ],
             **kwargs,
         )
 
-    def write(self, labels):
-        filepath = self.images[self.idx]["jsonpath"]
+    @staticmethod
+    def write(labels, filepath):
         dirname = os.path.dirname(filepath)
         if dirname:
             os.makedirs(dirname, exist_ok=True)
@@ -488,19 +522,29 @@ class ImageSeriesLabelerJSON(ImageSeriesLabeler):
             f.write(json.dumps(labels))
 
     def save(self):
-        self.write(self.labels)
+        for idx in self.idxs:
+            self.write(self.labels, self.images[idx]["jsonpath"])
         super().save()
 
     def delete(self):
-        filepath = self.images[self.idx]["jsonpath"]
-        if os.path.isfile(filepath):
-            os.remove(filepath)
+        for idx in self.idxs:
+            filepath = self.images[idx]["jsonpath"]
+            if os.path.isfile(filepath):
+                os.remove(filepath)
         super().delete()
 
     def ignore(self):
-        self.write({**self.images[self.idx], "ignore": True, "labels": None})
+        for idx in self.idxs:
+            self.write(
+                {**self.images[self.idx], "ignore": True, "labels": None},
+                self.images[idx]["jsonpath"],
+            )
         super().ignore()
 
     def unignore(self):
-        self.write({**self.images[self.idx], "ignore": False, "labels": None})
+        for idx in self.idxs:
+            self.write(
+                {**self.images[idx], "ignore": False, "labels": None},
+                self.images[idx]["jsonpath"],
+            )
         super().unignore()

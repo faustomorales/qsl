@@ -118,8 +118,8 @@ const Widget: React.FC<{
   });
   const common = {
     config: {
-      image: config.value.image || [],
-      regions: config.value.regions || [],
+      image: config.value?.image || [],
+      regions: config.value?.regions || [],
     },
     preload: preload.value,
     options: {

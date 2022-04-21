@@ -7,12 +7,13 @@ import pathlib
 import logging
 import threading
 import urllib.parse as up
+import numpy as np
 
 try:
     import cv2
-    import numpy as np
 except ImportError:
-    cv2, np = None, None  # type: ignore
+    cv2 = None  # type: ignore
+
 import pkg_resources
 import ipywidgets
 import typing_extensions as tx
@@ -115,6 +116,8 @@ def file2str(filepath: str, filetype: str):
 
 # pylint: disable=no-member
 def arr2str(image: "np.ndarray"):
+    if cv2 is None:
+        raise ValueError("Labeling arrays requires OpenCV.")
     return BASE64_PATTERN.format(
         type="image",
         data=base64.b64encode(cv2.imencode(".png", image)[1].tobytes()).decode("utf8"),

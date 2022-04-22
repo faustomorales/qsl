@@ -50,12 +50,14 @@
     "watch:labextension": "jupyter labextension watch ."
   },
   "dependencies": {
+    "@emotion/react": "^11.8.1",
+    "@emotion/styled": "^11.8.1",
     "@jupyter-widgets/base": "^1.1.10 || ^2.0.0 || ^3.0.0 || ^4.0.0",
-    "lodash": "^4.17.21",
+    "@mui/icons-material": "^5.6.1",
+    "@mui/material": "^5.6.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-image-labeler": "0.0.1-alpha.37",
-    "streamlit-component-lib": "^1.4.0"
+    "react-image-labeler": "0.0.1-alpha.43"
   },
   "devDependencies": {
     "@babel/core": "^7.5.0",
@@ -73,12 +75,10 @@
     "@typescript-eslint/parser": "^3.6.0",
     "acorn": "^7.2.0",
     "babel-loader": "^8.2.2",
-    "css-loader": "^3.2.0",
     "eslint": "^7.4.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-prettier": "^3.1.4",
     "fs-extra": "^7.0.0",
-    "html-webpack-plugin": "^5.5.0",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^26.0.0",
     "mkdirp": "^0.5.1",
@@ -86,7 +86,6 @@
     "prettier": "^2.0.5",
     "rimraf": "^2.6.2",
     "source-map-loader": "^1.1.3",
-    "style-loader": "^1.0.0",
     "ts-jest": "^26.0.0",
     "ts-loader": "^8.0.0",
     "typescript": "~4.1.3",
@@ -102,7 +101,7 @@
   },
   "jupyterlab": {
     "extension": "lib/plugin",
-    "outputDir": "../qsl/labextension/",
+    "outputDir": "../qsl/ui/labextension/",
     "sharedPackages": {
       "@jupyter-widgets/base": {
         "bundled": false,

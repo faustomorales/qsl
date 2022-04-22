@@ -5,7 +5,7 @@ import { Application, IPlugin } from "@phosphor/application";
 import { Widget } from "@phosphor/widgets";
 import { IJupyterWidgetRegistry } from "@jupyter-widgets/base";
 import { MODULE_NAME, MODULE_VERSION } from "./version";
-import { ImageLabelerModel, ImageLabelerView } from "./ImageLabelerWidget";
+import { MediaLabelerModel, MediaLabelerView } from "./MediaLabeler";
 
 const EXTENSION_ID = "qsl:plugin";
 
@@ -31,6 +31,6 @@ function activateWidgetExtension(
   registry.registerWidget({
     name: MODULE_NAME,
     version: MODULE_VERSION,
-    exports: { ImageLabelerModel, ImageLabelerView },
+    exports: { MediaLabelerModel, MediaLabelerView },
   });
 }

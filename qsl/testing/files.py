@@ -1,7 +1,7 @@
 import os
 import pkg_resources
 
-TEST_FILES = [
+TEST_IMAGES = [
     pkg_resources.resource_filename(
         "qsl", os.path.join("testing", "data", f"image{n}.jpg")
     )

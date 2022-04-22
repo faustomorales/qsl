@@ -12,21 +12,11 @@ include qslwidgets/webpack.config.js
 prune qslwidgets/lib
 prune qslwidgets/dist
 graft qslwidgets/src
-graft qsl/slextension
-graft qsl/nbextension
-graft qsl/labextension
-
-# Frontend
-graft qsl/frontend
-
-# Static assets
-graft qsl/assets
-graft qsl/testing/data
+graft qsl/ui
 
 # Unwanted JavaScript
 prune **/node_modules
 prune coverage
-
 
 # Testing data
 graft qsl/testing/data

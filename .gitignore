@@ -24,6 +24,7 @@ var/
 .installed.cfg
 *.egg
 .eslintcache
+MANIFEST
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -143,23 +144,16 @@ $RECYCLE.BIN/
 # ----
 
 **/node_modules/
-qsl/nbextension/index.*
-qsl/labextension/*.tgz
-qsl/slextension/
-qsl/frontend
+qsl/ui/nbextension/index.*
+qsl/ui/labextension
 
 # Coverage data
 # -------------
 **/coverage/
 
-# Packed lab extensions
-qsl/labextension
 
 # Virtualenv
 .venv
-
-# Build artifacts
-MANIFEST
 
 # Scratch notebooks
 notebooks

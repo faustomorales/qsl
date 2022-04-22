@@ -1,13 +1,12 @@
 const path = require('path');
 const version = require('./package.json').version;
-const HtmlWebpackPlugin = require('html-webpack-plugin');
 const defaults = {
+  entry: './src/index.ts',
   module: {
     rules: [
       { test: /\.ts$/, loader: 'ts-loader' },
       { test: /\.[t|j]sx$/, loader: 'babel-loader' },
       { test: /\.js$/, loader: 'source-map-loader' },
-      { test: /\.css$/, use: ['style-loader', 'css-loader'] },
     ],
   },
   ignoreWarnings: [/Failed to parse source map/],
@@ -27,14 +26,13 @@ module.exports = [
    * the notebook.
    */
   {
-    entry: './src/extension.ts',
+    ...defaults,
     output: {
       filename: 'index.js',
-      path: path.resolve(__dirname, '..', 'qsl', 'nbextension'),
+      path: path.resolve(__dirname, '..', 'qsl', 'ui', 'nbextension'),
       libraryTarget: 'amd',
       publicPath: '',
     },
-    ...defaults,
   },
 
   /**
@@ -48,7 +46,7 @@ module.exports = [
    * the custom widget embedder.
    */
   {
-    entry: './src/index.ts',
+    ...defaults,
     output: {
       filename: 'index.js',
       path: path.resolve(__dirname, 'dist'),
@@ -56,6 +54,5 @@ module.exports = [
       library: 'qsl',
       publicPath: 'https://unpkg.com/qsl@' + version + '/dist/',
     },
-    ...defaults,
   },
 ];

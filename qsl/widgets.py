@@ -1,28 +1,19 @@
 # pylint: disable=too-many-ancestors,missing-function-docstring,unused-argument,too-many-return-statements
 import os
 import json
-import base64
 import typing
-import pathlib
 import logging
 import threading
-import urllib.parse as up
 import numpy as np
-
-try:
-    import cv2
-except ImportError:
-    cv2 = None  # type: ignore
 
 import pkg_resources
 import ipywidgets
 import typing_extensions as tx
 import traitlets as t
-from . import file_utils
+from . import files
 
 TLS = threading.local()
 LOGGER = logging.getLogger(__name__)
-BASE64_PATTERN = "data:{type};charset=utf-8;base64,{data}"
 Target = tx.TypedDict(
     "Target",
     {
@@ -39,20 +30,33 @@ Target = tx.TypedDict(
 )
 
 module_name = "qslwidgets"
-module_version = json.loads(
-    pkg_resources.resource_string("qsl", "labextension/package.json")
-)["version"]
 
 
-class BaseImageLabeler(ipywidgets.DOMWidget):
+def module_version():
+    """Load module version dynamically from package.json, falling
+    back to a default value if it doesn't yet exist."""
+    try:
+        return json.loads(
+            pkg_resources.resource_string("qsl", "ui/labextension/package.json")
+        )["version"]
+    except FileNotFoundError:
+        return "0.0.0"
+
+
+def deprecate(old, new):
+    """Log a deprecation message."""
+    LOGGER.warning("%s has been deprecated. Use %s instead.", old, new)
+
+
+class MediaLabeler(ipywidgets.DOMWidget):
     """A widget for labeling a single image."""
 
-    _model_name = t.Unicode("ImageLabelerModel").tag(sync=True)
+    _model_name = t.Unicode("MediaLabelerModel").tag(sync=True)
     _model_module = t.Unicode(module_name).tag(sync=True)
-    _model_module_version = t.Unicode(module_version).tag(sync=True)
-    _view_name = t.Unicode("ImageLabelerView").tag(sync=True)
+    _model_module_version = t.Unicode(module_version()).tag(sync=True)
+    _view_name = t.Unicode("MediaLabelerView").tag(sync=True)
     _view_module = t.Unicode(module_name).tag(sync=True)
-    _view_module_version = t.Unicode(module_version).tag(sync=True)
+    _view_module_version = t.Unicode(module_version()).tag(sync=True)
 
     config = t.Dict(default_value={"image": [], "regions": []}, allow_none=True).tag(
         sync=True
@@ -101,160 +105,54 @@ class BaseImageLabeler(ipywidgets.DOMWidget):
         },
     ).tag(sync=True)
 
-
-def file2str(filepath: str, filetype: str):
-    file_size = os.stat(filepath)
-    if file_size.st_size > 10e6:
-        encoded = base64.b64encode(
-            pkg_resources.resource_string("qsl", "assets/local-file-error.png")
-        ).decode("utf8")
-    else:
-        with open(filepath, "rb") as f:
-            encoded = base64.b64encode(f.read()).decode("utf8")
-    return BASE64_PATTERN.format(type=filetype, data=encoded)
-
-
-# pylint: disable=no-member
-def arr2str(image: "np.ndarray"):
-    if cv2 is None:
-        raise ValueError("Labeling arrays requires OpenCV.")
-    return BASE64_PATTERN.format(
-        type="image",
-        data=base64.b64encode(cv2.imencode(".png", image)[1].tobytes()).decode("utf8"),
-    )
-
-
-def build_url(
-    target: typing.Union[str, "np.ndarray"],
-    base: dict,
-    filetype: str,
-    allow_base64=True,
-):
-    """Build a notebook file URL using notebook configuration and a filepath or URL."""
-    if target is None:
-        return None
-    if np is not None and isinstance(target, np.ndarray):
-        return arr2str(target)
-    if target.lower().startswith("s3://"):
-        s3 = file_utils.get_s3()
-        segments = target.lower().replace("s3://", "").split("/")
-        return s3.generate_presigned_url(
-            "get_object",
-            Params={"Bucket": segments[0], "Key": "/".join(segments[1:])},
-            ExpiresIn=3600,
-        )
-    if target.startswith("http://") or target.startswith("https://"):
-        return target
-    if target.startswith("data:"):
-        return target
-    if os.path.isfile(target):
-        if not base or not base.get("serverRoot") or not base.get("url"):
-            return file2str(target, filetype) if allow_base64 else None
-        relpath = os.path.relpath(target, os.path.expanduser(base["serverRoot"]))
-        if os.name == "nt":
-            relpath = pathlib.PureWindowsPath(relpath).as_posix()
-        if ".." in relpath:
-            return file2str(target, filetype) if allow_base64 else None
-        return up.urljoin(
-            base["url"],
-            os.path.join(
-                "files",
-                relpath,
-            ),
-        )
-    raise ValueError(f"Failed to load file at target: {target}")
-
-
-class ImageLabeler(BaseImageLabeler):
     def __init__(
         self,
-        config,
-        on_next: typing.Callable = None,
-        on_prev: typing.Callable = None,
-        on_save: typing.Callable = None,
-        on_delete: typing.Callable = None,
-        on_ignore: typing.Callable = None,
-        on_unignore: typing.Callable = None,
-        allow_config_change: bool = True,
+        items=None,
+        config=None,
+        allow_config_change=True,
+        batch_size=1,
+        images=None,
     ):
         super().__init__(
             config=config,
             buttons={
                 "config": allow_config_change,
-                "next": on_next is not None,
-                "prev": on_prev is not None,
-                "save": on_save is not None,
-                "delete": on_delete is not None,
-                "ignore": on_ignore is not None,
-                "unignore": on_unignore is not None,
+                "next": True,
+                "prev": True,
+                "save": True,
+                "delete": True,
+                "ignore": True,
+                "unignore": True,
             },
         )
-        self._on_next = on_next
-        self._on_prev = on_prev
-        self._on_save = on_save
-        self._on_delete = on_delete
-        self._on_ignore = on_ignore
-        self._on_unignore = on_unignore
         self._targets: typing.List[Target] = []
         self._allow_config_change = allow_config_change
         self.observe(self.handle_base_change, ["base"])
         self.observe(self.handle_action_change, ["action"])
         self.observe(self.handle_updated_change, ["updated"])
         self.observe(self.handle_states_change, ["states"])
-
-    @property
-    def on_next(self):
-        return self._on_next
-
-    @on_next.setter
-    def on_next(self, on_next):
-        self._on_next = on_next
-        self.buttons = {**self.buttons, "next": on_next is not None}
-
-    @property
-    def on_ignore(self):
-        return self._on_ignore
-
-    @on_ignore.setter
-    def on_ignore(self, on_ignore):
-        self._on_ignore = on_ignore
-        self.buttons = {**self.buttons, "ignore": on_ignore is not None}
-
-    @property
-    def on_unignore(self):
-        return self._on_unignore
-
-    @on_unignore.setter
-    def on_unignore(self, on_unignore):
-        self._on_unignore = on_unignore
-        self.buttons = {**self.buttons, "unignore": on_unignore is not None}
-
-    @property
-    def on_delete(self):
-        return self._on_delete
-
-    @on_delete.setter
-    def on_delete(self, on_delete):
-        self._on_delete = on_delete
-        self.buttons = {**self.buttons, "delete": on_delete is not None}
-
-    @property
-    def on_prev(self):
-        return self._on_prev
-
-    @on_prev.setter
-    def on_prev(self, on_prev):
-        self._on_prev = on_prev
-        self.buttons = {**self.buttons, "prev": on_prev is not None}
-
-    @property
-    def on_save(self):
-        return self._on_save
-
-    @on_save.setter
-    def on_save(self, on_save):
-        self._on_save = on_save
-        self.buttons = {**self.buttons, "save": on_save is not None}
+        assert (
+            items is not None or images is not None
+        ), "You must provide a list of items to label."
+        if images is not None:
+            deprecate("The images argument", "items")
+        self.items = items or images
+        self.idx = 0
+        self.batch_size = batch_size
+        self.max_preload = 3
+        has_json_path = [bool(item.get("jsonpath")) for item in self.items]
+        assert all(has_json_path) or not any(
+            has_json_path
+        ), "Either all items must have a jsonpath key or none of them can."
+        if any(has_json_path):
+            self.items = [
+                {
+                    **item,
+                    "labels": files.json_or_none(item["jsonpath"]),
+                }
+                for item in self.items
+            ]
+        self.update(True)
 
     @property
     def allow_config_change(self):
@@ -263,7 +161,7 @@ class ImageLabeler(BaseImageLabeler):
     @allow_config_change.setter
     def allow_config_change(self, allow_config_change):
         self._allow_config_change = allow_config_change
-        self.buttons = {**self.buttons, "config": allow_config_change}
+        self.set_buttons()
 
     @property
     def targets(self) -> typing.List[Target]:
@@ -277,7 +175,11 @@ class ImageLabeler(BaseImageLabeler):
 
     def set_buttons(self):
         self.buttons = {
-            **self.buttons,
+            "prev": self.idx != 0,
+            "next": (
+                all(t["labeled"] or t["ignored"] for t in self.targets)
+                and self.idx + 1 < len(self.items)
+            ),
             "save": any(t["selected"] for t in self.states),
             "config": self.allow_config_change,
             "delete": any(
@@ -303,7 +205,7 @@ class ImageLabeler(BaseImageLabeler):
             ), "Only images can be be batch labeled."
             self.type = self.targets[0]["type"] if len(self.targets) > 0 else "image"
             self.urls = [
-                build_url(target=t["target"], base=self.base, filetype=t["type"])
+                files.build_url(target=t["target"], base=self.base, filetype=t["type"])
                 if t.get("target") is not None
                 else None
                 for t in self.targets
@@ -325,45 +227,25 @@ class ImageLabeler(BaseImageLabeler):
         """Handles changes to the action state."""
         if not change["new"]:
             return
-        if self._on_next and change["new"] == "next":
-            self._on_next()
-        if self._on_prev and change["new"] == "prev":
-            self._on_prev()
-        if self._on_delete and change["new"] == "delete":
-            self._on_delete()
-        if self._on_ignore and change["new"] == "ignore":
-            self._on_ignore()
-        if self._on_unignore and change["new"] == "unignore":
-            self._on_unignore()
+        if change["new"] == "next":
+            self.next()
+        if change["new"] == "prev":
+            self.prev()
+        if change["new"] == "delete":
+            self.delete()
+        if change["new"] == "ignore":
+            self.ignore()
+        if change["new"] == "unignore":
+            self.unignore()
         self.action = ""
 
     def handle_updated_change(self, change):
         """Handles changes to the timestamp sentinel for saves."""
-        if self._on_save:
-            self._on_save()
-
-
-class ImageSeriesLabeler(ImageLabeler):
-    def __init__(self, images, config=None, allow_config_change=True, batch_size=1):
-        super().__init__(
-            config=config,
-            allow_config_change=allow_config_change,
-            on_next=self.next,
-            on_prev=self.prev,
-            on_save=self.save,
-            on_delete=self.delete,
-            on_ignore=self.ignore,
-            on_unignore=self.unignore,
-        )
-        self.images = images
-        self.idx = 0
-        self.batch_size = batch_size
-        self.max_preload = 3
-        self.update(True)
+        self.save()
 
     def next(self):
         next_idx = self.targets[-1]["idx"] + 1
-        if next_idx < len(self.images):
+        if next_idx < len(self.items):
             self.idx = next_idx
             self.update(True)
 
@@ -375,10 +257,10 @@ class ImageSeriesLabeler(ImageLabeler):
     def idxs(self):
         includes_video = False
         for count, idx in enumerate(
-            range(self.idx, min(self.idx + self.batch_size, len(self.images)))
+            range(self.idx, min(self.idx + self.batch_size, len(self.items)))
         ):
             includes_video = (
-                includes_video or self.images[idx].get("type", "image") == "video"
+                includes_video or self.items[idx].get("type", "image") == "video"
             )
             if count == 0:
                 # We can always include at least one.
@@ -391,43 +273,65 @@ class ImageSeriesLabeler(ImageLabeler):
                 break
 
     @property
-    def targets_and_images(self):
+    def images(self):
+        deprecate("images", "items")
+        return self.items
+
+    @images.setter
+    def images(self, images):
+        deprecate("images", "items")
+        self.items = images
+
+    @property
+    def targets_and_items(self):
         for tIdx, iIdx in enumerate(self.idxs):
-            yield self.targets[tIdx], self.images[iIdx]
+            yield self.targets[tIdx], self.items[iIdx]
 
     def save(self):
-        for target, image in self.targets_and_images:
+        for target, item in self.targets_and_items:
             if target["visible"] and target["selected"]:
-                image["labels"] = self.labels
+                item["labels"] = self.labels
                 if self.type == "image":
                     target["visible"] = False
+                jsonpath = item.get("jsonpath")
+                if jsonpath:
+                    files.labels2json(item, jsonpath)
         if self.type == "image" and not any(t["visible"] for t in self.targets):
             self.next()
         else:
             self.update(False)
 
     def delete(self):
-        for target, image in self.targets_and_images:
-            if target["visible"] and target["selected"] and image.get("labels"):
-                del image["labels"]
+        for target, item in self.targets_and_items:
+            if target["visible"] and target["selected"] and item.get("labels"):
+                del item["labels"]
+                jsonpath = item.get("jsonpath")
+                if os.path.isfile(jsonpath):
+                    os.remove(jsonpath)
         self.update(False)
 
     def ignore(self):
-        for target, image in self.targets_and_images:
+        for target, item in self.targets_and_items:
             if target["visible"] and target["selected"]:
-                image["ignore"] = True
+                item["ignore"] = True
                 target["visible"] = False
-                if image.get("labels"):
-                    del image["labels"]
+                if item.get("labels"):
+                    del item["labels"]
+                jsonpath = item.get("jsonpath")
+                if jsonpath:
+                    files.labels2json(item, jsonpath)
         if self.type == "image" and not any(t["visible"] for t in self.targets):
             self.next()
         else:
             self.update(False)
 
     def unignore(self):
-        for target, image in self.targets_and_images:
+        for target, item in self.targets_and_items:
             if target["visible"] and target["selected"]:
-                image["ignore"] = False
+                item["ignore"] = False
+                jsonpath = item.get("jsonpath")
+                if jsonpath:
+                    files.labels2json(item, jsonpath)
         self.update(False)
 
     def update(self, reset: bool):
@@ -436,13 +340,13 @@ class ImageSeriesLabeler(ImageLabeler):
         self.targets = [
             {
                 "idx": idx,
-                "target": self.images[idx].get("target"),
-                "type": self.images[idx].get("type", "image"),
-                "metadata": self.images[idx].get("metadata", {}),
+                "target": self.items[idx].get("target"),
+                "type": self.items[idx].get("type", "image"),
+                "metadata": self.items[idx].get("metadata", {}),
                 "selected": True if reset else self.targets[idx - self.idx]["selected"],
-                "ignored": self.images[idx].get("ignore", False),
-                "labeled": self.images[idx].get("labels") is not None,
-                "labels": self.images[idx].get("labels", {}),
+                "ignored": self.items[idx].get("ignore", False),
+                "labeled": self.items[idx].get("labels") is not None,
+                "labels": self.items[idx].get("labels", {}),
                 "visible": True if reset else self.targets[idx - self.idx]["visible"],
             }
             for idx in self.idxs
@@ -450,29 +354,20 @@ class ImageSeriesLabeler(ImageLabeler):
         if reset:
             self.set_urls_and_type()
             self.transitioning = False
-        base_image = next(i for t, i in self.targets_and_images if t["visible"])
+        base_item = next(i for t, i in self.targets_and_items if t["visible"])
         self.labels = (
             (
-                base_image.get("labels")
-                or base_image.get("defaults")
+                base_item.get("labels")
+                or base_item.get("defaults")
                 or ({} if self.type == "image" else [])
             )
             if reset
             else self.labels
         )
-        self.on_prev = self.prev if self.idx != 0 else None
-        self.on_next = (
-            self.next
-            if (
-                all(t["labeled"] or t["ignored"] for t in self.targets)
-                and self.idx + 1 < len(self.images)
-            )
-            else None
-        )
-        if self.base and self.idx + 1 < len(self.images):
+        if self.base and self.idx + 1 < len(self.items):
             preload = []
-            for preloadCandidate in self.images[self.idx + 1 :]:
-                preloadUrl = build_url(
+            for preloadCandidate in self.items[self.idx + 1 :]:
+                preloadUrl = files.build_url(
                     preloadCandidate["target"],
                     base=self.base,
                     filetype=preloadCandidate.get("type", "image"),
@@ -491,63 +386,22 @@ class ImageSeriesLabeler(ImageLabeler):
             * sum(
                 [
                     1
-                    if image.get("labels") is not None or image.get("ignore", False)
+                    if item.get("labels") is not None or item.get("ignore", False)
                     else 0
-                    for image in self.images
+                    for item in self.items
                 ]
             )
-            / len(self.images)
+            / len(self.items)
         )
 
 
-class ImageSeriesLabelerJSON(ImageSeriesLabeler):
-    def __init__(self, images, **kwargs):
-        assert all(
-            bool(image.get("jsonpath")) for image in images
-        ), "All images must have a jsonpath key."
-        super().__init__(
-            [
-                {
-                    **image,
-                    "labels": file_utils.json_or_none(image["jsonpath"]),
-                }
-                for image in images
-            ],
-            **kwargs,
-        )
+class ImageSeriesLabeler(MediaLabeler):
+    def __init__(self, *args, **kwargs):
+        deprecate("ImageSeriesLabeler", "MediaLabeler")
+        super().__init__(*args, **kwargs)
 
-    @staticmethod
-    def write(labels, filepath):
-        dirname = os.path.dirname(filepath)
-        if dirname:
-            os.makedirs(dirname, exist_ok=True)
-        with open(filepath, "w", encoding="utf8") as f:
-            f.write(json.dumps(labels))
 
-    def save(self):
-        for idx in self.idxs:
-            self.write(self.labels, self.images[idx]["jsonpath"])
-        super().save()
-
-    def delete(self):
-        for idx in self.idxs:
-            filepath = self.images[idx]["jsonpath"]
-            if os.path.isfile(filepath):
-                os.remove(filepath)
-        super().delete()
-
-    def ignore(self):
-        for idx in self.idxs:
-            self.write(
-                {**self.images[self.idx], "ignore": True, "labels": None},
-                self.images[idx]["jsonpath"],
-            )
-        super().ignore()
-
-    def unignore(self):
-        for idx in self.idxs:
-            self.write(
-                {**self.images[idx], "ignore": False, "labels": None},
-                self.images[idx]["jsonpath"],
-            )
-        super().unignore()
+class ImageSeriesLabelerJSON(MediaLabeler):
+    def __init__(self, *args, **kwargs):
+        deprecate("ImageSeriesLabelerJSON", "MediaLabeler")
+        super().__init__(*args, **kwargs)

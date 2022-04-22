@@ -1,5 +1,11 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import {
+  Box,
+  ThemeProvider,
+  ScopedCssBaseline,
+  createTheme,
+} from "@mui/material";
 import { WidgetModel } from "@jupyter-widgets/base";
 import { PageConfig } from "@jupyterlab/coreutils";
 import {
@@ -17,7 +23,6 @@ import {
   Labeler,
 } from "react-image-labeler";
 import { useModelStateExtractor } from "./hooks";
-import { uniqueId } from "lodash";
 import { MODULE_NAME, MODULE_VERSION } from "./version";
 
 interface BaseWidgetState<T, U> {
@@ -108,7 +113,6 @@ const Widget: React.FC<{
   const preload = extract("preload");
   const maxCanvasSize = extract("maxCanvasSize");
   const showNavigation = extract("showNavigation");
-  const id = React.useMemo(() => uniqueId("qslwidgetid"), []);
 
   React.useEffect(() => {
     base.set({
@@ -128,78 +132,79 @@ const Widget: React.FC<{
       showNavigation: showNavigation.value,
     },
     callbacks: {
-      onSave: buttons.value["save"]
+      onSave: buttons.value.save
         ? (newLabels: any) => {
             labels.set(newLabels);
             updated.set(Date.now());
           }
         : undefined,
-      onSaveConfig: buttons.value["config"] ? config.set : undefined,
-      onNext: buttons.value["next"] ? () => action.set("next") : undefined,
-      onPrev: buttons.value["prev"] ? () => action.set("prev") : undefined,
-      onDelete: buttons.value["delete"]
-        ? () => action.set("delete")
-        : undefined,
-      onIgnore: buttons.value["ignore"]
-        ? () => action.set("ignore")
-        : undefined,
-      onUnignore: buttons.value["unignore"]
+      onSaveConfig: buttons.value.config ? config.set : undefined,
+      onNext: buttons.value.next ? () => action.set("next") : undefined,
+      onPrev: buttons.value.prev ? () => action.set("prev") : undefined,
+      onDelete: buttons.value.delete ? () => action.set("delete") : undefined,
+      onIgnore: buttons.value.ignore ? () => action.set("ignore") : undefined,
+      onUnignore: buttons.value.unignore
         ? () => action.set("unignore")
         : undefined,
     },
   };
   return (
-    <Labeler
-      style={{
-        padding: 16,
-        backgroundColor: mode.value == "dark" ? "rgb(18, 18, 18)" : "white",
-      }}
-      mode={mode.value}
-      id={id}
+    <ThemeProvider
+      theme={createTheme({
+        palette: {
+          mode: mode.value || "light",
+        },
+      })}
     >
-      {states.value.length === 0 ? null : states.value.length == 1 ? (
-        type.value === "image" ? (
-          <ImageLabeler
-            {...common}
-            labels={(labels.value || {}) as Labels}
-            target={urls.value[0]}
-            metadata={transitioning.value ? {} : states.value[0].metadata}
-          />
-        ) : (
-          <VideoLabeler
-            {...common}
-            labels={
-              (Array.isArray(labels.value)
-                ? labels.value
-                : []) as TimestampedLabel[]
-            }
-            target={urls.value[0]}
-            metadata={transitioning.value ? {} : states.value[0].metadata}
-          />
-        )
-      ) : (
-        <BatchImageLabeler
-          {...common}
-          labels={(labels.value || {}) as Labels}
-          target={urls.value}
-          states={transitioning.value ? [] : states.value}
-          setStates={(newStates) => states.set(newStates)}
-        />
-      )}
-    </Labeler>
+      <ScopedCssBaseline>
+        <Box style={{ padding: 16}}>
+          <Labeler>
+            {states.value.length === 0 ? null : states.value.length == 1 ? (
+              type.value === "image" ? (
+                <ImageLabeler
+                  {...common}
+                  labels={(labels.value || {}) as Labels}
+                  target={urls.value[0]}
+                  metadata={transitioning.value ? {} : states.value[0].metadata}
+                />
+              ) : (
+                <VideoLabeler
+                  {...common}
+                  labels={
+                    (Array.isArray(labels.value)
+                      ? labels.value
+                      : []) as TimestampedLabel[]
+                  }
+                  target={urls.value[0]}
+                  metadata={transitioning.value ? {} : states.value[0].metadata}
+                />
+              )
+            ) : (
+              <BatchImageLabeler
+                {...common}
+                labels={(labels.value || {}) as Labels}
+                target={urls.value}
+                states={transitioning.value ? [] : states.value}
+                setStates={(newStates) => states.set(newStates)}
+              />
+            )}
+          </Labeler>
+        </Box>
+      </ScopedCssBaseline>
+    </ThemeProvider>
   );
 };
 
-class ImageLabelerModel extends DOMWidgetModel {
+class MediaLabelerModel extends DOMWidgetModel {
   defaults() {
     return {
       ...super.defaults(),
-      _model_name: ImageLabelerModel.model_name,
-      _model_module: ImageLabelerModel.model_module,
-      _model_module_version: ImageLabelerModel.model_module_version,
-      _view_name: ImageLabelerModel.view_name,
-      _view_module: ImageLabelerModel.view_module,
-      _view_module_version: ImageLabelerModel.view_module_version,
+      _model_name: MediaLabelerModel.model_name,
+      _model_module: MediaLabelerModel.model_module,
+      _model_module_version: MediaLabelerModel.model_module_version,
+      _view_name: MediaLabelerModel.view_name,
+      _view_module: MediaLabelerModel.view_module,
+      _view_module_version: MediaLabelerModel.view_module_version,
       ...DEFAULT_PROPERTIES,
     };
   }
@@ -209,15 +214,15 @@ class ImageLabelerModel extends DOMWidgetModel {
     // Add any extra serializers here
   };
 
-  static model_name = "ImageLabelerModel";
+  static model_name = "MediaLabelerModel";
   static model_module = MODULE_NAME;
   static model_module_version = MODULE_VERSION;
-  static view_name = "ImageLabelerView"; // Set to null if no view
+  static view_name = "MediaLabelerView"; // Set to null if no view
   static view_module = MODULE_NAME; // Set to null if no view
   static view_module_version = MODULE_VERSION;
 }
 
-class ImageLabelerView extends DOMWidgetView {
+class MediaLabelerView extends DOMWidgetView {
   render() {
     this.el.classList.add("qsl-image-labeler-widget");
     const component = React.createElement(Widget, {
@@ -227,4 +232,4 @@ class ImageLabelerView extends DOMWidgetView {
   }
 }
 
-export { ImageLabelerModel, ImageLabelerView };
+export { MediaLabelerModel, MediaLabelerView };

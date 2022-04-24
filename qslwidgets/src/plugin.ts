@@ -5,7 +5,7 @@ import { Application, IPlugin } from "@phosphor/application";
 import { Widget } from "@phosphor/widgets";
 import { IJupyterWidgetRegistry } from "@jupyter-widgets/base";
 import { MODULE_NAME, MODULE_VERSION } from "./version";
-import { MediaLabelerModel, MediaLabelerView } from "./MediaLabeler";
+import { MediaLabelerModel, MediaLabelerView } from "./JupyterWidget";
 
 const EXTENSION_ID = "qsl:plugin";
 

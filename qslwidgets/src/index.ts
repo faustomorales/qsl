@@ -2,4 +2,5 @@
 // Distributed under the terms of the MIT License.
 
 export * from "./version";
-export * from "./MediaLabeler";
+export * from "./JupyterWidget";
+export * from "./CommonWidget";

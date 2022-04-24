@@ -20,5 +20,5 @@ Check out the [Colab Notebook](https://colab.research.google.com/drive/1FUFt3fDs
 ## Development
 
 1. Create a local development environment using `make init`
-2. Run widget development with live re-building using `make develop-widget`
+2. Run widget development with live re-building using `make develop`
 3. Run a Jupyter Lab instance using `make lab`. Changes to the JavaScript/TypeScript require a full refresh to take effect.

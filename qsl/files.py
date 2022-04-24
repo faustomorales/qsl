@@ -8,6 +8,7 @@ import pathlib
 import threading
 import urllib.parse as up
 
+import filetype
 import numpy as np
 import pkg_resources
 
@@ -23,6 +24,18 @@ except ImportError:
 
 TLS = threading.local()
 BASE64_PATTERN = "data:{type};charset=utf-8;base64,{data}"
+IMAGE_EXTENSIONS = [
+    "3gp",
+    "mp4",
+    "m4v",
+    "mkv",
+    "webm",
+    "mov",
+    "avi",
+    "wmv",
+    "mpg",
+    "flv",
+]
 
 
 def get_s3_files_for_pattern(client, pattern: str) -> typing.List[str]:
@@ -128,6 +141,8 @@ def build_url(
     allow_base64=True,
 ) -> str:
     """Build a notebook file URL using notebook configuration and a filepath or URL."""
+    if target is None:
+        return None
     if isinstance(target, np.ndarray):
         return arr2str(target)
     if target.lower().startswith("s3://"):
@@ -139,9 +154,9 @@ def build_url(
             ExpiresIn=3600,
         )
     if (
-        target.startswith("http://")
-        or target.startswith("https://")
-        or target.startswith("data:")
+        target.lower().startswith("http://")
+        or target.lower().startswith("https://")
+        or target.lower().startswith("data:")
     ):
         return target
     if os.path.isfile(target):
@@ -169,3 +184,14 @@ def labels2json(labels, filepath):
         os.makedirs(dirname, exist_ok=True)
     with open(filepath, "w", encoding="utf8") as f:
         f.write(json.dumps(labels))
+
+
+def guess_type(target: typing.Union[str, np.ndarray]):
+    if isinstance(target, np.ndarray):
+        return "image"
+    if target.lower().startswith("s3://"):
+        ext = os.path.splitext(os.path.basename("s3://foo/bar/baz.png"))[1][1:]
+        return "image" if ext in IMAGE_EXTENSIONS else "video"
+    if os.path.isfile(target):
+        kind = filetype.guess(target)
+        return "image" if kind.mime.startswith("image") else "video"

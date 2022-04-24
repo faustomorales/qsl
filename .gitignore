@@ -146,6 +146,7 @@ $RECYCLE.BIN/
 **/node_modules/
 qsl/ui/nbextension/index.*
 qsl/ui/labextension
+qsl/ui/eelapp
 
 # Coverage data
 # -------------

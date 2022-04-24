@@ -16,10 +16,8 @@ black = "*"
 botocore = "*"
 boto3 = "*"
 mypy = "*"
-sqlalchemy-stubs = "*"
 types-setuptools = "*"
 pylint = "*"
-streamlit = "*"
 opencv-python-headless = "*"
 
 [dev-packages]

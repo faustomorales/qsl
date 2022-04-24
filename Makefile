@@ -14,9 +14,9 @@ check:  ## Check code for formatting, linting, etc.
 	@$(PYTHON_EXEC) mypy qsl
 	@$(PYTHON_EXEC) pylint qsl
 	@$(PYTHON_EXEC) black --diff --check .
-develop-widget:
+develop:  ## Watch/rebuild UI elements.
 	@$(PYTHON_EXEC) yarn --cwd qslwidgets watch
-clean:
+clean:  ## Clean out all build files.
 	rm -rf dist build qslwidgets/lib qslwidgets/dist \
 		qsl/ui/labextension \
 		qsl/ui/nbextension/index.js* .*_cache

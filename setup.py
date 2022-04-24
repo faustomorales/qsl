@@ -45,6 +45,10 @@ setup_args = dict(
     platforms="Linux, Mac OS X, Windows",
     keywords=["Jupyter", "Widgets", "IPython"],
     python_requires=">=3.6",
+    entry_points="""
+        [console_scripts]
+        qsl=qsl.cli:cli
+    """,
 )
 
 

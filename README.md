@@ -2,7 +2,7 @@
 
 ![QSL Screenshot](https://raw.githubusercontent.com/faustomorales/qsl/main/docs/screenshot.png)
 
-QSL is a simple, open-source media labeling tool that you can use as a Jupyter widget. It supports:
+QSL is a simple, open-source media labeling tool that you can use as a Jupyter widget. More information available at [https://qsl.robinbay.com](https://qsl.robinbay.com). It supports:
 
 - Bounding box, polygon, and segmentation mask labeling for images and videos (with support for video segments).
 - Configurable keyboard shortcuts for labels.

@@ -41,7 +41,7 @@ const images: {
       image: { Category: ["outdoor"] },
       boxes: [
         {
-          pt1: { x: 0.20, y: 0.20 },
+          pt1: { x: 0.2, y: 0.2 },
           pt2: { x: 0.5, y: 0.55 },
           labels: { Type: ["place"] },
         },
@@ -358,6 +358,34 @@ qsl.MediaLabeler(items=[
   },
 };
 
+const LogoVertical: React.FC<{
+  acronymStyle: { color: string; fontWeight: number };
+}> = ({ acronymStyle }) => (
+  <Box>
+    <Typography variant="h2" sx={{ p: 0, m: 0 }} style={{ lineHeight: 0.95 }}>
+      <span style={acronymStyle}>Q</span>uick +
+    </Typography>
+    <Typography variant="h2" sx={{ p: 0, m: 0 }} style={{ lineHeight: 0.95 }}>
+      <span style={acronymStyle}>S</span>imple
+    </Typography>
+    <Typography variant="h2" sx={{ p: 0, m: 0 }} style={{ lineHeight: 0.95 }}>
+      <span style={acronymStyle}>L</span>abeler
+    </Typography>
+  </Box>
+);
+
+const LogoHorizontal: React.FC<{
+  acronymStyle: { color: string; fontWeight: number };
+}> = ({ acronymStyle }) => (
+  <Box>
+    <Typography variant="h2" sx={{ p: 0, m: 0 }} style={{ lineHeight: 0.95 }}>
+      <span style={acronymStyle}>Q</span>uick +{" "}
+      <span style={acronymStyle}>S</span>imple{" "}
+      <span style={acronymStyle}>L</span>abeler
+    </Typography>
+  </Box>
+);
+
 const ExampleElement: React.FC<{
   snippet: { notebook: string; cli: string };
   demonstration: React.ReactNode;
@@ -545,7 +573,6 @@ const App: React.FC = () => {
     color: theme.palette.primary.main,
     fontWeight: 800,
   };
-
   return (
     <ThemeProvider theme={theme}>
       <Container>
@@ -558,28 +585,11 @@ const App: React.FC = () => {
           }}
         >
           <Box>
-            <Typography
-              variant="h2"
-              sx={{ p: 0, m: 0 }}
-              style={{ lineHeight: 0.95 }}
-            >
-              <span style={acronymStyle}>Q</span>uick +
-            </Typography>
-            <Typography
-              variant="h2"
-              sx={{ p: 0, m: 0 }}
-              style={{ lineHeight: 0.95 }}
-            >
-              <span style={acronymStyle}>S</span>imple
-            </Typography>
-            <Typography
-              variant="h2"
-              sx={{ p: 0, m: 0 }}
-              style={{ lineHeight: 0.95 }}
-            >
-              <span style={acronymStyle}>L</span>abeler
-            </Typography>
-
+            {large ? (
+              <LogoVertical acronymStyle={acronymStyle} />
+            ) : (
+              <LogoHorizontal acronymStyle={acronymStyle} />
+            )}
             <Typography variant="subtitle1">
               A Python library for labeling images, videos, and more.
             </Typography>

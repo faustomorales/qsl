@@ -158,3 +158,6 @@ qsl/ui/eelapp
 
 # Scratch notebooks
 notebooks
+
+# docs
+docs/index*

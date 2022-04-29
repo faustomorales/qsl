@@ -1,10 +1,12 @@
 import os
+import shutil
 import glob
 import json
 import typing
 import base64
 import fnmatch
 import pathlib
+import logging
 import threading
 import urllib.parse as up
 
@@ -22,6 +24,7 @@ try:
 except ImportError:
     boto3, botocore = None, None
 
+LOGGER = logging.getLogger(__name__)
 TLS = threading.local()
 BASE64_PATTERN = "data:{type};charset=utf-8;base64,{data}"
 IMAGE_EXTENSIONS = [
@@ -35,12 +38,15 @@ IMAGE_EXTENSIONS = [
     "wmv",
     "mpg",
     "flv",
+    "gif",
 ]
 
 
 def get_s3_files_for_pattern(client, pattern: str) -> typing.List[str]:
     """Get a list of S3 keys given a potential wildcard pattern
     (e.g., 's3://bucket/a/b/*/*.jpg')"""
+    if "*" not in pattern:
+        return [pattern]
     segments = pattern.replace("s3://", "").split("/")
     bucket = segments[0]
     keypat = "/".join(segments[1:])
@@ -111,16 +117,21 @@ def json_or_none(filepath: str):
     return labels
 
 
-def file2str(filepath: str, filetype: str):
+def file2str(filepath: str):
     """Given a file, convert it to a base64 string."""
     if os.stat(filepath).st_size > 10e6:
-        encoded = base64.b64encode(
-            pkg_resources.resource_string("qsl", "ui/assets/local-file-error.png")
-        ).decode("utf8")
+        LOGGER.warning(
+            "%s could not be transmitted because it was too large to base64 encode and your environment does not support shareable URLs.",
+            filepath,
+        )
+        return None
     else:
         with open(filepath, "rb") as f:
             encoded = base64.b64encode(f.read()).decode("utf8")
-    return BASE64_PATTERN.format(type=filetype, data=encoded)
+    return BASE64_PATTERN.format(
+        type=filetype.guess(filepath).mime,
+        data=encoded,
+    )
 
 
 # pylint: disable=no-member
@@ -129,49 +140,84 @@ def arr2str(image: "np.ndarray"):
     if cv2 is None:
         raise ValueError("Labeling arrays requires OpenCV.")
     return BASE64_PATTERN.format(
-        type="image",
+        type="image/png",
         data=base64.b64encode(cv2.imencode(".png", image)[1].tobytes()).decode("utf8"),
     )
+
+
+def get_relpath(filepath, directory):
+    """Convert a filepath to a relative path to a directory."""
+    relpath = os.path.relpath(filepath, directory)
+    if os.name == "nt":
+        relpath = pathlib.PureWindowsPath(relpath).as_posix()
+    return relpath
 
 
 def build_url(
     target: typing.Union[str, np.ndarray],
     base: dict,
-    filetype: str,
+    ftype: str,
+    get_tempdir: typing.Callable[[], str],
     allow_base64=True,
 ) -> str:
     """Build a notebook file URL using notebook configuration and a filepath or URL."""
     if target is None:
         return None
-    if isinstance(target, np.ndarray):
-        return arr2str(target)
-    if target.lower().startswith("s3://"):
-        s3 = get_s3()
-        segments = target.lower().replace("s3://", "").split("/")
-        return s3.generate_presigned_url(
-            "get_object",
-            Params={"Bucket": segments[0], "Key": "/".join(segments[1:])},
-            ExpiresIn=3600,
-        )
-    if (
+    missing_base = not base or not base.get("serverRoot") or not base.get("url")
+    tfilepath = None
+    if isinstance(target, str) and (
         target.lower().startswith("http://")
         or target.lower().startswith("https://")
-        or target.lower().startswith("data:")
+        or target.startswith("data:")
     ):
         return target
-    if os.path.isfile(target):
-        if not base or not base.get("serverRoot") or not base.get("url"):
-            return file2str(target, filetype) if allow_base64 else None
-        relpath = os.path.relpath(target, os.path.expanduser(base["serverRoot"]))
-        if os.name == "nt":
-            relpath = pathlib.PureWindowsPath(relpath).as_posix()
-        if ".." in relpath:
-            return file2str(target, filetype) if allow_base64 else None
+    if isinstance(target, np.ndarray):
+        tdir = get_tempdir()
+        if tdir is None or missing_base:
+            return arr2str(target)
+        tfilepath = os.path.join(tdir, str(hash(target.data.tobytes())) + ".png")
+        if not os.path.isfile(tfilepath):
+            cv2.imwrite(tfilepath, target)
+
+    if isinstance(target, str) and target.lower().startswith("s3://"):
+        s3 = get_s3()
+        tdir = get_tempdir()
+        segments = target.lower().replace("s3://", "").split("/")
+        bucket = segments[0]
+        key = "/".join(segments[1:])
+        if tdir is None or missing_base:
+            return s3.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": bucket, "Key": key},
+                ExpiresIn=3600,
+            )
+        tfilepath = os.path.join(
+            tdir,
+            str(hash(target)) + os.path.splitext(segments[-1])[1],
+        )
+        if not os.path.isfile(tfilepath):
+            s3.download_file(Bucket=bucket, Key=key, Filename=tfilepath)
+    if isinstance(target, str) and os.path.isfile(target):
+        if missing_base:
+            return file2str(target) if allow_base64 else None
+        if (
+            ".." in get_relpath(target, os.path.expanduser(base["serverRoot"]))
+            and get_tempdir() is not None
+        ):
+            tdir = get_tempdir()
+            tfilepath = os.path.join(
+                tdir, str(hash(target)) + os.path.splitext(target)[1]
+            )
+            if not os.path.isfile(tfilepath):
+                shutil.copy(target, tfilepath)
+        else:
+            tfilepath = target
+    if tfilepath is not None:
         return up.urljoin(
             base["url"],
             os.path.join(
                 "files",
-                relpath,
+                get_relpath(tfilepath, os.path.expanduser(base["serverRoot"])),
             ),
         )
     raise ValueError(f"Failed to load file at target: {target}")
@@ -190,8 +236,9 @@ def guess_type(target: typing.Union[str, np.ndarray]):
     if isinstance(target, np.ndarray):
         return "image"
     if target.lower().startswith("s3://"):
-        ext = os.path.splitext(os.path.basename("s3://foo/bar/baz.png"))[1][1:]
+        ext = os.path.splitext(os.path.basename(target))[1][1:]
         return "image" if ext in IMAGE_EXTENSIONS else "video"
     if os.path.isfile(target):
         kind = filetype.guess(target)
         return "image" if kind.mime.startswith("image") else "video"
+    return "image"

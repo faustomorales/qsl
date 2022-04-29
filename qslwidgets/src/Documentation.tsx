@@ -320,11 +320,10 @@ const snippets = {
     cli: `$ qsl label labels.json *.jpg`,
     notebook: `import qsl
 from IPython.display import display
+
 # Get the labels from \`labeler.items\` (i.e., to save them somewhere)
 labeler = qsl.MediaLabeler(
-  items=[
-    { "target": "path/img.jpg", "metadata": { "foo": "bar" } }
-  ],
+  items=[{ "target": "path/img.jpg", "metadata": { "foo": "bar" } }],
   config={"image": [
     {
       "name": "Category",
@@ -332,6 +331,7 @@ labeler = qsl.MediaLabeler(
       "multiple": True
     }
   ]}
+  jsonpath="labels.json"
 )
 display(labeler)
 `,
@@ -339,22 +339,26 @@ display(labeler)
   batch: {
     cli: `$ qsl label -b 8 labels.json *.jpg`,
     notebook: `import qsl
+from IPython.display import display
 
-qsl.MediaLabeler(
+labeler = qsl.MediaLabeler(
   items=[{"target": "path/img.jpg"}],
+  jsonpath="labels.json",
   batch_size=8
-)`,
+)
+display(labeler)`,
   },
   video: {
     cli: `$ qsl label labels.json *.mp4`,
     notebook: `import qsl
+from IPython.display import display
 
-qsl.MediaLabeler(items=[
-  {
-    "target": "path/video.mp4",
-    "type": "video"
-  }
-])`,
+labeler = qsl.MediaLabeler(
+  items=[{"target": "path/video.mp4", "type": "video"}],
+  jsonpath="labels.json"
+)
+display(labeler)
+`,
   },
 };
 
@@ -432,7 +436,7 @@ const ExampleElement: React.FC<{
 
 const DescriptionList: React.FC<
   {
-    entries: { title: string; description: string }[];
+    entries: { title: string | React.ReactNode; description: string }[];
   } & React.ComponentProps<"ul">
 > = ({ entries, ...props }) => {
   return (
@@ -591,7 +595,8 @@ const App: React.FC = () => {
               <LogoHorizontal acronymStyle={acronymStyle} />
             )}
             <Typography variant="subtitle1">
-              A Python library for labeling images, videos, and more.
+              An <a href="https://github.com/faustomorales/qsl">open-source</a>{" "}
+              Python library for labeling images, videos, and more.
             </Typography>
             <Box sx={{ py: 1 }}>
               <Highlight className="shell">$ pip install qsl</Highlight>
@@ -602,7 +607,14 @@ const App: React.FC = () => {
               style={{ paddingLeft: "15px", margin: 0 }}
               entries={[
                 {
-                  title: "Label images right from Jupyter or Google Colab",
+                  title: (
+                    <span>
+                      Label images right from Jupyter or{" "}
+                      <a href="https://colab.research.google.com/drive/1FUFt3fDs7BYpGI1E2z44L-zSRdoDtF8O?usp=sharing">
+                        Google Colab
+                      </a>
+                    </span>
+                  ),
                   description:
                     "If you're already working with your data in a notebook, why leave to do your labeling elsewhere? And if you do prefer to work separately, qsl provides a command line tool for running a standalone web server to label the images using the same interface.",
                 },

@@ -1,6 +1,7 @@
 import os
 import typing
 import logging
+import tempfile
 
 import numpy as np
 import typing_extensions as tx
@@ -51,7 +52,7 @@ def merge_items(initial, insert):
         if "unhashable type" in exception.args[0]:
             raise ValueError(
                 "Metadata dictionaries must be string-string maps. Targets must be strings."
-            )
+            ) from exception
     if bad:
         raise ValueError(
             "Could not merge items because one of the targets have conflicting labels."
@@ -83,6 +84,7 @@ class BaseMediaLabeler:
         self.mode = "light"
         self.maxCanvasSize = 512
         self.maxViewHeight = 512
+        self.tempdir = None
 
         # Items needs to be handled specially depending
         # on if labeler-wide or items-specific jsonpaths
@@ -123,6 +125,18 @@ class BaseMediaLabeler:
         self.max_preload = 3
         self.update(True)
 
+    def get_temporary_directory(self):
+        if self.tempdir:
+            return self.tempdir.name
+        if self.base["serverRoot"] is not None:
+            self.tempdir = (
+                tempfile.TemporaryDirectory(  # pylint: disable=consider-using-with
+                    prefix="qsl-temp", dir=os.path.expanduser(self.base["serverRoot"])
+                )
+            )
+            return self.tempdir.name
+        return None
+
     @property
     def allow_config_change(self):
         return self._allow_config_change
@@ -139,7 +153,9 @@ class BaseMediaLabeler:
     @targets.setter
     def targets(self, targets: typing.List[Target]):
         self._targets = targets
-        self.states = [{**target, "target": None} for target in targets]
+        self.states = [
+            {**typing.cast(dict, target), "target": None} for target in targets
+        ]
         self.set_buttons()
 
     def set_buttons(self):
@@ -285,14 +301,15 @@ class BaseMediaLabeler:
             self.set_urls_and_type()
             self.transitioning = False
         base_item = next(i for t, i in self.targets_and_items if t["visible"])
-        self.labels = (
+        self.labels: typing.Union[dict, list] = typing.cast(
+            typing.Union[dict, list],
             (
                 base_item.get("labels")
                 or base_item.get("defaults")
                 or ({} if self.type == "image" else [])
             )
             if reset
-            else self.labels
+            else self.labels,
         )
         if self.base and self.idx + 1 < len(self.items):
             preload = []
@@ -300,8 +317,9 @@ class BaseMediaLabeler:
                 preloadUrl = files.build_url(
                     preloadCandidate["target"],
                     base=self.base,
-                    filetype=preloadCandidate.get("type", "image"),
+                    ftype=preloadCandidate.get("type", "image"),
                     allow_base64=False,
+                    get_tempdir=self.get_temporary_directory,
                 )
                 if preloadUrl:
                     preload.append(preloadUrl)
@@ -334,7 +352,12 @@ class BaseMediaLabeler:
             ), "Only images can be be batch labeled."
             self.type = self.targets[0]["type"] if len(self.targets) > 0 else "image"
             self.urls = [
-                files.build_url(target=t["target"], base=self.base, filetype=t["type"])
+                files.build_url(
+                    target=t["target"],
+                    base=self.base,
+                    ftype=t["type"],
+                    get_tempdir=self.get_temporary_directory,
+                )
                 if t.get("target") is not None
                 else None
                 for t in self.targets

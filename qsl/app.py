@@ -61,17 +61,18 @@ class MediaLabeler(common.BaseMediaLabeler):
             self.action = ""
 
     def __setattr__(self, key, value):
-        eel.sync(key, value)
+        eel.sync(key, value)  # pylint: disable=no-member
         super().__setattr__(key, value)
 
 
+# pylint: disable=unused-variable
 def start(jsonpath: str, targets: typing.List[str], batch_size: int):
     """Start Eel."""
     # A bit of a hack so that `files.build_url` works properly
     eel.BOTTLE_ROUTES = {
         "/files/<path:path>": (
             lambda path: bottle.static_file(path, root=os.getcwd()),
-            dict(),
+            {},
         ),
         **eel.BOTTLE_ROUTES,
     }

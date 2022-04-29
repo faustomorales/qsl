@@ -1,5 +1,5 @@
 import click
-from . import app, files
+from . import app
 
 
 @click.group()

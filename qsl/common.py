@@ -317,7 +317,6 @@ class BaseMediaLabeler:
                 preloadUrl = files.build_url(
                     preloadCandidate["target"],
                     base=self.base,
-                    ftype=preloadCandidate.get("type", "image"),
                     allow_base64=False,
                     get_tempdir=self.get_temporary_directory,
                 )
@@ -355,7 +354,6 @@ class BaseMediaLabeler:
                 files.build_url(
                     target=t["target"],
                     base=self.base,
-                    ftype=t["type"],
                     get_tempdir=self.get_temporary_directory,
                 )
                 if t.get("target") is not None

@@ -12,7 +12,6 @@ import urllib.parse as up
 
 import filetype
 import numpy as np
-import pkg_resources
 
 try:
     import cv2
@@ -125,9 +124,8 @@ def file2str(filepath: str):
             filepath,
         )
         return None
-    else:
-        with open(filepath, "rb") as f:
-            encoded = base64.b64encode(f.read()).decode("utf8")
+    with open(filepath, "rb") as f:
+        encoded = base64.b64encode(f.read()).decode("utf8")
     return BASE64_PATTERN.format(
         type=filetype.guess(filepath).mime,
         data=encoded,
@@ -156,7 +154,6 @@ def get_relpath(filepath, directory):
 def build_url(
     target: typing.Union[str, np.ndarray],
     base: dict,
-    ftype: str,
     get_tempdir: typing.Callable[[], str],
     allow_base64=True,
 ) -> str:

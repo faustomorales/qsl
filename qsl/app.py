@@ -23,11 +23,11 @@ class MediaLabeler(common.BaseMediaLabeler):
             batch_size=batch_size,
             images=images,
             jsonpath=jsonpath,
+            base={
+                "url": "http://localhost:8080",
+                "serverRoot": os.getcwd(),
+            },
         )
-        self.base = {
-            "url": "http://localhost:8080",
-            "serverRoot": os.getcwd(),
-        }
         self.set_urls_and_type()
         eel.expose(self.init)
         eel.expose(self.sync)

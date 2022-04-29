@@ -71,9 +71,10 @@ class BaseMediaLabeler:
         batch_size=1,
         images=None,
         jsonpath=None,
+        base=None,
     ):
         super().__init__()
-        self.base = {
+        self.base = base or {
             "url": None,
             "serverRoot": None,
         }
@@ -106,6 +107,9 @@ class BaseMediaLabeler:
                 for item in items
             ]
         if jsonpath is not None:
+            assert all(
+                isinstance(item.get("target"), (type(None), str)) for item in items
+            ), "Using a jsonpath is incompatible with raw array targets. Please remove the jsonpath argument. You can access labels by looking at `labeler.items`."
             jsondata = files.json_or_none(jsonpath)
             if jsondata is not None:
                 if config is not None:

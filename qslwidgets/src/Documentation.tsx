@@ -484,7 +484,7 @@ const App: React.FC = () => {
                   {
                     title: "Show metadata with images",
                     description:
-                      "Include contextual information about the given image in the labeling interface by adding a metadata object.",
+                      "Include contextual information about the given image in the labeling interface by adding a metadata object. If you don't specify a target, the metadata will still be shown (useful if you're labeling something other than images/videos).",
                   },
                   {
                     title:

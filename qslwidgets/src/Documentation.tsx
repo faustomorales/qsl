@@ -321,9 +321,11 @@ const snippets = {
     notebook: `import qsl
 from IPython.display import display
 
-# Get the labels from \`labeler.items\` (i.e., to save them somewhere)
+# You can get the current state of the
+# labels from \`labeler.items\` (i.e., to save them somewhere)
 labeler = qsl.MediaLabeler(
   items=[{ "target": "path/img.jpg", "metadata": { "foo": "bar" } }],
+  # Optionally, provide an intial config (you can edit it in the UI).
   config={"image": [
     {
       "name": "Category",
@@ -331,6 +333,8 @@ labeler = qsl.MediaLabeler(
       "multiple": True
     }
   ]}
+  # Optionally, pass a path to a JSON file that you want
+  # labels to be saved to.
   jsonpath="labels.json"
 )
 display(labeler)

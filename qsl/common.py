@@ -188,7 +188,7 @@ class BaseMediaLabeler:
         next_idx = self.targets[-1]["idx"] + 1
         if next_idx < len(self.items):
             self.idx = next_idx
-            self.update(True)
+        self.update(True)
 
     def prev(self):
         self.idx = max(self.idx - self.batch_size, 0)

@@ -29,7 +29,7 @@ format:  ## Format all files.
 	yarn --cwd qslwidgets format
 build:  # Build the frontend and integrate into the package
 	rm -rf dist
-	@$(PYTHON_EXEC) yarn --cwd qslwidgets build
+	@$(PYTHON_EXEC) yarn --cwd qslwidgets build:prod
 package: build ## Make a local build of the Python package, source dist and wheel
 	@$(PYTHON_EXEC) pyproject-build .
 publish-docs:

@@ -7316,10 +7316,10 @@ react-highlight@^0.14.0:
   dependencies:
     highlight.js "^10.5.0"
 
-react-image-labeler@0.0.1-alpha.53:
-  version "0.0.1-alpha.53"
-  resolved "https://registry.yarnpkg.com/react-image-labeler/-/react-image-labeler-0.0.1-alpha.53.tgz#09439f9b5ea77f9c6c7247f147c8ed21406d4173"
-  integrity sha512-1Gb4BtFatV3oBj4CroxwCaczGwcdmKF6PszqG/2e38qfOPZGWwPCdyhelumZ05J3BtLOY5fRMRj/XcFMnK2kTA==
+react-image-labeler@0.0.1-alpha.55:
+  version "0.0.1-alpha.55"
+  resolved "https://registry.yarnpkg.com/react-image-labeler/-/react-image-labeler-0.0.1-alpha.55.tgz#ddfd54ac78bf1962ec69825f6bd391406084341a"
+  integrity sha512-7VOqTNJjB4glol4B4w20V8xGzHIZQCPhhi3yySL7ysURsqCLz5aJEZrQae0UsxpcVwEUXKjl3KZhN1/6lszyIw==
 
 react-is@^16.13.1, react-is@^16.7.0:
   version "16.13.1"

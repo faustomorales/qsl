@@ -74,10 +74,7 @@ class BaseMediaLabeler:
         base=None,
     ):
         super().__init__()
-        self.base = base or {
-            "url": None,
-            "serverRoot": None,
-        }
+        self.base = base
         self.config = config
         self.jsonpath = jsonpath
         self.action = ""

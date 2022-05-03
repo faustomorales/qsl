@@ -21,7 +21,34 @@ def module_version():
 
 
 class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
-    """A widget for labeling a single image."""
+    """A widget for labeling a series of media files.
+
+    Args:
+        items: A list of items to label as a list of dicts. Each dict
+            may have the following keys (all optional).
+                - target: A string (URL, filepath, or S3 URL) or
+                    numpy array representing an image or video. If a
+                    numpy array, it must be an image provided as an
+                    HxWx3 array where the final axis represents BGR
+                    values as unsigned 8-bit integers (i.e., OpenCV
+                    style arrays). If not provided, only the metadata
+                    is shown.
+                - metadata: A string-to-string dictionary representing
+                    information that will be shown with the image.
+                - type: The type of the file ("image" or "video"). It
+                    defaults to "image"
+                - labels: The current labels for the target.
+                - defaults: The default labels for the target.
+                - ignored: A boolean value indicating whether the
+                    image is ignored.
+                - jsonpath: A filepath in which to save the labels for
+                    this image.
+        config: The initial configuration for the labeler.
+        allow_config_change: Whether to allow the configuration to be
+            changed in the UI.
+        batch_size: The batch size for the labeler.
+        jsonpath: A filepath in which to save all the current labels.
+    """
 
     _model_name = t.Unicode("MediaLabelerModel").tag(sync=True)
     _model_module = t.Unicode(module_name).tag(sync=True)
@@ -57,7 +84,8 @@ class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
         default_value={
             "url": None,
             "serverRoot": None,
-        }
+        },
+        allow_none=True,
     ).tag(sync=True)
     preload = t.List(trait=t.Unicode(), allow_none=True).tag(sync=True)
     maxCanvasSize = t.Integer(default_value=512).tag(sync=True)

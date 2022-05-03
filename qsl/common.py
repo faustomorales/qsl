@@ -99,7 +99,7 @@ class BaseMediaLabeler:
             items = [
                 {
                     **item,
-                    "labels": files.json_or_none(item["jsonpath"]),
+                    **(files.json_or_none(item["jsonpath"]) or {}),
                 }
                 for item in items
             ]

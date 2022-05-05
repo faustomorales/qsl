@@ -75,7 +75,6 @@ class BaseMediaLabeler:
     ):
         super().__init__()
         self.base = base
-        self.config = config
         self.jsonpath = jsonpath
         self.action = ""
         self.preload = []
@@ -115,11 +114,12 @@ class BaseMediaLabeler:
                         jsonpath,
                     )
                 items = merge_items(initial=jsondata["items"], insert=items)
-
+                config = jsondata["config"]
         self._targets: typing.List[Target] = []
         self._allow_config_change = allow_config_change
         if images is not None:
             deprecate("The images argument", "items")
+        self.config = config
         self.items = items
         self.idx = 0
         self.batch_size = batch_size

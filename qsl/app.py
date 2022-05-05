@@ -80,9 +80,7 @@ def start(jsonpath: str, targets: typing.List[str], batch_size: int):
         os.path.dirname(pkg_resources.resource_filename("qsl", "ui/eelapp/index.html")),
         [".js", ".html"],
     )
-    project = files.json_or_none(jsonpath) or {"config": {}, "items": []}
     labeler = MediaLabeler(
-        config=project["config"] if project else {},
         batch_size=batch_size,
         items=[
             {"target": t, "type": files.guess_type(t)}

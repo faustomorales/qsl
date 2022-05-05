@@ -159,6 +159,19 @@ class BaseMediaLabeler:
         ]
         self.set_buttons()
 
+    def advance_to_unlabeled(self):
+        unlabeled = next(
+            (idx for idx, item in enumerate(self.items) if not item.get("labels")), None
+        )
+        if unlabeled is None:
+            LOGGER.warning(
+                "All items have already been labeled. Starting from beginning."
+            )
+            self.idx = 0
+        else:
+            self.idx = unlabeled
+        self.update(True)
+
     def set_buttons(self):
         self.buttons = {
             "prev": self.idx != 0,

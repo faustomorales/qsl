@@ -13,11 +13,12 @@ import {
   BatchImageLabeler,
   TimestampedLabel,
   Labeler,
-} from "react-image-labeler";
+} from "./react-image-labeler";
+import GlobalLabelerContext from "./react-image-labeler/components/GlobalLabelerContext";
 
 interface BaseWidgetState<T, U> {
   states: {
-    metadata: { [key: string]: string };
+    metadata?: { [key: string]: string };
     selected: boolean;
     visible: boolean;
     ignored: boolean;
@@ -25,6 +26,7 @@ interface BaseWidgetState<T, U> {
     labels: Labels;
   }[];
   urls: string[];
+  message: string;
   type: T;
   config: Config;
   transitioning: boolean;
@@ -58,6 +60,7 @@ const defaultWidgetState: WidgetState = {
   states: [],
   urls: [],
   type: "image",
+  message: "",
   transitioning: false,
   config: { image: [], regions: [] } as Config,
   labels: { image: {}, polygons: [], masks: [], boxes: [] } as Labels,
@@ -82,14 +85,17 @@ const defaultWidgetState: WidgetState = {
   mode: "light" as "light" | "dark",
 };
 
-const CommonWidget: React.FC<{
+interface CommonWidgetProps {
   extract: <V extends keyof WidgetState & string>(
     name: V
   ) => {
     value: WidgetState[V];
     set: (val: WidgetState[V], options?: any) => void;
   };
-}> = ({ extract }) => {
+}
+
+const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
+  const { setToast } = React.useContext(GlobalLabelerContext);
   const config = extract("config");
   const states = extract("states");
   const transitioning = extract("transitioning");
@@ -103,6 +109,13 @@ const CommonWidget: React.FC<{
   const preload = extract("preload");
   const maxCanvasSize = extract("maxCanvasSize");
   const maxViewHeight = extract("maxViewHeight");
+  const message = extract("message");
+  React.useEffect(() => {
+    if (message.value !== "") {
+      setToast(message.value);
+      message.set("");
+    }
+  }, [message.value, setToast]);
   const common = {
     config: {
       image: config.value?.image || [],
@@ -141,43 +154,47 @@ const CommonWidget: React.FC<{
     >
       <ScopedCssBaseline>
         <Box style={{ padding: 16 }}>
-          <Labeler>
-            {states.value.length === 0 ? null : states.value.length == 1 ? (
-              type.value === "image" ? (
-                <ImageLabeler
-                  {...common}
-                  maxViewHeight={maxViewHeight.value}
-                  labels={(labels.value || {}) as Labels}
-                  target={urls.value[0]}
-                  metadata={transitioning.value ? {} : states.value[0].metadata}
-                />
-              ) : (
-                <VideoLabeler
-                  {...common}
-                  maxViewHeight={maxViewHeight.value}
-                  labels={
-                    (Array.isArray(labels.value)
-                      ? labels.value
-                      : []) as TimestampedLabel[]
-                  }
-                  target={urls.value[0]}
-                  metadata={transitioning.value ? {} : states.value[0].metadata}
-                />
-              )
-            ) : (
-              <BatchImageLabeler
+          {states.value.length === 0 ? null : states.value.length == 1 ? (
+            type.value === "image" ? (
+              <ImageLabeler
                 {...common}
+                maxViewHeight={maxViewHeight.value}
                 labels={(labels.value || {}) as Labels}
-                target={urls.value}
-                states={transitioning.value ? [] : states.value}
-                setStates={(newStates) => states.set(newStates)}
+                target={urls.value[0]}
+                metadata={transitioning.value ? {} : states.value[0].metadata}
               />
-            )}
-          </Labeler>
+            ) : (
+              <VideoLabeler
+                {...common}
+                maxViewHeight={maxViewHeight.value}
+                labels={
+                  (Array.isArray(labels.value)
+                    ? labels.value
+                    : []) as TimestampedLabel[]
+                }
+                target={urls.value[0]}
+                metadata={transitioning.value ? {} : states.value[0].metadata}
+              />
+            )
+          ) : (
+            <BatchImageLabeler
+              {...common}
+              labels={(labels.value || {}) as Labels}
+              target={urls.value}
+              states={transitioning.value ? [] : states.value}
+              setStates={(newStates) => states.set(newStates)}
+            />
+          )}
         </Box>
       </ScopedCssBaseline>
     </ThemeProvider>
   );
 };
+
+const CommonWidget: React.FC<CommonWidgetProps> = (props) => (
+  <Labeler>
+    <InnerCommonWidget {...props} />
+  </Labeler>
+);
 
 export { CommonWidget, WidgetState, defaultWidgetState };

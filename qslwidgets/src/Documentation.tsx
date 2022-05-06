@@ -24,7 +24,7 @@ import {
   Labels,
   Config,
   TimestampedLabel,
-} from "react-image-labeler";
+} from "./react-image-labeler";
 
 import "highlight.js/styles/agate.css";
 import "./docs.css";
@@ -291,7 +291,7 @@ export const LabelingBatches: React.FC = () => {
               ...state,
               target: target.map((t, tIdx) => {
                 return { ...t, url: state.target[tIdx].url };
-              }),
+              }) as any,
             })
           }
           labels={state.target.find((t) => t.visible && t.selected)?.labels}
@@ -550,27 +550,27 @@ const App: React.FC = () => {
               <Typography variant="body1">
                 Have a lot of images you want to label quickly? QSL supports
                 batching images together.
-                <DescriptionList
-                  style={{ paddingLeft: "15px" }}
-                  entries={[
-                    {
-                      title: "Customize the number of images in each batch.",
-                      description:
-                        "Choose your batch size based on your specific problem.",
-                    },
-                    {
-                      title: "Skip through batches quickly.",
-                      description:
-                        "If many of your images will have the same label, you can skip through a large dataset very quickly.",
-                    },
-                    {
-                      title: "Mix and match videos and images.",
-                      description:
-                        "If you include videos, those will be automatically switched into labeling one at a time.",
-                    },
-                  ]}
-                />
               </Typography>
+              <DescriptionList
+                style={{ paddingLeft: "15px" }}
+                entries={[
+                  {
+                    title: "Customize the number of images in each batch.",
+                    description:
+                      "Choose your batch size based on your specific problem.",
+                  },
+                  {
+                    title: "Skip through batches quickly.",
+                    description:
+                      "If many of your images will have the same label, you can skip through a large dataset very quickly.",
+                  },
+                  {
+                    title: "Mix and match videos and images.",
+                    description:
+                      "If you include videos, those will be automatically switched into labeling one at a time.",
+                  },
+                ]}
+              />
             </Box>
           }
         />

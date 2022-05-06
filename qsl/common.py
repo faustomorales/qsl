@@ -201,7 +201,22 @@ class BaseMediaLabeler:
         self.update(True)
 
     def prev(self):
-        self.idx = max(self.idx - self.batch_size, 0)
+        if self.idx > 0:
+            includes_video = False
+            for count, idx in enumerate(
+                range(self.idx - 1, max(0, self.idx - self.batch_size) - 1, -1)
+            ):
+                includes_video = (
+                    includes_video or self.items[idx].get("type", "image") == "video"
+                )
+                if count == 0 or not includes_video:
+                    # We can always include at least one.
+                    continue
+                else:
+                    # We've hit a video in a batch. Do not allow this.
+                    idx = idx + 1
+                    break
+            self.idx = idx
         self.update(True)
 
     @property

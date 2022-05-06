@@ -1,6 +1,6 @@
 {
   "name": "qslwidgets",
-  "version": "0.0.20",
+  "version": "0.0.22",
   "description": "Widgets for the QSL image labeling package.",
   "keywords": [
     "jupyter",
@@ -47,7 +47,9 @@
     "watch": "npm-run-all -p watch:*",
     "watch:lib": "tsc -w",
     "watch:nbextension": "webpack --watch --mode=development",
-    "watch:labextension": "jupyter labextension watch ."
+    "watch:labextension": "jupyter labextension watch .",
+    "storybook": "start-storybook -p 6006",
+    "build-storybook": "build-storybook"
   },
   "dependencies": {
     "@emotion/react": "^11.8.1",
@@ -55,20 +57,27 @@
     "@jupyter-widgets/base": "^1.1.10 || ^2.0.0 || ^3.0.0 || ^4.0.0",
     "@mui/icons-material": "^5.6.1",
     "@mui/material": "^5.6.1",
+    "lodash.debounce": "^4.0.8",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-highlight": "^0.14.0",
-    "react-image-labeler": "0.0.1-alpha.56"
+    "react-highlight": "^0.14.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.5.0",
-    "@babel/preset-env": "^7.5.0",
+    "@babel/core": "^7.14.5",
+    "@babel/preset-env": "^7.14.5",
     "@babel/preset-react": "^7.14.5",
     "@babel/preset-typescript": "^7.14.5",
     "@jupyterlab/builder": "^3.0.0",
     "@phosphor/application": "^1.6.0",
     "@phosphor/widgets": "^1.6.0",
+    "@storybook/addon-actions": "^6.4.22",
+    "@storybook/addon-essentials": "^6.4.22",
+    "@storybook/addon-interactions": "^6.4.22",
+    "@storybook/addon-links": "^6.4.22",
+    "@storybook/react": "^6.4.22",
+    "@storybook/testing-library": "^0.0.11",
     "@types/jest": "^26.0.0",
+    "@types/lodash.debounce": "^4.0.7",
     "@types/react": "^17.0.11",
     "@types/react-dom": "^17.0.8",
     "@types/react-highlight": "^0.12.5",

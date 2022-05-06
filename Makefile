@@ -14,8 +14,10 @@ check:  ## Check code for formatting, linting, etc.
 	@$(PYTHON_EXEC) mypy qsl
 	@$(PYTHON_EXEC) pylint qsl
 	@$(PYTHON_EXEC) black --diff --check .
-develop:  ## Watch/rebuild UI elements.
+develop:  ## Watch/rebuild Jupyter / Eel UI elements.
 	@$(PYTHON_EXEC) yarn --cwd qslwidgets watch
+storybook:  ## Watch/rebuild isolated UI elements.
+	yarn --cwd qslwidgets storybook
 clean:  ## Clean out all build files.
 	rm -rf dist build qslwidgets/lib qslwidgets/dist \
 		qsl/ui/labextension \

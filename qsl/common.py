@@ -345,7 +345,7 @@ class BaseMediaLabeler:
             preload = []
             for preloadCandidate in self.items[self.idx + 1 :]:
                 preloadUrl = files.build_url(
-                    preloadCandidate["target"],
+                    preloadCandidate.get("target"),
                     base=self.base,
                     allow_base64=False,
                     get_tempdir=self.get_temporary_directory,
@@ -382,11 +382,9 @@ class BaseMediaLabeler:
             self.type = self.targets[0]["type"] if len(self.targets) > 0 else "image"
             self.urls = [
                 files.build_url(
-                    target=t["target"],
+                    target=t.get("target"),
                     base=self.base,
                     get_tempdir=self.get_temporary_directory,
                 )
-                if t.get("target") is not None
-                else None
                 for t in self.targets
             ]

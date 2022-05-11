@@ -83,6 +83,7 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
           left: "50%",
           transform: "translate(-50%, -50%)",
           bgcolor: "background.paper",
+          color: "text.secondary",
           border: "2px solid #000",
           boxShadow: 24,
         }}
@@ -186,7 +187,7 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
             <Typography>
               Your new label configuration will look like the following.
             </Typography>
-            <Box sx={{ ml: -3, mr: -3, mt: 1 }}>
+            <Box sx={{ ml: -3, mr: -3, mt: 1, mb: -3 }}>
               <LabelPanelEntry
                 selected={state.mockSelected}
                 setSelected={(selected) =>

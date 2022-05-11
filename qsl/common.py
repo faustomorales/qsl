@@ -115,6 +115,7 @@ class BaseMediaLabeler:
                     )
                 items = merge_items(initial=jsondata["items"], insert=items)
                 config = jsondata["config"]
+        assert items, "There must be at least one labeling target."
         self._targets: typing.List[Target] = []
         self._allow_config_change = allow_config_change
         if images is not None:

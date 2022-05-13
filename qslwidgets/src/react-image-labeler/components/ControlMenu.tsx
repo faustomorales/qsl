@@ -17,7 +17,9 @@ import {
 import {
   KeyboardArrowRight,
   KeyboardArrowLeft,
+  List,
   Keyboard,
+  Add,
 } from "@mui/icons-material";
 import RangeSlider from "./RangeSlider";
 import LabelPanel from "./LabelPanel";
@@ -44,6 +46,7 @@ interface Callbacks {
   onReset?: () => void;
   onSelectAll?: () => void;
   onSelectNone?: () => void;
+  onShowIndex?: () => void;
 }
 
 const ControlMenu: React.FC<{
@@ -454,20 +457,32 @@ const ControlMenu: React.FC<{
                 </Button>
               </ButtonGroup>
             ) : null}
-            {callbacks?.onSaveConfig ? (
+            {callbacks?.onSaveConfig || callbacks?.onShowIndex ? (
               <ButtonGroup
                 size="small"
                 aria-label="add new configuration menu"
                 fullWidth
               >
-                <Button
-                  className="add-new-label"
-                  onClick={() =>
-                    setState({ index: null, configEditorOpen: true })
-                  }
-                >
-                  Add New Label Type
-                </Button>
+                {callbacks?.onSaveConfig ? (
+                  <Button
+                    startIcon={<Add />}
+                    className="add-new-label"
+                    onClick={() =>
+                      setState({ index: null, configEditorOpen: true })
+                    }
+                  >
+                    Add Type
+                  </Button>
+                ) : null}
+                {callbacks?.onShowIndex ? (
+                  <Button
+                    startIcon={<List />}
+                    className="show-data-index"
+                    onClick={callbacks.onShowIndex}
+                  >
+                    View Index
+                  </Button>
+                ) : null}
               </ButtonGroup>
             ) : null}
           </Stack>

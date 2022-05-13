@@ -46,19 +46,7 @@ class MediaLabeler(common.BaseMediaLabeler):
         if key == "action":
             if not value:
                 return
-            if value == "next":
-                self.next()
-            if value == "prev":
-                self.prev()
-            if value == "delete":
-                self.delete()
-            if value == "ignore":
-                self.ignore()
-            if value == "unignore":
-                self.unignore()
-            if value == "save":
-                self.save()
-            self.action = ""
+            self.apply_action(value)
 
     def __setattr__(self, key, value):
         eel.sync(key, value)  # pylint: disable=no-member

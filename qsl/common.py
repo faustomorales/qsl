@@ -82,6 +82,7 @@ class BaseMediaLabeler:
         self.maxCanvasSize = 512
         self.maxViewHeight = 512
         self.tempdir = None
+        self.viewState = "labeling"
 
         # Items needs to be handled specially depending
         # on if labeler-wide or items-specific jsonpaths
@@ -125,6 +126,7 @@ class BaseMediaLabeler:
         self.idx = 0
         self.batch_size = batch_size
         self.max_preload = 3
+        self.mediaIndex = self.get_media_index()
         self.update(True)
 
     def get_temporary_directory(self):
@@ -172,6 +174,40 @@ class BaseMediaLabeler:
         else:
             self.idx = unlabeled
         self.update(True)
+
+    def get_media_index(self):
+        return {
+            "rows": [
+                {
+                    "id": index,
+                    "target": target
+                    if isinstance(target, str)
+                    else "numpy array"
+                    if isinstance(target, np.ndarray)
+                    else "",
+                    "labeled": "Yes" if labels else "No",
+                }
+                for index, (target, metadata, labels) in enumerate(
+                    [
+                        (
+                            item.get("target"),
+                            item.get("metadata", {}),
+                            item.get("labels", {}),
+                        )
+                        for item in self.items
+                    ]
+                )
+            ],
+            "columns": [
+                {
+                    "field": "target",
+                    "type": "string",
+                    "flex": 1,
+                    "headerName": "Target",
+                },
+                {"field": "labeled", "type": "string", "headerName": "Labeled"},
+            ],
+        }
 
     def set_buttons(self):
         self.buttons = {
@@ -254,6 +290,30 @@ class BaseMediaLabeler:
         for tIdx, iIdx in enumerate(self.idxs):
             yield self.targets[tIdx], self.items[iIdx]
 
+    def apply_action(self, value):
+        if not value:
+            return
+        if value == "next":
+            self.next()
+        if value == "prev":
+            self.prev()
+        if value == "delete":
+            self.delete()
+        if value == "ignore":
+            self.ignore()
+        if value == "unignore":
+            self.unignore()
+        if value == "save":
+            self.save()
+        if value == "label":
+            self.batch_size = 1
+            self.update(True)
+            self.viewState = "labeling"
+        if value == "index":
+            self.mediaIndex = self.get_media_index()
+            self.viewState = "index"
+        self.action = ""
+
     def save(self):
         for target, item in self.targets_and_items:
             if target["visible"] and target["selected"]:
@@ -312,7 +372,7 @@ class BaseMediaLabeler:
 
     def update(self, reset: bool):
         if reset:
-            self.transitioning = True
+            self.viewState = "transitioning"
         self.targets = [
             {
                 "idx": idx,
@@ -329,7 +389,7 @@ class BaseMediaLabeler:
         ]
         if reset:
             self.set_urls_and_type()
-            self.transitioning = False
+            self.viewState = "labeling"
         base_item = next(i for t, i in self.targets_and_items if t["visible"])
         self.labels: typing.Union[dict, list] = typing.cast(
             typing.Union[dict, list],

@@ -63,7 +63,9 @@ class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
     states = t.List(default_value=[]).tag(sync=True)
     urls = t.List(default_value=[]).tag(sync=True)
     type = t.Unicode(default_value="image").tag(sync=True)
-    transitioning = t.Bool(default_value=False).tag(sync=True)
+    idx = t.Integer(default_value=0).tag(sync=True)
+    viewState = t.Unicode("labeling").tag(sync=True)
+    mediaIndex = t.Dict(default_value={"rows": [], "columns": []}).tag(sync=True)
     labels = t.Union(
         [
             t.Dict(
@@ -142,19 +144,7 @@ class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
         """Handles changes to the action state."""
         if not change["new"]:
             return
-        if change["new"] == "next":
-            self.next()
-        if change["new"] == "prev":
-            self.prev()
-        if change["new"] == "delete":
-            self.delete()
-        if change["new"] == "ignore":
-            self.ignore()
-        if change["new"] == "unignore":
-            self.unignore()
-        if change["new"] == "save":
-            self.save()
-        self.action = ""
+        self.apply_action(change["new"])
 
 
 class ImageSeriesLabeler(MediaLabeler):

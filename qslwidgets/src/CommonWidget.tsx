@@ -12,6 +12,7 @@ import {
   Config,
   BatchImageLabeler,
   TimestampedLabel,
+  MediaIndex,
   Labeler,
 } from "./react-image-labeler";
 import GlobalLabelerContext from "./react-image-labeler/components/GlobalLabelerContext";
@@ -29,12 +30,26 @@ interface BaseWidgetState<T, U> {
   message: string;
   type: T;
   config: Config;
-  transitioning: boolean;
   labels: U;
-  action: "next" | "prev" | "delete" | "ignore" | "unignore" | "save" | "";
+  action:
+    | "next"
+    | "prev"
+    | "delete"
+    | "ignore"
+    | "unignore"
+    | "save"
+    | "label"
+    | "index"
+    | "";
   preload: string[];
   maxCanvasSize: number;
   maxViewHeight: number;
+  idx: number;
+  viewState: "transitioning" | "labeling" | "index";
+  mediaIndex: {
+    rows: { [key: string]: string | number; id: number }[];
+    columns: { field: string; headerName: string; type: "number" | "string" }[];
+  };
   buttons: {
     next: boolean;
     prev: boolean;
@@ -61,13 +76,15 @@ const defaultWidgetState: WidgetState = {
   urls: [],
   type: "image",
   message: "",
-  transitioning: false,
   config: { image: [], regions: [] } as Config,
   labels: { image: {}, polygons: [], masks: [], boxes: [] } as Labels,
   action: "",
   preload: [] as string[],
   maxCanvasSize: 512 as number,
   maxViewHeight: 512 as number,
+  idx: 0,
+  viewState: "labeling",
+  mediaIndex: { rows: [], columns: [] },
   buttons: {
     next: true,
     prev: true,
@@ -98,7 +115,6 @@ const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
   const { setToast } = React.useContext(GlobalLabelerContext);
   const config = extract("config");
   const states = extract("states");
-  const transitioning = extract("transitioning");
   const urls = extract("urls");
   const type = extract("type");
   const labels = extract("labels");
@@ -109,6 +125,9 @@ const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
   const preload = extract("preload");
   const maxCanvasSize = extract("maxCanvasSize");
   const maxViewHeight = extract("maxViewHeight");
+  const viewState = extract("viewState");
+  const mediaIndex = extract("mediaIndex");
+  const idx = extract("idx");
   const message = extract("message");
   React.useEffect(() => {
     if (message.value !== "") {
@@ -142,6 +161,7 @@ const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
       onUnignore: buttons.value.unignore
         ? () => action.set("unignore")
         : undefined,
+      onShowIndex: () => action.set("index"),
     },
   };
   return (
@@ -154,14 +174,31 @@ const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
     >
       <ScopedCssBaseline>
         <Box style={{ padding: 16 }}>
-          {states.value.length === 0 ? null : states.value.length == 1 ? (
+          <Box hidden={viewState.value !== "index"}>
+            <MediaIndex
+              grid={mediaIndex.value}
+              idx={idx.value}
+              label={(newIdx) => {
+                idx.set(newIdx);
+                action.set("label");
+              }}
+            />
+          </Box>
+          {states.value.length === 0 ||
+          viewState.value === "index" ? null : states.value.length == 1 ? (
             type.value === "image" ? (
               <ImageLabeler
                 {...common}
                 maxViewHeight={maxViewHeight.value}
                 labels={(labels.value || {}) as Labels}
-                target={urls.value[0]}
-                metadata={transitioning.value ? {} : states.value[0].metadata}
+                target={
+                  viewState.value === "transitioning" ? undefined : urls.value[0]
+                }
+                metadata={
+                  viewState.value === "transitioning"
+                    ? {}
+                    : states.value[0].metadata
+                }
               />
             ) : (
               <VideoLabeler
@@ -173,7 +210,11 @@ const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
                     : []) as TimestampedLabel[]
                 }
                 target={urls.value[0]}
-                metadata={transitioning.value ? {} : states.value[0].metadata}
+                metadata={
+                  viewState.value === "transitioning"
+                    ? {}
+                    : states.value[0].metadata
+                }
               />
             )
           ) : (
@@ -181,7 +222,7 @@ const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
               {...common}
               labels={(labels.value || {}) as Labels}
               target={urls.value}
-              states={transitioning.value ? [] : states.value}
+              states={viewState.value === "transitioning" ? [] : states.value}
               setStates={(newStates) => states.set(newStates)}
             />
           )}

@@ -77,6 +77,7 @@ export const UsageWithMultipleImages: React.FC = () => {
             state.idx == state.images.length - 1
               ? undefined
               : () => setState({ ...state, idx: state.idx + 1 }),
+          onShowIndex: () => null,
         }}
       />
     </Labeler>

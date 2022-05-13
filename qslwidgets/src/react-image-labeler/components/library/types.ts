@@ -1,3 +1,4 @@
+export type ArbitraryMetadata = { [key: string]: string };
 export type Point = { x: number; y: number };
 export type Vec = { dx: number; dy: number };
 export type Scale = { sx: number; sy: number };
@@ -17,15 +18,17 @@ export interface LabelData {
   [key: string]: string[];
 }
 
-export interface PolygonLabel {
-  points: Point[];
+interface BaseRegionLabel {
   labels: LabelData;
 }
 
-export interface AlignedBoxLabel {
+export interface PolygonLabel extends BaseRegionLabel {
+  points: Point[];
+}
+
+export interface AlignedBoxLabel extends BaseRegionLabel {
   pt1: Point;
   pt2?: Point;
-  labels: LabelData;
 }
 
 export interface RLEMap {
@@ -40,9 +43,8 @@ export interface Bitmap {
 
 type Map = RLEMap | Bitmap;
 
-export interface MaskLabel<T extends Map> {
+export interface MaskLabel<T extends Map> extends BaseRegionLabel {
   map: T;
-  labels: LabelData;
 }
 
 export interface DraftLabels {
@@ -138,6 +140,7 @@ export interface BaseLabelerProps<T, U> {
     onIgnore?: () => void;
     onUnignore?: () => void;
     onSaveConfig?: (config: Config) => void;
+    onShowIndex?: () => void;
   };
 }
 
@@ -149,18 +152,18 @@ export type TimestampedLabel = {
 
 export interface ImageLabelerProps extends BaseLabelerProps<Labels, string> {
   preload?: string[];
-  metadata?: { [key: string]: string };
+  metadata?: ArbitraryMetadata;
   maxViewHeight?: number;
 }
 
 export interface VideoLabelerProps
   extends BaseLabelerProps<TimestampedLabel[], string> {
-  metadata?: { [key: string]: string };
+  metadata?: ArbitraryMetadata;
   maxViewHeight?: number;
 }
 
 export interface BatchEntry {
-  metadata?: { [key: string]: string };
+  metadata?: ArbitraryMetadata;
   labels: Labels;
   visible: boolean;
   selected: boolean;

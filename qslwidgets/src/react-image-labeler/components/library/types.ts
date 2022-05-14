@@ -20,6 +20,8 @@ export interface LabelData {
 
 interface BaseRegionLabel {
   labels: LabelData;
+  metadata?: ArbitraryMetadata;
+  readonly?: boolean;
 }
 
 export interface PolygonLabel extends BaseRegionLabel {

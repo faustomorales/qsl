@@ -26,6 +26,7 @@ import LabelPanel from "./LabelPanel";
 import ConfigEditor from "./ConfigEditor";
 import ClickTarget from "./ClickTarget";
 import GlobalLabelerContext from "./GlobalLabelerContext";
+import Metadata from "./Metadata";
 import { insertOrAppend, shortcutify } from "./library/utils";
 import {
   useKeyboardEvent,
@@ -181,7 +182,11 @@ const ControlMenu: React.FC<{
       />
       <LabelPanel
         config={activeConfig}
-        disabled={disabled}
+        disabled={
+          disabled ||
+          (draft.drawing.active !== undefined &&
+            draft.drawing.active.region.readonly === true)
+        }
         editConfig={
           callbacks?.onSaveConfig
             ? (index) => setState({ configEditorOpen: true, index })
@@ -217,6 +222,11 @@ const ControlMenu: React.FC<{
           });
         }}
       />
+      {draft.drawing && draft.drawing.active?.region.metadata ? (
+        <Box sx={{ position: "relative", zIndex: 1 }}>
+          <Metadata data={draft.drawing.active.region.metadata} />
+        </Box>
+      ) : null}
       {Object.keys((draft.drawing.active ? config.regions : config.image) || [])
         .length > 0 ? (
         <Divider sx={{ mb: 3 }} />
@@ -354,10 +364,11 @@ const ControlMenu: React.FC<{
               startIcon={"\u23CE"}
               className="finish-region"
             >
-              Finish
+              {draft.drawing.active.region.readonly ? "Deselect" : "Finish"}
             </Button>
             <Button
               startIcon={"\u232B"}
+              disabled={draft.drawing.active.region.readonly}
               onClick={() => finishPolygon(false)}
               ref={refs.clearRegion}
             >
@@ -478,6 +489,7 @@ const ControlMenu: React.FC<{
                   <Button
                     startIcon={<List />}
                     className="show-data-index"
+                    disabled={disabled}
                     onClick={callbacks.onShowIndex}
                   >
                     View Index

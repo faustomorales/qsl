@@ -35,7 +35,7 @@ const RegionList: React.FC<RegionListProps> = ({
         draft.drawing.mode !== "masks" ||
         draft.drawing.active?.idx !== index ? (
           <Mask
-            activeColor="blue"
+            color={mask.readonly ? "yellow" : "blue"}
             key={index}
             bitmap={mask.map}
             style={{
@@ -58,7 +58,7 @@ const RegionList: React.FC<RegionListProps> = ({
                 draft.drawing.mode === "polygons" ? undefined : "none",
             }}
             key={index}
-            color="blue"
+            color={polygon.readonly ? "yellow" : "blue"}
             {...callbacks}
             onClick={(event: React.MouseEvent) =>
               callbacks.onClick(event, polygon, index)
@@ -70,7 +70,7 @@ const RegionList: React.FC<RegionListProps> = ({
         draft.drawing.mode !== "boxes" ||
         draft.drawing.active?.idx !== index ? (
           <AlignedBox
-            color="blue"
+            color={box.readonly ? "yellow" : "blue"}
             box={box}
             key={index}
             style={{
@@ -107,7 +107,7 @@ const RegionList: React.FC<RegionListProps> = ({
         />
       ) : draft.drawing.mode === "masks" ? (
         <Mask
-          activeColor="red"
+          color="red"
           {...callbacks}
           bitmap={draft.drawing.active.region.map}
           style={{ cursor }}

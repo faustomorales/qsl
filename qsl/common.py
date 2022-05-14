@@ -25,6 +25,10 @@ Target = tx.TypedDict(
     },
 )
 
+# Taken from https://stackoverflow.com/questions/952914/how-to-make-a-flat-list-out-of-a-list-of-lists
+def flatten(l: typing.List[typing.Any]):
+    return [item for sublist in l for item in sublist]
+
 
 def deprecate(old, new):
     """Log a deprecation message."""
@@ -83,6 +87,7 @@ class BaseMediaLabeler:
         self.maxViewHeight = 512
         self.tempdir = None
         self.viewState = "labeling"
+        self.message = ""
 
         # Items needs to be handled specially depending
         # on if labeler-wide or items-specific jsonpaths
@@ -124,6 +129,7 @@ class BaseMediaLabeler:
         self.config = config
         self.items = items
         self.idx = 0
+        self.sortedIdxs = list(range(len(items)))
         self.batch_size = batch_size
         self.max_preload = 3
         self.mediaIndex = self.get_media_index()
@@ -164,7 +170,7 @@ class BaseMediaLabeler:
 
     def advance_to_unlabeled(self):
         unlabeled = next(
-            (idx for idx, item in enumerate(self.items) if not item.get("labels")), None
+            (idx for idx in self.sortedIdxs if not self.items[idx].get("labels")), None
         )
         if unlabeled is None:
             LOGGER.warning(
@@ -172,14 +178,18 @@ class BaseMediaLabeler:
             )
             self.idx = 0
         else:
-            self.idx = unlabeled
+            self.idx = self.sortedIdxs[unlabeled]
         self.update(True)
 
     def get_media_index(self):
+        metadata_keys = list(
+            set(flatten([item.get("metadata", {}).keys() for item in self.items]))
+        )[:5]
         return {
             "rows": [
                 {
-                    "id": index,
+                    **{k: metadata.get(k) for k in metadata_keys},
+                    "qslId": index,
                     "target": target
                     if isinstance(target, str)
                     else "numpy array"
@@ -206,15 +216,16 @@ class BaseMediaLabeler:
                     "headerName": "Target",
                 },
                 {"field": "labeled", "type": "string", "headerName": "Labeled"},
-            ],
+            ]
+            + [{"field": k, "type": "string", "flex": 1} for k in metadata_keys],
         }
 
     def set_buttons(self):
         self.buttons = {
-            "prev": self.idx != 0,
+            "prev": self.idx != self.sortedIdxs,
             "next": (
                 all(t["labeled"] or t["ignored"] for t in self.targets)
-                and self.idx + 1 < len(self.items)
+                and self.targets[-1]["idx"] != self.sortedIdxs[-1]
             ),
             "save": any(t["selected"] for t in self.states),
             "config": self._allow_config_change,
@@ -232,45 +243,48 @@ class BaseMediaLabeler:
         }
 
     def next(self):
-        next_idx = self.targets[-1]["idx"] + 1
-        if next_idx < len(self.items):
-            self.idx = next_idx
+        next_sidx = self.sortedIdxs.index(self.targets[-1]["idx"]) + 1
+        if next_sidx < len(self.sortedIdxs):
+            self.idx = self.sortedIdxs[next_sidx]
         self.update(True)
 
     def prev(self):
-        if self.idx > 0:
+        sidx = self.sortedIdxs.index(self.idx)
+        if sidx > 0:
             includes_video = False
-            for count, idx in enumerate(
-                range(self.idx - 1, max(0, self.idx - self.batch_size) - 1, -1)
+            for count, sidx in enumerate(
+                range(sidx - 1, max(0, sidx - self.batch_size) - 1, -1)
             ):
                 includes_video = (
-                    includes_video or self.items[idx].get("type", "image") == "video"
+                    includes_video
+                    or self.items[self.sortedIdxs[sidx]].get("type", "image") == "video"
                 )
                 if count == 0 or not includes_video:
                     # We can always include at least one.
                     continue
-                else:
-                    # We've hit a video in a batch. Do not allow this.
-                    idx = idx + 1
-                    break
-            self.idx = idx
+                # We've hit a video in a batch. Do not allow this.
+                sidx = sidx + 1
+                break
+            self.idx = self.sortedIdxs[sidx]
         self.update(True)
 
     @property
     def idxs(self):
         includes_video = False
-        for count, idx in enumerate(
-            range(self.idx, min(self.idx + self.batch_size, len(self.items)))
+        sidx_initial = self.sortedIdxs.index(self.idx)
+        for count, sidx in enumerate(
+            range(sidx_initial, min(sidx_initial + self.batch_size, len(self.items)))
         ):
             includes_video = (
-                includes_video or self.items[idx].get("type", "image") == "video"
+                includes_video
+                or self.items[self.sortedIdxs[sidx]].get("type", "image") == "video"
             )
             if count == 0:
                 # We can always include at least one.
-                yield idx
+                yield self.sortedIdxs[sidx]
             elif not includes_video:
                 # We can include an arbitrary number of non-videos.
-                yield idx
+                yield self.sortedIdxs[sidx]
             else:
                 # We've hit a video in a batch. Do not allow this.
                 break
@@ -375,17 +389,17 @@ class BaseMediaLabeler:
             self.viewState = "transitioning"
         self.targets = [
             {
-                "idx": idx,
-                "target": self.items[idx].get("target"),
-                "type": self.items[idx].get("type", "image"),
-                "metadata": self.items[idx].get("metadata", {}),
-                "selected": True if reset else self.targets[idx - self.idx]["selected"],
-                "ignored": self.items[idx].get("ignore", False),
-                "labeled": self.items[idx].get("labels") is not None,
-                "labels": self.items[idx].get("labels", {}),
-                "visible": True if reset else self.targets[idx - self.idx]["visible"],
+                "idx": iIdx,
+                "target": self.items[iIdx].get("target"),
+                "type": self.items[iIdx].get("type", "image"),
+                "metadata": self.items[iIdx].get("metadata", {}),
+                "selected": True if reset else self.targets[tIdx]["selected"],
+                "ignored": self.items[iIdx].get("ignore", False),
+                "labeled": self.items[iIdx].get("labels") is not None,
+                "labels": self.items[iIdx].get("labels", {}),
+                "visible": True if reset else self.targets[tIdx]["visible"],
             }
-            for idx in self.idxs
+            for tIdx, iIdx in enumerate(self.idxs)
         ]
         if reset:
             self.set_urls_and_type()
@@ -401,9 +415,11 @@ class BaseMediaLabeler:
             if reset
             else self.labels,
         )
-        if self.base and self.idx + 1 < len(self.items):
+        sIdx = self.sortedIdxs.index(self.idx)
+        if self.base and sIdx + 1 < len(self.sortedIdxs):
             preload = []
-            for preloadCandidate in self.items[self.idx + 1 :]:
+            for iIdx in self.sortedIdxs[sIdx + 1 :]:
+                preloadCandidate = self.items[iIdx]
                 preloadUrl = files.build_url(
                     preloadCandidate.get("target"),
                     base=self.base,

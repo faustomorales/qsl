@@ -1,5 +1,5 @@
 import React from "react";
-import { MediaIndex } from "../react-image-labeler";
+import { MediaIndex, Labeler } from "../react-image-labeler";
 
 const grid = {
   columns: [
@@ -35,8 +35,23 @@ const grid = {
 };
 
 export const BasicUsage: React.FC = () => {
-  const [idx, setIdx] = React.useState(0)
-  return <MediaIndex grid={grid} idx={idx} label={setIdx} />;
+  const [idx, setIdx] = React.useState(0);
+  return (
+    <Labeler>
+      <MediaIndex
+        viewHeight={400}
+        setSortedIdxs={(sortedIdxs) =>
+          console.log("Setting sorted indexes.", sortedIdxs)
+        }
+        sortedIdxs={grid.rows.map((r) => r.id)}
+        grid={grid}
+        idx={idx}
+        label={setIdx}
+        rowKey={"id"}
+        visible={true}
+      />
+    </Labeler>
+  );
 };
 
 export default {

@@ -46,8 +46,9 @@ interface BaseWidgetState<T, U> {
   maxViewHeight: number;
   idx: number;
   viewState: "transitioning" | "labeling" | "index";
+  sortedIdxs: number[];
   mediaIndex: {
-    rows: { [key: string]: string | number; id: number }[];
+    rows: { [key: string]: string | number; qslId: number }[];
     columns: { field: string; headerName: string; type: "number" | "string" }[];
   };
   buttons: {
@@ -84,6 +85,7 @@ const defaultWidgetState: WidgetState = {
   maxViewHeight: 512 as number,
   idx: 0,
   viewState: "labeling",
+  sortedIdxs: [],
   mediaIndex: { rows: [], columns: [] },
   buttons: {
     next: true,
@@ -129,6 +131,7 @@ const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
   const mediaIndex = extract("mediaIndex");
   const idx = extract("idx");
   const message = extract("message");
+  const sortedIdxs = extract("sortedIdxs");
   React.useEffect(() => {
     if (message.value !== "") {
       setToast(message.value);
@@ -164,6 +167,7 @@ const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
       onShowIndex: () => action.set("index"),
     },
   };
+  // We use the hidden trick below to get around https://github.com/mui/mui-x/issues/4674
   return (
     <ThemeProvider
       theme={createTheme({
@@ -177,11 +181,16 @@ const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
           <Box hidden={viewState.value !== "index"}>
             <MediaIndex
               grid={mediaIndex.value}
+              setSortedIdxs={sortedIdxs.set}
+              rowKey="qslId"
               idx={idx.value}
+              visible={viewState.value === "index"}
+              sortedIdxs={sortedIdxs.value}
               label={(newIdx) => {
                 idx.set(newIdx);
                 action.set("label");
               }}
+              viewHeight={maxViewHeight.value}
             />
           </Box>
           {states.value.length === 0 ||
@@ -192,7 +201,9 @@ const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
                 maxViewHeight={maxViewHeight.value}
                 labels={(labels.value || {}) as Labels}
                 target={
-                  viewState.value === "transitioning" ? undefined : urls.value[0]
+                  viewState.value === "transitioning"
+                    ? undefined
+                    : urls.value[0]
                 }
                 metadata={
                   viewState.value === "transitioning"

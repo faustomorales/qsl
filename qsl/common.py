@@ -320,7 +320,6 @@ class BaseMediaLabeler:
         if value == "save":
             self.save()
         if value == "label":
-            self.batch_size = 1
             self.update(True)
             self.viewState = "labeling"
         if value == "index":

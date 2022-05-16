@@ -424,15 +424,8 @@ const ExampleElement: React.FC<{
           <Highlight className="shell">{snippet.cli}</Highlight>
         </Box>
       </Box>
-      <Paper elevation={5} sx={{ my: 2, width: "100%" }}>
-        <Box
-          sx={{
-            p: 2,
-            overflow: "scroll",
-          }}
-        >
-          {demonstration}
-        </Box>
+      <Paper elevation={5} sx={{ my: 2, width: "100%", p: 2 }}>
+        <Box>{demonstration}</Box>
       </Paper>
     </Box>
   );

@@ -30,6 +30,19 @@ def flatten(l: typing.List[typing.Any]):
     return [item for sublist in l for item in sublist]
 
 
+def counts2bitmap(counts: typing.List[int], dimensions: typing.Dict) -> np.ndarray:
+    """Convert a COCO-style bitmap into a bitmap."""
+    return (
+        np.concatenate(
+            [
+                np.zeros(count, dtype="uint8") + 1 - (index % 2)
+                for index, count in enumerate(counts)
+            ]
+        ).reshape((dimensions["height"], dimensions["width"]))
+        * 255
+    )
+
+
 def deprecate(old, new):
     """Log a deprecation message."""
     LOGGER.warning("%s has been deprecated. Use %s instead.", old, new)

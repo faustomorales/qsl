@@ -73,6 +73,7 @@ describe("Test Flood Fill", () => {
     ].flat();
     const mask = fillHsv({ x: 1 / image.width, y: 1 / image.height }, image, {
       threshold: 1,
+      radius: { dx: 0, dy: 0 },
     });
     expect(
       expected.map((v, i) => mask[i] == v).filter((v) => !v).length == 0

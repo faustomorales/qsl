@@ -28,6 +28,8 @@ const RangeSlider: React.FC<
       classes={{ thumb: "slider-thumb" }}
       max={max}
       disabled={disabled}
+      valueLabelDisplay={"on"}
+      valueLabelFormat={Math.round}
       onChange={(event, value) => onValueChange(value as number)}
     />
   </Stack>

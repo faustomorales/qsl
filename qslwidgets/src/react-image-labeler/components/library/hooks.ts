@@ -254,7 +254,7 @@ export const useDraftLabelState = (
     canvas: null,
     cursor: {
       radius: 5,
-      threshold: 10,
+      threshold: 1,
       coords: undefined,
     },
     drawing: {

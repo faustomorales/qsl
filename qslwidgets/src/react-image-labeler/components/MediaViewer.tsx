@@ -33,6 +33,7 @@ const MediaViewerBox = styled(Box)`
     height: 100%;
     max-width: none;
     max-height: none;
+    image-rendering: pixelated;
   }
 `;
 

@@ -314,7 +314,7 @@ const ControlMenu: React.FC<{
                   <RangeSlider
                     name="Flood Threshold"
                     value={draft.cursor.threshold}
-                    min={1}
+                    min={0}
                     disabled={!draft.drawing.flood}
                     max={20}
                     width="100%"

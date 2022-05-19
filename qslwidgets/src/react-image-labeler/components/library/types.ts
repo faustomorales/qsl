@@ -1,18 +1,15 @@
 export type ArbitraryMetadata = { [key: string]: string };
 export type Point = { x: number; y: number };
 export type Vec = { dx: number; dy: number };
+export interface MaskCandidatePoint extends Point {
+  origin: Point;
+  direction: number;
+}
 export type Scale = { sx: number; sy: number };
 export type Dimensions = {
   width: number;
   height: number;
 };
-// Taken from https://mstn.github.io/2018/06/08/fixed-size-arrays-in-typescript/
-export type FixedSizeArray<N extends number, T> = N extends 0
-  ? never[]
-  : {
-      0: T;
-      length: N;
-    } & ReadonlyArray<T>;
 
 export interface LabelData {
   [key: string]: string[];
@@ -105,9 +102,7 @@ export interface Config {
 export type DrawingMode = "polygons" | "boxes" | "masks";
 
 export type VisitedNodeStatus = "visited" | "matched";
-export type NodeValue = 0 | 127 | 255;
 export type NodeStatus = "unknown" | VisitedNodeStatus;
-export type NodeStatusColorMap = Record<NodeStatus, FixedSizeArray<4, number>>;
 export interface Labels {
   image?: LabelData;
   polygons?: PolygonLabel[];

@@ -1,5 +1,4 @@
 import React from "react";
-import { NodeValue, valueToNodeStatus } from "./library/flooding";
 import { Bitmap } from "./library/types";
 
 type MaskProps = {
@@ -23,17 +22,13 @@ const Mask: React.FC<MaskProps> = ({ bitmap, color, ...childProps }) => {
       );
       const colorValues =
         color === "red"
-          ? [255, 0, 0, 255]
+          ? [255, 0, 0, 127]
           : color === "blue"
-          ? [0, 0, 255, 255]
-          : [255, 255, 0, 255];
+          ? [0, 0, 255, 127]
+          : [255, 255, 0, 127];
       Uint8ClampedArray.from(
         Array.from(bitmap.values)
-          .map((v) =>
-            valueToNodeStatus[v as NodeValue] === "matched"
-              ? colorValues
-              : [0, 0, 0, 0]
-          )
+          .map((v) => (v === 255 ? colorValues : [0, 0, 0, 0]))
           .flat()
       ).forEach((v, i) => (pixels.data[i] = v));
       context.putImageData(pixels, 0, 0);
@@ -45,6 +40,7 @@ const Mask: React.FC<MaskProps> = ({ bitmap, color, ...childProps }) => {
       className="region mask"
       style={{
         ...(childProps.style || {}),
+        imageRendering: "pixelated",
         position: "absolute",
         width: "100%",
         height: "100%",

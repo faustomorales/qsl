@@ -1,4 +1,4 @@
-import { img2hsv, fillHsv, findMaskByPoint } from "./flooding";
+import { unfill, img2hsv, fillHsv, findMaskByPoint } from "./flooding";
 import { computeDistance, snapPolygonCoords } from "./geometry";
 import { insertOrAppend } from "./utils";
 import {
@@ -78,7 +78,10 @@ export const handleMediaClick = (
           ...drawing.active.region,
           map: {
             ...drawing.active.region.map,
-            values: fillHsv(point, image, fillOptions),
+            values:
+              altKey && fillOptions.previous
+                ? unfill(point, fillOptions.previous, fillOptions.radius)
+                : fillHsv(point, image, fillOptions),
           },
         },
       };

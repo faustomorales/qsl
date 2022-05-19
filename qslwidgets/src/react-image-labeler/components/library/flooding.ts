@@ -5,25 +5,15 @@ import {
   Dimensions,
   Bitmap,
   CanvasData,
-  NodeValue,
   NodeStatus,
   VisitedNodeStatus,
   MaskLabel,
+  MaskCandidatePoint,
 } from "./types";
 
 const hsvChannels = 3;
 const maxSegmentationIters = 1_000_000;
-
-const nodeStatusToValue: Record<NodeStatus, NodeValue> = {
-  unknown: 0,
-  visited: 127,
-  matched: 255,
-};
-const valueToNodeStatus: Record<NodeValue, NodeStatus> = {
-  0: "unknown",
-  127: "visited",
-  255: "matched",
-};
+const matchedValue = 255;
 
 const directions: Vec[] = [
   { dx: 0, dy: -1 }, // North
@@ -44,57 +34,54 @@ export function findLastIndex<T>(
   return -1;
 }
 
-const add = (p: Point, d: Vec): Point => {
-  return { x: p.x + d.dx, y: p.y + d.dy };
+const add = <T extends Point>(p: T, d: Vec): T => {
+  return { ...p, x: p.x + d.dx, y: p.y + d.dy };
 };
 
 // Adapted from https://github.com/bwiklund/flood-fill/blob/master/spec/flood-fill.spec.ts
 type FloodFillOperations<T> = {
   equals: (a: T, b: T) => boolean;
-  isInBounds: (point: Point) => boolean;
+  isInBounds: (point: MaskCandidatePoint) => boolean;
   getImageValue: (point: Point) => T | undefined;
-  getMatchValue: (point: Point) => NodeStatus;
-  setMatchValue: (point: Point, status: VisitedNodeStatus) => void;
+  getMatchValue: (point: MaskCandidatePoint) => NodeStatus;
+  setMatchValue: (point: MaskCandidatePoint, status: VisitedNodeStatus) => void;
 };
 
 const fill = <T>(
-  targets: Point[],
+  targets: MaskCandidatePoint[],
   operations: FloodFillOperations<T>,
   limit?: number
 ) => {
   const queue = targets.filter((p) => operations.isInBounds(p));
-  // If we're out of bounds or if this
-  // location already matches, return.
-  if (queue.length == 0) return;
-  const targetValues = queue
-    .map(operations.getImageValue)
-    .filter((value) => !!value);
-  queue.forEach((t) => operations.setMatchValue(t, "matched"));
-  if (targetValues.length === 0) return;
   let count = 0;
-  while (queue.length > 0) {
+  if (!limit) {
+    return;
+  }
+  while (queue.length > 0 && count < limit) {
     const node = queue.shift()!;
     const candidates = directions
-      .map((d) => add(node, d))
+      .map((d, di) => {
+        return {
+          ...add(node, d),
+          origin: node,
+          direction: di,
+        };
+      })
       .filter(operations.isInBounds)
       .filter((c) => operations.getMatchValue(c) == "unknown");
     const matches = candidates.filter((c) => {
-      const comparisonValue = operations.getImageValue(c);
+      const candidateValue = operations.getImageValue(c);
+      const originValue = operations.getImageValue(c.origin);
       return (
-        comparisonValue !== undefined &&
-        targetValues.some(
-          (targetValue) =>
-            targetValue && operations.equals(comparisonValue, targetValue)
-        )
+        originValue !== undefined &&
+        candidateValue !== undefined &&
+        operations.equals(originValue, candidateValue)
       );
     });
     candidates.forEach((c) => operations.setMatchValue(c, "visited"));
     matches.forEach((m) => operations.setMatchValue(m, "matched"));
     queue.push(...matches);
     count += 1;
-    if (limit !== undefined && count > limit) {
-      return;
-    }
   }
 };
 
@@ -213,13 +200,108 @@ const scalePoint = (point: Point, scale: Scale) => {
   };
 };
 
+const cxcyFloat2x1y1Int = (
+  point: Point,
+  radius: Vec,
+  dimensions: Dimensions
+) => {
+  const pointc = {
+    x: Math.max(0, Math.round((point.x - radius.dx) * dimensions.width)),
+    y: Math.max(0, Math.round((point.y - radius.dy) * dimensions.height)),
+  };
+  const kernelc = {
+    dx: Math.min(
+      Math.round(
+        (2 * radius.dx + Math.min(0, point.x - radius.dx)) * dimensions.width
+      ),
+      dimensions.width - pointc.x
+    ),
+    dy: Math.min(
+      Math.round(
+        (2 * radius.dy + Math.min(0, point.y - radius.dy)) * dimensions.height
+      ),
+      dimensions.height - pointc.y
+    ),
+  };
+  return {
+    point: pointc,
+    kernel: kernelc,
+  };
+};
+
+const computeEdgePoints = (point: Point, kernel: Vec): MaskCandidatePoint[] => {
+  return [
+    Array.from(Array(kernel.dx).keys()).map((v) => {
+      return [
+        { x: v + point.x, y: point.y },
+        { x: v + point.x, y: point.y + kernel.dy },
+      ];
+    }),
+    Array.from(Array(kernel.dy).keys()).map((v) => {
+      return [
+        { y: v + point.y, x: point.x },
+        { y: v + point.y, x: point.x + kernel.dx },
+      ];
+    }),
+  ]
+    .flat(2)
+    .map((p) => {
+      return {
+        ...p,
+        origin: point,
+        direction: -1,
+      };
+    });
+};
+
+const blockFill = (map: Bitmap, point: Point, kernel: Vec, value: number) => {
+  if (
+    point.x < 0 ||
+    point.y < 0 ||
+    point.x + kernel.dx > map.dimensions.width ||
+    point.y + kernel.dy > map.dimensions.height
+  ) {
+    throw `Detected invalid block fill point/parameters. kernel: (${kernel.dx}, ${kernel.dy}), point: (${point.x}, ${point.y}), dimensions: (${map.dimensions.width}, ${map.dimensions.height})`;
+  }
+  const values = Array(kernel.dx).fill(value);
+  Array.from(Array(kernel.dy).keys()).forEach((yi) => {
+    map.values.set(values, (point.y + yi) * map.dimensions.width + point.x);
+  });
+};
+
+const fillHoles = (map: Bitmap, kSize: Vec) => {
+  for (let row = 0; row <= map.dimensions.height - kSize.dy; row++) {
+    let col = 0;
+    while (col <= map.dimensions.width - kSize.dx) {
+      const corners = [
+        { dx: 0, dy: 0 },
+        { dx: kSize.dx, dy: 0 },
+        kSize,
+        { dx: 0, dy: kSize.dy },
+      ].map((d) => (row + d.dy) * map.dimensions.width + col + d.dx);
+      if (corners.every((index) => map.values[index] === matchedValue)) {
+        blockFill(map, { x: col, y: row }, kSize, matchedValue);
+        col += kSize.dx;
+      } else {
+        col += 1;
+      }
+    }
+  }
+};
+
+const unfill = (point: Point, bitmap: Bitmap, radius: Vec) => {
+  const converted = cxcyFloat2x1y1Int(point, radius, bitmap.dimensions);
+  blockFill(bitmap, converted.point, converted.kernel, 0);
+  return bitmap.values;
+};
+
 const fillHsv = (
   point: Point,
   image: CanvasData,
   options: {
     threshold: number;
+    radius: Vec;
     previous?: Bitmap;
-    radius?: Vec;
   }
 ): Uint8ClampedArray => {
   const threshold2 = options.threshold ** 2;
@@ -228,34 +310,24 @@ const fillHsv = (
     image.width * image.height !== options.previous.values.length
   )
     throw `Incompatible dimensions for mask (${options.previous.values.length}) and canvas (${image.width}x${image.height}).`;
-  const maskDimensions = options.previous
-    ? options.previous.dimensions
-    : { height: image.height, width: image.width };
-  const mask = new Uint8ClampedArray(
-    maskDimensions.width * maskDimensions.height
-  );
-  const pointInt = {
-    x: Math.round(point.x * image.width),
-    y: Math.round(point.y * image.height),
+  const mask: Bitmap = {
+    values: new Uint8ClampedArray(
+      options.previous
+        ? options.previous.dimensions.width * options.previous.dimensions.height
+        : image.width * image.height
+    ),
+    dimensions: options.previous
+      ? options.previous.dimensions
+      : { height: image.height, width: image.width },
   };
   // It's possible that we need to edit
   // a mask that was originally drawn using
   // a differently sized canvas. This allows
   // for that conversion.
   const scale: Scale = {
-    sx: maskDimensions.width / image.width,
-    sy: maskDimensions.height / image.height,
+    sx: mask.dimensions.width / image.width,
+    sy: mask.dimensions.height / image.height,
   };
-  const radiusInt: Vec = options.radius
-    ? {
-        dx: Math.round(options.radius.dx * image.width),
-        dy: Math.round(options.radius.dy * image.height),
-      }
-    : {
-        dx: 0,
-        dy: 0,
-      };
-  const matchedValue = nodeStatusToValue["matched"];
   const operations: FloodFillOperations<Uint8ClampedArray> = {
     equals: (a, b) => compare(Array.from(a), Array.from(b), threshold2),
     isInBounds: (point) =>
@@ -267,47 +339,88 @@ const fillHsv = (
       const start = point2index(point, image.width) * hsvChannels;
       return image.hsv?.slice(start, start + hsvChannels);
     },
-    getMatchValue: (point) =>
-      valueToNodeStatus[
-        mask[
-          point2index(scalePoint(point, scale), maskDimensions.width)
-        ] as NodeValue
-      ],
-    setMatchValue: (point, status) =>
-      (mask[point2index(scalePoint(point, scale), maskDimensions.width)] =
-        nodeStatusToValue[status]),
-  };
-  let points: Point[] = [];
-  for (let dx = 0; dx <= radiusInt.dx; dx++) {
-    for (let dy = 0; dy <= radiusInt.dy; dy++) {
-      points = points.concat(
-        (dx === 0 ? [dx] : [dx, -dx])
-          .map((dxc) =>
-            (dy === 0 ? [dy] : [dy, -dy]).map((dyc) => {
-              return { x: pointInt.x + dxc, y: pointInt.y + dyc };
-            })
-          )
-          .flat()
+    getMatchValue: (point) => {
+      const index = point2index(
+        scalePoint(point, scale),
+        mask.dimensions.width
       );
-    }
-  }
-  fill<Uint8ClampedArray>(points, operations, maxSegmentationIters);
+      const value = mask.values[index];
+      switch (value) {
+        case 0:
+          return "unknown";
+        case matchedValue:
+          return "matched";
+        default:
+          if (
+            point.direction < 0 ||
+            value.toString(2).padStart(directions.length, "0")[
+              point.direction
+            ] === "0"
+          ) {
+            return "unknown";
+          } else {
+            return "visited";
+          }
+      }
+    },
+    setMatchValue: (point, status) => {
+      const index = point2index(
+        scalePoint(point, scale),
+        mask.dimensions.width
+      );
+      switch (status) {
+        case "matched":
+          mask.values[index] = matchedValue;
+          break;
+        case "visited":
+          const existing = mask.values[index]
+            .toString(2)
+            .padStart(directions.length, "0");
+          const updated = parseInt(
+            existing.substring(0, point.direction) +
+              1 +
+              existing.substring(point.direction + 1),
+            2
+          );
+          mask.values[index] = updated;
+          break;
+        default:
+          throw `Unsupported flood map setting passed: ${status}`;
+      }
+    },
+  };
+  const maskPt = cxcyFloat2x1y1Int(point, options.radius, mask.dimensions);
+  const imagePt = cxcyFloat2x1y1Int(point, options.radius, image);
+  blockFill(mask, maskPt.point, maskPt.kernel, matchedValue);
+  fill<Uint8ClampedArray>(
+    computeEdgePoints(imagePt.point, imagePt.kernel),
+    operations,
+    image.hsv ? maxSegmentationIters : 0
+  );
   // Set mask to be matched if either the memo or the mask are matched.
   if (options.previous) {
     options.previous.values.forEach((v, i) => {
       if (v === matchedValue) {
-        mask[i] = v;
+        mask.values[i] = v;
       }
     });
   }
-  return mask;
+  if (options.radius && image.hsv) {
+    fillHoles(mask, {
+      dx: Math.round(options.radius.dx * mask.dimensions.width),
+      dy: Math.round(options.radius.dy * mask.dimensions.height),
+    });
+  }
+  return mask.values;
 };
 
 export const counts2values = (counts: number[]) =>
   new Uint8ClampedArray(
     counts
       .map((length, index) =>
-        Array.from(Array(length).keys()).map(() => (index % 2 === 0 ? 255 : 0))
+        Array.from(Array(length).keys()).map(() =>
+          index % 2 === 0 ? matchedValue : 0
+        )
       )
       .flat()
   );
@@ -315,7 +428,7 @@ export const counts2values = (counts: number[]) =>
 export const values2counts = (values: Uint8ClampedArray) =>
   values.reduce(
     (memo, value) => {
-      if (((memo.length - 1) % 2 == 0) == (value == 255)) {
+      if (((memo.length - 1) % 2 == 0) == (value == matchedValue)) {
         memo[memo.length - 1] += 1;
       } else {
         memo.push(1);
@@ -331,23 +444,13 @@ export const findMaskByPoint = (
 ): number => {
   return findLastIndex(masks, (mask) => {
     return (
-      valueToNodeStatus[
-        mask.map.values[
-          Math.round(point.y * mask.map.dimensions.height) *
-            mask.map.dimensions.width +
-            Math.round(point.x * mask.map.dimensions.width)
-        ] as NodeValue
-      ] == "matched"
+      mask.map.values[
+        Math.round(point.y * mask.map.dimensions.height) *
+          mask.map.dimensions.width +
+          Math.round(point.x * mask.map.dimensions.width)
+      ] === matchedValue
     );
   });
 };
 
-export {
-  img2hsv,
-  fillHsv,
-  nodeStatusToValue,
-  valueToNodeStatus,
-  CanvasData,
-  NodeValue,
-  NodeStatus,
-};
+export { img2hsv, fillHsv, unfill, CanvasData };

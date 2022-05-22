@@ -59,10 +59,11 @@ const Polygon: React.FC<PolygonProps> = ({
         y={5}
         fill={color}
         {...childProps}
+        fontSize="8pt"
         className="box-text"
         fontFamily="Roboto,Helvetica,Arial,sans-serif"
         alignmentBaseline="hanging"
-        style={{ ...(childProps.style || {}), pointerEvents: "none" }}
+        onClick={childProps.onClick}
       >
         {labels2string(polygon.labels)}
       </text>
@@ -72,7 +73,7 @@ const Polygon: React.FC<PolygonProps> = ({
             <line
               key={index}
               stroke={color}
-              strokeWidth={STROKE_WIDTH}
+              strokeWidth={`calc(${STROKE_WIDTH}px / var(--media-viewer-scale, 1))`}
               x1={pct2css((points[index].x - xmin) / width)}
               y1={pct2css((points[index].y - ymin) / height)}
               x2={pct2css((points[index + 1].x - xmin) / width)}

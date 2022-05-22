@@ -175,7 +175,7 @@ export const LabelingImages: React.FC = () => {
           config={state.config}
           labels={state.labels}
           target={state.src}
-          maxViewHeight={256}
+          options={{ maxViewHeight: 256 }}
         />
       </Labeler>
     </Demonstrator>

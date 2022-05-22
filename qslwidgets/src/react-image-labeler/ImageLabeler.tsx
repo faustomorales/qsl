@@ -22,7 +22,6 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
   metadata,
   preload,
   config = { image: [], regions: [] },
-  maxViewHeight,
 }) => {
   const { draft, setDraft, resetDraft } = useDraftLabelState(labels, [target]);
   const refs = {
@@ -105,7 +104,7 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
             <Box>
               <MediaViewer
                 size={mediaState?.size}
-                maxViewHeight={maxViewHeight}
+                maxViewHeight={options?.maxViewHeight}
                 media={{
                   main: (
                     <img

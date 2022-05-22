@@ -344,13 +344,13 @@ class BaseMediaLabeler:
         for target, item in self.targets_and_items:
             if target["visible"] and target["selected"]:
                 item["labels"] = self.labels
-                if self.type == "image":
+                if self.type != "video":
                     target["visible"] = False
                 jsonpath = item.get("jsonpath")
                 if jsonpath:
                     files.labels2json(item, jsonpath)
         self.save_to_disk()
-        if self.type == "image" and not any(t["visible"] for t in self.targets):
+        if self.type != "video" and not any(t["visible"] for t in self.targets):
             self.next()
         else:
             self.update(False)
@@ -432,6 +432,8 @@ class BaseMediaLabeler:
             preload = []
             for iIdx in self.sortedIdxs[sIdx + 1 :]:
                 preloadCandidate = self.items[iIdx]
+                if preloadCandidate.get("type") == "time-series":
+                    continue
                 preloadUrl = files.build_url(
                     preloadCandidate.get("target"),
                     base=self.base,
@@ -460,19 +462,25 @@ class BaseMediaLabeler:
         )
 
     def set_urls_and_type(self):
-        if self.base:
+        if self.base or self.type == "time-series":
             assert (
                 len(set(c["type"] for c in self.targets)) <= 1
             ), "Only one type of media is permitted in each batch."
             assert len(self.targets) <= 1 or all(
                 c["type"] == "image" for c in self.targets
             ), "Only images can be be batch labeled."
-            self.type = self.targets[0]["type"] if len(self.targets) > 0 else "image"
+            self.type = (
+                self.targets[0]["type"]
+                if len(self.targets) > 0
+                else self.targets[0].get("type", "image")
+            )
             self.urls = [
                 files.build_url(
                     target=t.get("target"),
                     base=self.base,
                     get_tempdir=self.get_temporary_directory,
                 )
+                if self.type != "time-series"
+                else t["target"]
                 for t in self.targets
             ]

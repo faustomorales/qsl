@@ -4,6 +4,7 @@ import BatchImageLabeler from "./BatchImageLabeler";
 import Labeler from "./Labeler";
 import Demonstrator from "./Demonstrator";
 import MediaIndex from "./MediaIndex";
+import TimeSeriesLabeler from "./TimeSeriesLabeler";
 import {
   Labels,
   TimestampedLabel,
@@ -15,6 +16,7 @@ export {
   ImageLabeler,
   VideoLabeler,
   BatchImageLabeler,
+  TimeSeriesLabeler,
   Labeler,
   Demonstrator,
   TimestampedLabel,

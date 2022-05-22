@@ -57,8 +57,17 @@ const ControlMenu: React.FC<{
   callbacks: Callbacks;
   disabled: boolean;
   showNavigation?: boolean;
+  allowRegion?: boolean;
   direction: "column" | "row";
-}> = ({ draft, disabled, callbacks, showNavigation, setDraft, ...other }) => {
+}> = ({
+  draft,
+  disabled,
+  callbacks,
+  showNavigation,
+  setDraft,
+  allowRegion = true,
+  ...other
+}) => {
   const theme = useTheme();
   const refs = Object.fromEntries(
     [
@@ -170,7 +179,8 @@ const ControlMenu: React.FC<{
   );
   const level = draft.drawing.active ? "regions" : "image";
   const activeConfig = config[level] || [];
-  const allowRegionSelection = config?.regions && config.regions.length > 0;
+  const allowRegionSelection =
+    config?.regions && config.regions.length > 0 && allowRegion;
   return (
     <Box>
       <ClickTarget />
@@ -516,6 +526,7 @@ const ControlMenu: React.FC<{
       </Stack>
       {callbacks && callbacks.onSaveConfig ? (
         <ConfigEditor
+          allowRegion={allowRegion}
           open={state.configEditorOpen}
           onClose={() => setState({ ...state, configEditorOpen: false })}
           existing={

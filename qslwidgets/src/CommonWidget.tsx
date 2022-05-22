@@ -14,10 +14,12 @@ import {
   TimestampedLabel,
   MediaIndex,
   Labeler,
+  TimeSeriesLabeler,
 } from "./react-image-labeler";
 import GlobalLabelerContext from "./react-image-labeler/components/GlobalLabelerContext";
+import { TimeSeriesTarget } from "./react-image-labeler/components/library/types";
 
-interface BaseWidgetState<T, U> {
+interface BaseWidgetState<T, U, V> {
   states: {
     metadata?: { [key: string]: string };
     selected: boolean;
@@ -26,7 +28,7 @@ interface BaseWidgetState<T, U> {
     labeled: boolean;
     labels: Labels;
   }[];
-  urls: string[];
+  urls: V;
   message: string;
   type: T;
   config: Config;
@@ -68,9 +70,14 @@ interface BaseWidgetState<T, U> {
   mode: "light" | "dark";
 }
 
-type ImageWidgetState = BaseWidgetState<"image", Labels>;
-type VideoWidgetState = BaseWidgetState<"video", TimestampedLabel[]>;
-type WidgetState = VideoWidgetState | ImageWidgetState;
+type ImageWidgetState = BaseWidgetState<"image", Labels, string[]>;
+type VideoWidgetState = BaseWidgetState<"video", TimestampedLabel[], string[]>;
+type TimeVideoState = BaseWidgetState<
+  "time-series",
+  Labels,
+  TimeSeriesTarget[]
+>;
+type WidgetState = VideoWidgetState | ImageWidgetState | TimeVideoState;
 
 const defaultWidgetState: WidgetState = {
   states: [],
@@ -148,6 +155,7 @@ const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
       progress: progress.value,
       maxCanvasSize: maxCanvasSize.value,
       showNavigation: true,
+      maxViewHeight: maxViewHeight.value,
     },
     callbacks: {
       onSave: buttons.value.save
@@ -198,12 +206,11 @@ const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
             type.value === "image" ? (
               <ImageLabeler
                 {...common}
-                maxViewHeight={maxViewHeight.value}
                 labels={(labels.value || {}) as Labels}
                 target={
                   viewState.value === "transitioning"
                     ? undefined
-                    : urls.value[0]
+                    : (urls.value as string[])[0]
                 }
                 metadata={
                   viewState.value === "transitioning"
@@ -211,28 +218,42 @@ const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
                     : states.value[0].metadata
                 }
               />
-            ) : (
+            ) : type.value === "video" ? (
               <VideoLabeler
                 {...common}
-                maxViewHeight={maxViewHeight.value}
                 labels={
                   (Array.isArray(labels.value)
                     ? labels.value
                     : []) as TimestampedLabel[]
                 }
-                target={urls.value[0]}
+                target={(urls.value as string[])[0]}
                 metadata={
                   viewState.value === "transitioning"
                     ? {}
                     : states.value[0].metadata
                 }
               />
-            )
+            ) : type.value == "time-series" ? (
+              <TimeSeriesLabeler
+                {...common}
+                labels={(labels.value || {}) as Labels}
+                target={
+                  viewState.value === "transitioning"
+                    ? undefined
+                    : (urls.value[0] as TimeSeriesTarget)
+                }
+                metadata={
+                  viewState.value === "transitioning"
+                    ? {}
+                    : states.value[0].metadata
+                }
+              />
+            ) : null
           ) : (
             <BatchImageLabeler
               {...common}
               labels={(labels.value || {}) as Labels}
-              target={urls.value}
+              target={urls.value as string[]}
               states={viewState.value === "transitioning" ? [] : states.value}
               setStates={(newStates) => states.set(newStates)}
             />

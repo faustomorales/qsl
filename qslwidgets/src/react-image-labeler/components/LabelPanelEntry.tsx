@@ -14,6 +14,7 @@ import {
 import { Edit } from "@mui/icons-material";
 import GlobalLabelerContext from "./GlobalLabelerContext";
 import { useKeyboardEvent, simulateClick } from "./library/hooks";
+import { processSelectionChange } from "./library/handlers";
 import { LabelConfig, Option } from "./library/types";
 
 interface LabelPanelEntryProps {
@@ -34,26 +35,6 @@ const StyledBox = styled(Box)`
     border-bottom: none;
   }
 `;
-
-// Process change to a selection for a label.
-/**
- * @param value - The value that has been selected.
- * @param selected - A list of current selected items.
- * @param multiple - Whether this field allows multiple selection.
- * @returns An updated list of selected values.
- */
-const processSelectionChange = (
-  value: string,
-  selected: string[] | undefined,
-  multiple: boolean
-) =>
-  selected && selected.indexOf(value) > -1
-    ? multiple
-      ? selected.filter((v) => v != value)
-      : []
-    : multiple
-    ? (selected || []).concat([value])
-    : [value];
 
 const buildOptionsList = (selected: string[] | undefined, options: Option[]) =>
   options.concat(
@@ -131,7 +112,7 @@ const LabelPanelEntry: React.FC<LabelPanelEntryProps> = ({
         freeform:
           availableOptions || config.multiple || !config.freeform || !selected
             ? ""
-            : selected[0],
+            : selected[0] || "",
       }),
     [selected]
   );

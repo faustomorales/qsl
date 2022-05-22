@@ -122,10 +122,11 @@ export interface DraftState {
 export interface BaseLabelerProps<T, U> {
   config?: Config;
   target?: U;
-  labels?: T;
+  labels: T;
   options?: {
     progress?: number;
     maxCanvasSize?: number;
+    maxViewHeight?: number;
     showNavigation?: boolean;
   };
   callbacks?: {
@@ -150,13 +151,11 @@ export type TimestampedLabel = {
 export interface ImageLabelerProps extends BaseLabelerProps<Labels, string> {
   preload?: string[];
   metadata?: ArbitraryMetadata;
-  maxViewHeight?: number;
 }
 
 export interface VideoLabelerProps
   extends BaseLabelerProps<TimestampedLabel[], string> {
   metadata?: ArbitraryMetadata;
-  maxViewHeight?: number;
 }
 
 export interface BatchEntry {
@@ -179,3 +178,59 @@ export type MediaRefs = {
   source: React.MutableRefObject<HTMLImageElement | HTMLVideoElement | null>;
   canvas: React.MutableRefObject<HTMLCanvasElement | null>;
 };
+
+type AxisDomainDefinition = ["dataMin" | number, "dataMax" | number];
+
+export interface TimeSeriesTarget {
+  plots: {
+    x: {
+      name: string;
+      height?: number;
+      values: number[];
+      type?: "number" | "category";
+      tickCount?: number;
+      click?: string;
+    };
+    y: {
+      animation?: number;
+      limits?: {
+        left?: AxisDomainDefinition;
+        right?: AxisDomainDefinition;
+      };
+      widths?: {
+        left?: number;
+        right?: number;
+      };
+      labels?: {
+        left?: string;
+        right?: string;
+      };
+      lines: {
+        name: string;
+        color?: string;
+        type?: string;
+        axis?: "left" | "right";
+        values: number[];
+        dot?: {
+          labelKey?: string;
+        };
+      }[];
+    };
+    size?: Dimensions;
+    areas?: {
+      x1: number;
+      x2: number;
+      y1?: number;
+      y2?: number;
+      label: string;
+      labelKey: string;
+      labelVal: string;
+    }[];
+  }[];
+}
+
+export interface TimeSeriesLabelerProps
+  extends BaseLabelerProps<Labels, TimeSeriesTarget> {
+  target?: TimeSeriesTarget;
+  metadata?: ArbitraryMetadata;
+}

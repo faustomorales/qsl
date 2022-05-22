@@ -21,7 +21,7 @@ const RegionCursor: React.FC<
         // Sort this out later after implementing
         // the calculations for radial search in fill()
         borderRadius: round ? `${radius}px` : undefined,
-        transform: `translate(${-radius}px, ${-radius}px)`,
+        transform: `translate(${-radius}px, ${-radius}px) scale(calc(1/var(--media-viewer-scale, 1)))`,
         left: pct2css(x),
         top: pct2css(y),
         position: "absolute",

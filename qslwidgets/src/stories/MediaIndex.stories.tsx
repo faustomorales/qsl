@@ -36,14 +36,15 @@ const grid = {
 
 export const BasicUsage: React.FC = () => {
   const [idx, setIdx] = React.useState(0);
+  const [sortedIdxs, setSortedIdxs] = React.useState(
+    grid.rows.map((r) => r.id)
+  );
   return (
     <Labeler>
       <MediaIndex
         viewHeight={400}
-        setSortedIdxs={(sortedIdxs) =>
-          console.log("Setting sorted indexes.", sortedIdxs)
-        }
-        sortedIdxs={grid.rows.map((r) => r.id)}
+        setSortedIdxs={setSortedIdxs}
+        sortedIdxs={sortedIdxs}
         grid={grid}
         idx={idx}
         label={setIdx}

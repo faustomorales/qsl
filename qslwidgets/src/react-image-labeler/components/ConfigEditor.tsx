@@ -13,6 +13,7 @@ import { LabelConfig } from "./library/types";
 interface ConfigEditorProps {
   existing?: { level: "image" | "regions"; config: LabelConfig };
   open: boolean;
+  allowRegion?: boolean;
   onSave: (config: LabelConfig, level: "image" | "regions") => void;
   onClose: () => void;
 }
@@ -20,6 +21,7 @@ interface ConfigEditorProps {
 const ConfigEditor: React.FC<ConfigEditorProps> = ({
   open,
   existing,
+  allowRegion = true,
   onSave,
   onClose,
 }) => {
@@ -120,10 +122,12 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
             }
             selected={[state.level]}
             config={{
-              options: [
-                { name: "image", displayName: "Image" },
-                { name: "regions", displayName: "Regions" },
-              ],
+              options: allowRegion
+                ? [
+                    { name: "image", displayName: "Image" },
+                    { name: "regions", displayName: "Regions" },
+                  ]
+                : [{ name: "image", displayName: "Image" }],
               multiple: false,
               freeform: false,
               name: "Level",

@@ -25,6 +25,11 @@ export const handleMediaClick = (
   if (!refs.source.current) {
     throw "Did not find relevant media elements.";
   }
+  const mediaViewerScale = parseFloat(
+    getComputedStyle(refs.source.current).getPropertyValue(
+      "--media-viewer-scale"
+    ) || "1"
+  );
   if (drawing.active && drawing.active.idx > -1) {
     // We have selected a pre-existing label and the user has
     // re-clicked. This results in de-selection.
@@ -65,8 +70,14 @@ export const handleMediaClick = (
     const fillOptions = {
       previous: drawing.active ? drawing.active.region.map : undefined,
       radius: {
-        dx: draft.cursor.radius / refs.source.current.clientWidth,
-        dy: draft.cursor.radius / refs.source.current.clientHeight,
+        dx:
+          draft.cursor.radius /
+          refs.source.current.clientWidth /
+          mediaViewerScale,
+        dy:
+          draft.cursor.radius /
+          refs.source.current.clientHeight /
+          mediaViewerScale,
       },
       threshold: draft.cursor.threshold,
     };
@@ -187,3 +198,23 @@ export const handleMediaClick = (
   }
   throw "Failed to handle media click operation.";
 };
+
+// Process change to a selection for a label.
+/**
+ * @param value - The value that has been selected.
+ * @param selected - A list of current selected items.
+ * @param multiple - Whether this field allows multiple selection.
+ * @returns An updated list of selected values.
+ */
+export const processSelectionChange = (
+  value: string,
+  selected: string[] | undefined,
+  multiple: boolean
+) =>
+  selected && selected.indexOf(value) > -1
+    ? multiple
+      ? selected.filter((v) => v != value)
+      : []
+    : multiple
+    ? (selected || []).concat([value])
+    : [value];

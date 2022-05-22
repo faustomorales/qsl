@@ -56,6 +56,7 @@ const AlignedBox: React.FC<AlignedBoxProps> = ({
         fontSize="8pt"
         fontFamily="Roboto,Helvetica,Arial,sans-serif"
         dominantBaseline="hanging"
+        onClick={childProps.onClick}
       >
         {labels2string(box.labels)}
       </text>
@@ -65,9 +66,9 @@ const AlignedBox: React.FC<AlignedBoxProps> = ({
         y={0}
         fill="none"
         width="100%"
+        strokeWidth={`calc(${STROKE_WIDTH}px / var(--media-viewer-scale, 1))`}
         height="100%"
         stroke={color}
-        strokeWidth={STROKE_WIDTH}
         z={1}
       />
     </svg>

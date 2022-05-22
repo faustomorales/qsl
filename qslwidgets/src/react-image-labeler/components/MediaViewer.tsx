@@ -14,6 +14,12 @@ const MediaViewerBox = styled(Box)`
     display: none;
   }
 
+  & .minimap img,
+  & minimap video {
+    transform: scale(calc(1 / var(--media-viewer-scale, 1)));
+    transform-origin: 0 0;
+  }
+
   & .minimap .box-text {
     visibility: hidden;
   }
@@ -134,12 +140,6 @@ const MediaViewer: React.FC<
         }
       : { x: 0, y: 0 };
   }, [state]);
-  const clip = React.useMemo(() => {
-    return {
-      left: state.pos.x * (elementSize?.width || 0),
-      top: state.pos.y * (elementSize?.height || 0),
-    };
-  }, [state.pos, elementSize]);
   const setPos = React.useCallback(
     (point) => {
       if (!margin) {
@@ -235,10 +235,6 @@ const MediaViewer: React.FC<
               ref={refs.media}
               style={{
                 position: "absolute",
-                overflow: "hidden",
-                clip: `rect(${clip.top}px, auto, auto, ${clip.left}px)`,
-                left: `${-clip.left}px`,
-                top: `${-clip.top}px`,
               }}
             >
               <Box
@@ -246,7 +242,15 @@ const MediaViewer: React.FC<
                 style={
                   loading
                     ? { width: 0, height: 0, overflow: "hidden" }
-                    : elementSize || { width: 0, height: 0 }
+                    : ({
+                        "--media-viewer-scale": state.zoom / 100,
+                        transform: `scale(${
+                          state.zoom / 100
+                        }) translate(${pct2css(-state.pos.x)}, ${pct2css(
+                          -state.pos.y
+                        )})`,
+                        transformOrigin: "0 0",
+                      } as React.CSSProperties)
                 }
               >
                 {children}
@@ -257,7 +261,7 @@ const MediaViewer: React.FC<
         </Box>
         {controls || null}
       </Box>
-      {loading || !state.viewportSize || !elementSize ? (
+      {loading || !state.viewportSize || !elementSize || !size ? (
         <Box sx={{ height: minimapSize?.height || MAP_SIZE }} />
       ) : (
         <Box
@@ -278,8 +282,21 @@ const MediaViewer: React.FC<
             }}
             onClick={onMapClick}
           >
+            <div
+              style={
+                {
+                  "--media-viewer-scale":
+                    (minimapSize?.width || MAP_SIZE) / size.width,
+                  transform: `scale(${
+                    (minimapSize?.width || MAP_SIZE) / size.width
+                  })`,
+                  transformOrigin: "0 0",
+                } as React.CSSProperties
+              }
+            >
+              {media.mini}
+            </div>
             {children}
-            {media.mini}
             <div
               style={{
                 outline: "2px solid red",

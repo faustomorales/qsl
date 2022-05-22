@@ -55,7 +55,7 @@ const BatchImageList = styled(ImageList)`
 
 const BatchImageLabeler: React.FC<BatchImageLabelerProps> = ({
   target = [],
-  labels = { image: {} },
+  labels,
   options,
   callbacks,
   setStates,

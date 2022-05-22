@@ -199,7 +199,9 @@ export const LabelingBatches: React.FC = () => {
               }) as any,
             })
           }
-          labels={state.target.find((t) => t.visible && t.selected)?.labels}
+          labels={
+            state.target.find((t) => t.visible && t.selected)?.labels || {}
+          }
           options={{ showNavigation: true }}
           callbacks={{
             onSave: (labels) =>

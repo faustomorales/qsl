@@ -30,11 +30,10 @@ import {
 const VideoLabeler: React.FC<VideoLabelerProps> = ({
   target,
   config = { image: [], regions: [] },
-  labels = [],
+  labels,
   metadata,
   options,
   callbacks,
-  maxViewHeight,
 }) => {
   const refs = {
     mini: React.useRef<HTMLVideoElement>(null),
@@ -188,7 +187,7 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
       content={
         <Box>
           <MediaViewer
-            maxViewHeight={maxViewHeight}
+            maxViewHeight={options?.maxViewHeight}
             size={mediaState?.size}
             loading={disableContents}
             onMouseLeave={() =>

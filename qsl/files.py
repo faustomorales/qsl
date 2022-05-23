@@ -11,7 +11,11 @@ import threading
 import urllib.parse as up
 
 import filetype
-import numpy as np
+
+try:
+    import numpy as np
+except ImportError:
+    np = None
 
 try:
     import cv2
@@ -39,6 +43,13 @@ IMAGE_EXTENSIONS = [
     "flv",
     "gif",
 ]
+
+
+def is_array(value: typing.Any):
+    """Check if an object is a numpy array."""
+    if np is not None and isinstance(value, np.ndarray):
+        return True
+    return False
 
 
 def get_s3_files_for_pattern(client, pattern: str) -> typing.List[str]:
@@ -152,7 +163,7 @@ def get_relpath(filepath, directory):
 
 
 def build_url(
-    target: typing.Union[str, np.ndarray],
+    target: typing.Union[str, "np.ndarray"],
     base: dict,
     get_tempdir: typing.Callable[[], str],
     allow_base64=True,
@@ -168,7 +179,7 @@ def build_url(
         or target.startswith("data:")
     ):
         return target
-    if isinstance(target, np.ndarray):
+    if is_array(target):
         tdir = get_tempdir()
         if tdir is None or missing_base:
             return arr2str(target)
@@ -229,8 +240,8 @@ def labels2json(labels, filepath):
         f.write(json.dumps(labels))
 
 
-def guess_type(target: typing.Union[str, np.ndarray]):
-    if isinstance(target, np.ndarray):
+def guess_type(target: typing.Union[str, "np.ndarray"]):
+    if is_array(target):
         return "image"
     if target.lower().startswith("s3://"):
         ext = os.path.splitext(os.path.basename(target))[1][1:]

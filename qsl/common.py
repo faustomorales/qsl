@@ -3,7 +3,10 @@ import typing
 import logging
 import tempfile
 
-import numpy as np
+try:
+    import numpy as np
+except ImportError:
+    np = None
 import typing_extensions as tx
 
 from . import files
@@ -14,7 +17,7 @@ Target = tx.TypedDict(
     "Target",
     {
         "idx": int,
-        "target": typing.Union[str, np.ndarray],
+        "target": typing.Union[str, "np.ndarray"],
         "type": tx.Literal["video", "image"],
         "metadata": dict,
         "visible": bool,
@@ -30,7 +33,7 @@ def flatten(l: typing.List[typing.Any]):
     return [item for sublist in l for item in sublist]
 
 
-def counts2bitmap(counts: typing.List[int], dimensions: typing.Dict) -> np.ndarray:
+def counts2bitmap(counts: typing.List[int], dimensions: typing.Dict) -> "np.ndarray":
     """Convert a COCO-style bitmap into a bitmap."""
     return (
         np.concatenate(
@@ -206,7 +209,7 @@ class BaseMediaLabeler:
                     "target": target
                     if isinstance(target, str)
                     else "numpy array"
-                    if isinstance(target, np.ndarray)
+                    if files.is_array(target)
                     else "",
                     "labeled": "Yes" if labels else "No",
                 }

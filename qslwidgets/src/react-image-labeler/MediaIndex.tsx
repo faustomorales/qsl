@@ -44,6 +44,10 @@ const MediaIndex = <T extends string>(props: MediaIndexProps<T>) => {
   const [sortModel, setSortModel] = React.useState([] as GridSortModel);
   const { setFocus } = React.useContext(GlobalLabelerContext);
   React.useEffect(() => {
+    if (!visible) {
+      // Don't mess with the indexes if we're not even visible.
+      return;
+    }
     if (sortModel.length > 0) {
       const sortKey = sortModel[0].field;
       if (sortKey === "mediaIndexSortState") {

@@ -15,7 +15,7 @@ import filetype
 try:
     import numpy as np
 except ImportError:
-    np = None
+    np = None  # type: ignore
 
 try:
     import cv2
@@ -181,6 +181,7 @@ def build_url(
         return target
     if is_array(target):
         tdir = get_tempdir()
+        target = typing.cast("np.ndarray", target)
         if tdir is None or missing_base:
             return arr2str(target)
         tfilepath = os.path.join(tdir, str(hash(target.data.tobytes())) + ".png")
@@ -241,12 +242,13 @@ def labels2json(labels, filepath):
 
 
 def guess_type(target: typing.Union[str, "np.ndarray"]):
+    """Guess the file type for a target."""
     if is_array(target):
         return "image"
-    if target.lower().startswith("s3://"):
+    if isinstance(target, str) and target.lower().startswith("s3://"):
         ext = os.path.splitext(os.path.basename(target))[1][1:]
         return "image" if ext in IMAGE_EXTENSIONS else "video"
-    if os.path.isfile(target):
+    if isinstance(target, str) and os.path.isfile(target):
         kind = filetype.guess(target)
         return "image" if kind.mime.startswith("image") else "video"
     return "image"

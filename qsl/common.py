@@ -6,7 +6,7 @@ import tempfile
 try:
     import numpy as np
 except ImportError:
-    np = None
+    np = None  # type: ignore
 import typing_extensions as tx
 
 from . import files
@@ -465,7 +465,7 @@ class BaseMediaLabeler:
         )
 
     def set_urls_and_type(self):
-        if self.base or self.type == "time-series":
+        if self.base:
             assert (
                 len(set(c["type"] for c in self.targets)) <= 1
             ), "Only one type of media is permitted in each batch."

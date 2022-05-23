@@ -63,7 +63,7 @@ class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
     states = t.List(default_value=[]).tag(sync=True)
     urls = t.List(default_value=[]).tag(sync=True)
     type = t.Unicode(default_value="image").tag(sync=True)
-    idx = t.Integer(default_value=0).tag(sync=True)
+    idx = t.Int(default_value=0).tag(sync=True)
     sortedIdxs = t.List(default_value=[]).tag(sync=True)
     viewState = t.Unicode("labeling").tag(sync=True)
     mediaIndex = t.Dict(default_value={"rows": [], "columns": []}).tag(sync=True)
@@ -92,8 +92,8 @@ class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
         allow_none=True,
     ).tag(sync=True)
     preload = t.List(trait=t.Unicode(), allow_none=True).tag(sync=True)
-    maxCanvasSize = t.Integer(default_value=512).tag(sync=True)
-    maxViewHeight = t.Integer(default_value=512).tag(sync=True)
+    maxCanvasSize = t.Int(default_value=512).tag(sync=True)
+    maxViewHeight = t.Int(default_value=512).tag(sync=True)
     progress = t.Float(-1).tag(sync=True)
     mode = t.Unicode("light").tag(sync=True)
     buttons = t.Dict(

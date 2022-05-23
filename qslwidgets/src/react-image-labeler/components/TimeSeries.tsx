@@ -39,6 +39,10 @@ const TimeSeriesContainer = styled(Box)`
     fill: red;
     stroke: red;
   }
+
+  & .recharts-text.recharts-label {
+    text-anchor: middle;
+  }
 `;
 
 const TimeSeries: React.FC<{

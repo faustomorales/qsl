@@ -136,6 +136,7 @@ class BaseMediaLabeler:
                 maxCanvasSize = jsondata.get("maxCanvasSize", maxCanvasSize)
                 maxViewHeight = jsondata.get("maxViewHeight", maxViewHeight)
                 allowConfigChange = jsondata.get("allowConfigChange", allowConfigChange)
+                batchSize = jsondata.get("batchSize", batchSize)
         assert items, "There must be at least one labeling target."
         self.mode = mode
         self.maxCanvasSize = maxCanvasSize
@@ -383,7 +384,7 @@ class BaseMediaLabeler:
             if target["visible"] and target["selected"] and item.get("labels"):
                 del item["labels"]
                 jsonpath = item.get("jsonpath")
-                if os.path.isfile(jsonpath):
+                if jsonpath and os.path.isfile(jsonpath):
                     os.remove(jsonpath)
         self.update(False)
 

@@ -10,7 +10,7 @@ def cli():
 @click.command()
 @click.argument("project", nargs=1)
 @click.argument("targets", nargs=-1)
-def label(project, targets, batchSize):
+def label(project, targets):
     """Launch the labeling application."""
     if not project.endswith(".json"):
         click.echo(

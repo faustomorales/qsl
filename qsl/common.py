@@ -210,15 +210,18 @@ class BaseMediaLabeler:
                     if isinstance(target, str)
                     else "numpy array"
                     if files.is_array(target)
+                    else "time series"
+                    if ttype == "time-series"
                     else "",
                     "labeled": "Yes" if labels else "No",
                 }
-                for index, (target, metadata, labels) in enumerate(
+                for index, (target, metadata, labels, ttype) in enumerate(
                     [
                         (
                             item.get("target"),
                             item.get("metadata", {}),
                             item.get("labels", {}),
+                            item.get("type", "image"),
                         )
                         for item in self.items
                     ]

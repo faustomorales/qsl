@@ -56,7 +56,7 @@ const LabelPanelEntry: React.FC<LabelPanelEntryProps> = ({
 }) => {
   const availableOptions = React.useMemo(
     () =>
-      config.options || (config.multiple && config.freeform)
+      config.options || config.multiple
         ? buildOptionsList(selected || [], config.options || [])
         : undefined,
     [config.options, selected]

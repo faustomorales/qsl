@@ -14,18 +14,11 @@ const MediaViewerBox = styled(Box)`
     display: none;
   }
 
-  & .minimap img,
-  & .minimap video {
-    transform: scale(calc(1 / var(--media-viewer-scale, 1)));
-    transform-origin: 0 0;
-  }
-
   & .minimap .box-text {
     visibility: hidden;
   }
 
-  & .viewport .media img,
-  .viewport .media video {
+  & .viewport img .viewport video {
     vertical-align: bottom;
   }
 
@@ -35,8 +28,6 @@ const MediaViewerBox = styled(Box)`
 
   & img,
   & video {
-    width: 100%;
-    height: 100%;
     max-width: none;
     max-height: none;
     image-rendering: pixelated;
@@ -74,11 +65,13 @@ const MediaViewer: React.FC<
     zoom: 100,
     pos: { x: 0, y: 0 } as Point,
     viewportSize: undefined as Dimensions | undefined,
+    minimapSize: { width: MAP_SIZE, height: MAP_SIZE },
   });
-  React.useEffect(
-    () => setState({ ...state, pos: { x: 0, y: 0 } }),
-    [loadState]
-  );
+  React.useEffect(() => {
+    if (loadState === "loading") {
+      setState({ ...state, pos: { x: 0, y: 0 } });
+    }
+  }, [loadState]);
   useInterval(
     () => {
       if (
@@ -100,49 +93,52 @@ const MediaViewer: React.FC<
     true
   );
   React.useEffect(() => {
-    if (!size) {
+    if (!size || !refs.viewport.current) {
       return;
     }
+    const minimapScale = size
+      ? MAP_SIZE / Math.max(size.width, size.height)
+      : undefined;
     setState({
       ...state,
       zoom:
         100 *
         Math.min(
-          (refs.viewport.current?.clientWidth || maxViewHeight) / size.width,
+          refs.viewport.current.clientWidth / size.width,
           maxViewHeight / size.height
         ),
+      minimapSize: minimapScale
+        ? {
+            width: minimapScale * size.width,
+            height: minimapScale * size.height,
+          }
+        : state.minimapSize || { width: MAP_SIZE, height: MAP_SIZE },
     });
-  }, [size]);
-  const elementSize = React.useMemo(() => {
-    return size
-      ? {
-          width: (size.width * state.zoom) / 100,
-          height: (size.height * state.zoom) / 100,
-        }
-      : undefined;
-  }, [state.zoom, size]);
-  const minimapSize = React.useMemo(() => {
-    if (!elementSize) return null;
-    const scale = MAP_SIZE / Math.max(elementSize.width, elementSize.height);
+  }, [size, refs.viewport]);
+  const scale = React.useMemo(() => state.zoom / 100, [state.zoom]);
+  const zoomedSize = React.useMemo(() => {
+    if (!size) {
+      return;
+    }
     return {
-      width: scale * elementSize.width,
-      height: scale * elementSize.height,
+      width: scale * size.width,
+      height: scale * size.height,
     };
-  }, [elementSize]);
+  }, [state.zoom, size]);
   const margin = React.useMemo(() => {
-    return state.viewportSize && elementSize
+    return state.viewportSize && zoomedSize
       ? {
           x:
-            Math.min(state.viewportSize.width, elementSize.width) /
-            elementSize.width /
+            Math.min(state.viewportSize.width, zoomedSize.width) /
+            zoomedSize.width /
             2,
           y:
-            Math.min(state.viewportSize.height, elementSize.height) /
-            elementSize.height /
+            Math.min(state.viewportSize.height, zoomedSize.height) /
+            zoomedSize.height /
             2,
         }
       : { x: 0, y: 0 };
-  }, [state]);
+  }, [state.viewportSize, zoomedSize]);
   const setPos = React.useCallback(
     (point) => {
       if (!margin) {
@@ -176,23 +172,23 @@ const MediaViewer: React.FC<
   );
   const onImageScroll = React.useCallback(
     (event: WheelEvent) => {
-      if (!elementSize) return;
+      if (!zoomedSize) return;
       event.preventDefault();
       event.stopPropagation();
       if (!event.ctrlKey) {
         setPos({
-          x: state.pos.x + event.deltaX / elementSize.width,
-          y: state.pos.y + event.deltaY / elementSize.height,
+          x: state.pos.x + event.deltaX / zoomedSize.width,
+          y: state.pos.y + event.deltaY / zoomedSize.height,
         });
       } else {
         setState({
           ...state,
-          zoom: state.zoom - event.deltaY,
+          zoom: state.zoom - event.deltaY / 2,
         });
       }
       return false;
     },
-    [state, elementSize]
+    [state, zoomedSize]
   );
   React.useEffect(() => {
     if (!refs.media.current) return;
@@ -214,143 +210,126 @@ const MediaViewer: React.FC<
             overflow: "hidden",
             height: Math.min(
               maxViewHeight,
-              elementSize ? elementSize.height : maxViewHeight
+              zoomedSize ? zoomedSize.height : maxViewHeight
             ),
           }}
           ref={refs.viewport}
         >
           <ClickTarget />
-          <Box>
-            {loadState == "loading" ? (
-              <CircularProgress
-                style={{
-                  position: "absolute",
-                  left: "50%",
-                  right: "50%",
-                  top: "50%",
-                  bottom: "50%",
-                }}
-              />
-            ) : null}
-            <Box
-              className="media"
-              onMouseLeave={loadState == "loaded" ? onMouseLeave : undefined}
-              ref={refs.media}
+          {loadState == "loading" ? (
+            <CircularProgress
               style={{
                 position: "absolute",
+                left: "50%",
+                right: "50%",
+                top: "50%",
+                bottom: "50%",
               }}
-            >
-              <Box
-                className="raw"
-                style={
-                  loadState !== "loaded"
-                    ? { width: 0, height: 0, overflow: "hidden" }
-                    : ({
-                        "--media-viewer-scale": state.zoom / 100,
-                        transform: `scale(${
-                          state.zoom / 100
-                        }) translate(${pct2css(-state.pos.x)}, ${pct2css(
-                          -state.pos.y
-                        )})`,
-                        transformOrigin: "0 0",
-                      } as React.CSSProperties)
-                }
-              >
-                {loadState === "loaded" ? children : null}
-                {media.main}
-              </Box>
-            </Box>
+            />
+          ) : null}
+          <Box
+            className="media"
+            ref={refs.media}
+            onMouseLeave={loadState == "loaded" ? onMouseLeave : undefined}
+            style={
+              loadState === "loaded"
+                ? ({
+                    "--media-viewer-scale": scale,
+                    transform: `scale(${scale}) translate(${pct2css(
+                      -state.pos.x
+                    )}, ${pct2css(-state.pos.y)})`,
+                    transformOrigin: "0 0",
+                    position: "absolute",
+                  } as React.CSSProperties)
+                : { width: 0, height: 0, overflow: "hidden" }
+            }
+          >
+            {loadState === "loaded" ? children : null}
+            {media.main}
           </Box>
         </Box>
         {controls || null}
       </Box>
-      {loadState !== "loaded" ||
-      !state.viewportSize ||
-      !elementSize ||
-      !size ? (
-        <Box sx={{ height: minimapSize?.height || MAP_SIZE }} />
-      ) : (
-        <Box
-          className="controls"
+      <Box
+        className="controls"
+        style={{
+          display: "grid",
+          gridTemplateColumns: `${state.minimapSize.width}px 1fr`,
+          gridTemplateRows: "auto",
+          gridTemplateAreas: '"minimap zoom"',
+          gridColumnGap: 10,
+        }}
+      >
+        <Paper
+          className="minimap"
           style={{
-            display: "grid",
-            gridTemplateColumns: `${minimapSize?.width || MAP_SIZE}px 1fr`,
-            gridTemplateRows: "auto",
-            gridTemplateAreas: '"minimap zoom"',
-            gridColumnGap: 10,
+            ...state.minimapSize,
+            position: "relative",
           }}
+          onClick={onMapClick}
         >
-          <Paper
-            className="minimap"
-            style={{
-              ...minimapSize,
-              position: "relative",
-            }}
-            onClick={onMapClick}
-          >
-            <div
-              style={
-                {
-                  "--media-viewer-scale":
-                    (minimapSize?.width || MAP_SIZE) / size.width,
-                  transform: `scale(${
-                    (minimapSize?.width || MAP_SIZE) / size.width
-                  })`,
+          {loadState === "loaded" && size ? (
+            <div>
+              <div
+                style={{
+                  transform: `scale(${state.minimapSize.width / size.width})`,
                   transformOrigin: "0 0",
-                } as React.CSSProperties
-              }
-            >
-              {media.mini}
+                }}
+              >
+                {media.mini}
+              </div>
+              {children}
+              {state.viewportSize && zoomedSize ? (
+                <div
+                  style={{
+                    outline: "2px solid red",
+                    outlineOffset: "-1px",
+                    position: "absolute",
+                    left: pct2css(state.pos.x),
+                    top: pct2css(state.pos.y),
+                    width: pct2css(
+                      Math.min(
+                        1 - state.pos.x,
+                        state.viewportSize.width / zoomedSize.width
+                      )
+                    ),
+                    height: pct2css(
+                      Math.min(
+                        1 - state.pos.y,
+                        state.viewportSize.height / zoomedSize.height
+                      )
+                    ),
+                  }}
+                />
+              ) : null}
+              <div
+                ref={refs.minimap}
+                className="hover-target"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  ...state.minimapSize,
+                  display: "block",
+                }}
+              />
             </div>
-            {children}
-            <div
-              style={{
-                outline: "2px solid red",
-                outlineOffset: "-1px",
-                position: "absolute",
-                left: pct2css(state.pos.x),
-                top: pct2css(state.pos.y),
-                width: pct2css(
-                  Math.min(
-                    1 - state.pos.x,
-                    state.viewportSize.width / elementSize.width
-                  )
-                ),
-                height: pct2css(
-                  Math.min(
-                    1 - state.pos.y,
-                    state.viewportSize.height / elementSize.height
-                  )
-                ),
-              }}
-            />
-            <div
-              ref={refs.minimap}
-              className="hover-target"
-              style={{
-                position: "absolute",
-                top: 0,
-                ...minimapSize,
-                display: "block",
-              }}
-            />
-          </Paper>
-          <RangeSlider
-            name="Zoom"
-            className={"zoom"}
-            min={1}
-            max={Math.max(500, state.zoom)}
-            width={"100%"}
-            value={state.zoom}
-            onValueChange={(zoom) =>
-              setState({
-                ...state,
-                zoom,
-              })
-            }
-          />
-        </Box>
-      )}
+          ) : null}
+        </Paper>
+        <RangeSlider
+          name="Zoom"
+          className={"zoom"}
+          min={1}
+          max={Math.max(500, state.zoom)}
+          width={"100%"}
+          value={state.zoom}
+          onValueChange={(zoom) =>
+            setState({
+              ...state,
+              zoom,
+            })
+          }
+        />
+      </Box>
     </MediaViewerBox>
   );
 };

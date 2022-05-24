@@ -50,11 +50,7 @@ const AlignedBox: React.FC<AlignedBoxProps> = ({
       <text
         fill={color}
         className="box-text"
-        x={5}
-        y={5}
         z={0}
-        fontSize="8pt"
-        fontFamily="Roboto,Helvetica,Arial,sans-serif"
         dominantBaseline="hanging"
         onClick={childProps.onClick}
       >

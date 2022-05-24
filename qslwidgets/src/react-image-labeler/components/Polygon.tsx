@@ -55,13 +55,9 @@ const Polygon: React.FC<PolygonProps> = ({
       }}
     >
       <text
-        x={5}
-        y={5}
         fill={color}
         {...childProps}
-        fontSize="8pt"
         className="box-text"
-        fontFamily="Roboto,Helvetica,Arial,sans-serif"
         alignmentBaseline="hanging"
         onClick={childProps.onClick}
       >

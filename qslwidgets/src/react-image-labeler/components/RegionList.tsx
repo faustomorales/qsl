@@ -1,5 +1,5 @@
 import React from "react";
-import { Box } from "@mui/material";
+import { Box, styled } from "@mui/material";
 import Polygon from "./Polygon";
 import AlignedBox from "./AlignedBox";
 import RegionCursor from "./RegionCursor";
@@ -22,6 +22,17 @@ interface RegionListProps {
   };
 }
 
+const StyledBox = styled(Box)`
+  .box-text {
+    font-size: calc(10pt / var(--media-viewer-scale, 1));
+    font-family: Roboto, Helvetica, Arial, sans-serif;
+    transform: translate(
+      calc(10px / var(--media-viewer-scale, 1)),
+      calc(10px / var(--media-viewer-scale, 1))
+    );
+  }
+`;
+
 const RegionList: React.FC<RegionListProps> = ({
   config,
   draft,
@@ -30,7 +41,7 @@ const RegionList: React.FC<RegionListProps> = ({
   const cursor =
     config?.regions && config.regions.length > 0 ? "none" : undefined;
   return (
-    <Box>
+    <StyledBox>
       {draft.labels.masks.map((mask, index) =>
         draft.drawing.mode !== "masks" ||
         draft.drawing.active?.idx !== index ? (
@@ -134,7 +145,7 @@ const RegionList: React.FC<RegionListProps> = ({
           round={draft.drawing.mode !== "masks"}
         />
       ) : null}
-    </Box>
+    </StyledBox>
   );
 };
 

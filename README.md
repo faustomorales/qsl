@@ -5,7 +5,8 @@
 QSL is a simple, open-source media labeling tool that you can use as a Jupyter widget. More information available at [https://qsl.robinbay.com](https://qsl.robinbay.com). It supports:
 
 - Bounding box, polygon, and segmentation mask labeling for images and videos (with support for video segments).
-- Configurable keyboard shortcuts for labels.
+- Point and range-based time-series labeling.
+- Automatic keyboard shortcuts for labels.
 - Loading images stored locally, on the web, or in cloud storage (currently only AWS S3).
 - Pre-loading images in a queue to speed up labeling.
 
@@ -30,7 +31,8 @@ Check out the [Colab Notebook](https://colab.research.google.com/drive/1FUFt3fDs
     - `options`: A list of options that the user can select from -- each option has the following properties.
       - `name` [required]: The name for the option.
       - `displayName`: The displayed name for the option. Defaults to the same value as `name`.
-  - `regions` [reuired]: The labeling configuration at the region-level for images and video frames. It has no effect of `time-series` targets. It is a list of objects with the same structure as that of the `image` key.
+      - `shortcut`: A single-character that will be used as a keyboard shortcut for this option. If not set, `qsl` will try to generate one on-the-fly.
+  - `regions` [required]: The labeling configuration at the region-level for images and video frames. It has no effect of `time-series` targets. It is a list of objects with the same structure as that of the `image` key.
 - `items` [required]: A list of items to label, each of which have the following properties.
   - `jsonpath`: The location in which to save labels. If neither this property nor the top-level `jsonpath` parameters are set, you must get the labels from `labeler.items`.
   - `type` [optional, default=`image`]: The type of the labeling target. The options are `image`, `video`, and `time-series`.
@@ -58,8 +60,8 @@ Check out the [Colab Notebook](https://colab.research.google.com/drive/1FUFt3fDs
         - `areas` [optional]: A list of clickable areas to draw onto the plot, each of which should have the following properties:
           - `x1` [required]: The starting x-coordinate for the area.
           - `x2` [required]: The ending x-coordinate for the area.
-          - `y1` [optional]: The starting y-coordinate for the area, defaults to the bottom.
-          - `y2` [optional]: The ending y-coordinate for the area, defaults to the top.
+          - `y1`: The starting y-coordinate for the area, defaults to the bottom.
+          - `y2`: The ending y-coordinate for the area, defaults to the top.
           - `labelKey` [required]: The label entry to which this area will write when the user clicks on it.
           - `labelVal` [required]: The value to which the label entry will be assigned when the user clicks on it.
           - `label` [required]: The text label that will appear on the area.
@@ -67,18 +69,18 @@ Check out the [Colab Notebook](https://colab.research.google.com/drive/1FUFt3fDs
     - For images, it has the following properties:
       - `image`: Image-level labels for the image of the form `{[name]: [...labels]}` where `name` corresponds to the `name` of the corresponding entry in the `config.image` array.
       - `polygons`: Polygon labels for the image of the form:
-        - `points`: A list of `{x: float, y: float}` values. `x` and `y` represent percentage of width and height, respectively.
+        - `points` [required]: A list of `{x: float, y: float}` values. `x` and `y` represent percentage of width and height, respectively.
         - `labels`: An object of the same form as the `image` key above.
       - `boxes`: Rectilinear bounding box labels for the image of the form:
-        - `pt1`: The top-left point as an `{x: float, y: float}` object.
-        - `pt2`: The bottom-right point. Same format as `pt1`.
+        - `pt1` [required]: The top-left point as an `{x: float, y: float}` object.
+        - `pt2` [required]: The bottom-right point. Same format as `pt1`.
         - `labels`: An object of the same form as the `image` key above.
       - `masks`: Segmentation masks of the form:
-        - `dimensions`: The dimensions of the segmentation mask as a `width: int, height: int` object.
-        - `counts`: A COCO-style run-length-encoded mask.
+        - `dimensions` [required]: The dimensions of the segmentation mask as a `width: int, height: int` object.
+        - `counts` [required]: A COCO-style run-length-encoded mask.
     - For videos, it is an array of objects representing frame labels. Each object has the form:
-      - `timestamp`: The timestamp in the video for the labeled frame.
-      - `end` [optional]: The end timstamp, for cases where the user is labeling a range of frames. They can do this by alt-clicking on the playbar to select an end frame.
+      - `timestamp` [required]: The timestamp in the video for the labeled frame.
+      - `end`: The end timstamp, for cases where the user is labeling a range of frames. They can do this by alt-clicking on the playbar to select an end frame.
       - `labels`: Same as the image `labels` property, but for the timestamped frame (i.e., an object with `image`, `polygons`, `boxes`, and `masks`).
   - `defaults`: The default labels that will appear with given item. Useful for cases where you want to present a default case to the user that they can simply accept and move on. Has the same structure as `defaults`.
 - `allowConfigChange`: Whether allow the user to change the labeling configuration from within the interface. Defaults to true.
@@ -91,6 +93,137 @@ Check out the [Colab Notebook](https://colab.research.google.com/drive/1FUFt3fDs
 ### Command Line Application
 
 You can launch the same labeling interface from the command line using `qsl label <project-json-file> <...files>`. If the project file does not exist, it will be created. The files you provide will be added. If the project file already exists, files that aren't already on the list will be added. You can edit the project file to modify the settings that cannot be changed from within the UI (i.e., `allowConfigChange`, `maxCanvasSize`, `maxViewHeight`, `mode`, and `batchSize`).
+
+## Examples
+
+Each example below demonstrates different ways to label media using the tool. At the top of each are the arguments used to produce the example.
+
+- To use the example with the Jupyter Widget, use `qsl.MediaLabeler(**params)`
+- To use the example with the command-line application, use `open("project.json").write(json.dumps(params))` and then run `qsl label project.json`.
+
+### Images
+
+```python
+params = dict(
+    config={
+        "image": [
+            {"name": "Location", "multiple": False, "options": [{"name": "Indoor"}, {"name": "Outdoor"}]},
+            {"name": "Flags", "multiple": True, "freeform": True},
+            {"name": "Type", "multiple": False, "options": [{"name": "Cat"}, {"name": "Dog"}]},
+        ],
+        "regions": [
+            {"name": "Type", "multiple": False, "options": [{"name": "Eye"}, {"name": "Nose"}]}
+        ]
+    },
+    items=[
+        {"target": "https://picsum.photos/id/1025/500/500", "defaults": {"image": {"Type": ["Dog"]}}},
+    ],
+)
+```
+
+### Videos
+
+```python
+params = dict(
+    config={
+        "image": [
+            {"name": "Location", "multiple": False, "options": [{"name": "Indoor"}, {"name": "Outdoor"}]},
+            {"name": "Flags", "multiple": True, "freeform": True},
+        ],
+        "regions": [
+            {"name": "Type", "multiple": False, "options": [{"name": "Eye"}, {"name": "Nose"}]}
+        ]
+    },
+    items=[
+        {
+            "target": "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_2MB.mp4",
+            "type": "video",
+        }
+    ],
+)
+```
+
+### Image Batches
+
+```python
+params = dict(
+    config={
+        "image": [
+            {"name": "Type", "multiple": False, "options": [{"name": "Cat"}, {"name": "Dog"}]},
+            {"name": "Location", "multiple": False, "options": [{"name": "Indoor"}, {"name": "Outdoor"}]},
+            {"name": "Flags", "multiple": True, "freeform": True},
+        ],
+        "regions": [
+            {"name": "Type", "multiple": False, "options": [{"name": "Eye"}, {"name": "Nose"}]}
+        ]
+    },
+    items=[
+        {"target": "https://picsum.photos/id/1025/500/500", "defaults": {"image": {"Type": ["Dog"]}}},
+        {"target": "https://picsum.photos/id/1062/500/500", "metadata": {"source": "picsum"}},
+        {"target": "https://picsum.photos/id/1074/500/500"},
+        {"target": "https://picsum.photos/id/219/500/500"},
+        {"target": "https://picsum.photos/id/215/500/500"},
+        {"target": "https://picsum.photos/id/216/500/500"},
+        {"target": "https://picsum.photos/id/217/500/500"},
+        {"target": "https://picsum.photos/id/218/500/500"},
+    ],
+    batchSize=2
+)
+```
+
+### Time Series
+
+```python
+import numpy as np
+
+x = np.linspace(0, 2 * np.pi, 100)
+params = dict(
+    config={
+        "image": [
+            {"name": "Peaks", "multiple": True},
+            {"name": "A or B", "freeform": True},
+        ]
+    },
+    items=[
+        {
+            "target": {
+                "plots": [
+                    {
+                        "x": {"name": "time", "values": x},
+                        "y": {
+                            "lines": [
+                                {
+                                    "name": "value",
+                                    "values": np.sin(x),
+                                    "color": "green",
+                                    "dot": {"labelKey": "Peaks"},
+                                }
+                            ]
+                        },
+                        "areas": [
+                            {
+                                "x1": 0,
+                                "x2": np.pi,
+                                "label": "a",
+                                "labelKey": "A or B",
+                                "labelVal": "a",
+                            },
+                            {
+                                "x1": np.pi,
+                                "x2": 2 * np.pi,
+                                "label": "b",
+                                "labelKey": "A or B",
+                                "labelVal": "b",
+                            },
+                        ],
+                    }
+                ],
+            },
+            "type": "time-series",
+        }
+    ],
+)
+```
 
 ## Development
 

@@ -87,20 +87,20 @@ class BaseMediaLabeler:
         self,
         items=None,
         config=None,
-        allow_config_change=True,
-        batch_size=1,
+        allowConfigChange=True,
+        batchSize=1,
         images=None,
         jsonpath=None,
         base=None,
+        mode="light",
+        maxCanvasSize=512,
+        maxViewHeight=512,
     ):
         super().__init__()
         self.base = base
         self.jsonpath = jsonpath
         self.action = ""
         self.preload = []
-        self.mode = "light"
-        self.maxCanvasSize = 512
-        self.maxViewHeight = 512
         self.tempdir = None
         self.viewState = "labeling"
         self.message = ""
@@ -130,24 +130,26 @@ class BaseMediaLabeler:
             ), "Using a jsonpath is incompatible with raw array targets. Please remove the jsonpath argument. You can access labels by looking at `labeler.items`."
             jsondata = files.json_or_none(jsonpath)
             if jsondata is not None:
-                if config is not None:
-                    LOGGER.warning(
-                        "The project at %s exists. Ignoring supplied config and using config from file.",
-                        jsonpath,
-                    )
                 items = merge_items(initial=jsondata["items"], insert=items)
                 config = jsondata["config"]
+                mode = jsondata.get("mode", mode)
+                maxCanvasSize = jsondata.get("maxCanvasSize", maxCanvasSize)
+                maxViewHeight = jsondata.get("maxViewHeight", maxViewHeight)
+                allowConfigChange = jsondata.get("allowConfigChange", allowConfigChange)
         assert items, "There must be at least one labeling target."
+        self.mode = mode
+        self.maxCanvasSize = maxCanvasSize
+        self.maxViewHeight = maxViewHeight
         self._targets: typing.List[Target] = []
-        self._allow_config_change = allow_config_change
+        self._allowConfigChange = allowConfigChange
         if images is not None:
             deprecate("The images argument", "items")
         self.config = config
         self.items = items
         self.idx = 0
         self.sortedIdxs = list(range(len(items)))
-        self.batch_size = batch_size
-        self.max_preload = 3
+        self.batchSize = batchSize
+        self.maxPreload = 3
         self.mediaIndex = self.get_media_index()
         self.update(True)
 
@@ -164,12 +166,12 @@ class BaseMediaLabeler:
         return None
 
     @property
-    def allow_config_change(self):
-        return self._allow_config_change
+    def allowConfigChange(self):
+        return self._allowConfigChange
 
-    @allow_config_change.setter
-    def allow_config_change(self, allow_config_change):
-        self._allow_config_change = allow_config_change
+    @allowConfigChange.setter
+    def allowConfigChange(self, allowConfigChange):
+        self._allowConfigChange = allowConfigChange
         self.set_buttons()
 
     @property
@@ -247,7 +249,7 @@ class BaseMediaLabeler:
                 and self.targets[-1]["idx"] != self.sortedIdxs[-1]
             ),
             "save": any(t["selected"] for t in self.states),
-            "config": self._allow_config_change,
+            "config": self._allowConfigChange,
             "delete": any(
                 t["labeled"] and t["visible"] and t["selected"] for t in self.states
             ),
@@ -272,7 +274,7 @@ class BaseMediaLabeler:
         if sidx > 0:
             includes_video = False
             for count, sidx in enumerate(
-                range(sidx - 1, max(0, sidx - self.batch_size) - 1, -1)
+                range(sidx - 1, max(0, sidx - self.batchSize) - 1, -1)
             ):
                 includes_video = (
                     includes_video
@@ -292,7 +294,7 @@ class BaseMediaLabeler:
         includes_video = False
         sidx_initial = self.sortedIdxs.index(self.idx)
         for count, sidx in enumerate(
-            range(sidx_initial, min(sidx_initial + self.batch_size, len(self.items)))
+            range(sidx_initial, min(sidx_initial + self.batchSize, len(self.items)))
         ):
             includes_video = (
                 includes_video
@@ -364,7 +366,16 @@ class BaseMediaLabeler:
     def save_to_disk(self):
         if self.jsonpath:
             files.labels2json(
-                {"items": self.items, "config": self.config}, self.jsonpath
+                {
+                    "items": self.items,
+                    "config": self.config,
+                    "maxCanvasSize": self.maxCanvasSize,
+                    "maxViewHeight": self.maxViewHeight,
+                    "mode": self.mode,
+                    "batchSize": self.batchSize,
+                    "allowConfigChange": self.allowConfigChange,
+                },
+                self.jsonpath,
             )
 
     def delete(self):
@@ -448,7 +459,7 @@ class BaseMediaLabeler:
                 )
                 if preloadUrl:
                     preload.append(preloadUrl)
-                if len(preload) == self.max_preload:
+                if len(preload) == self.maxPreload:
                     break
             self.preload = preload
         self.update_progress()

@@ -348,7 +348,7 @@ from IPython.display import display
 labeler = qsl.MediaLabeler(
   items=[{"target": "path/img.jpg"}],
   jsonpath="labels.json",
-  batch_size=8
+  batchSize=8
 )
 display(labeler)`,
   },

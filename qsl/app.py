@@ -10,18 +10,10 @@ class MediaLabeler(common.BaseMediaLabeler):
     def __init__(
         self,
         items=None,
-        config=None,
-        allow_config_change=True,
-        batch_size=1,
-        images=None,
         jsonpath=None,
     ):
         super().__init__(
             items=items,
-            config=config,
-            allow_config_change=allow_config_change,
-            batch_size=batch_size,
-            images=images,
             jsonpath=jsonpath,
             base={
                 "url": "http://localhost:8080",
@@ -54,7 +46,7 @@ class MediaLabeler(common.BaseMediaLabeler):
 
 
 # pylint: disable=unused-variable
-def start(jsonpath: str, targets: typing.List[str], batch_size: int):
+def start(jsonpath: str, targets: typing.List[str]):
     """Start Eel."""
     # A bit of a hack so that `files.build_url` works properly
     eel.BOTTLE_ROUTES = {
@@ -69,7 +61,6 @@ def start(jsonpath: str, targets: typing.List[str], batch_size: int):
         [".js", ".html"],
     )
     labeler = MediaLabeler(
-        batch_size=batch_size,
         items=[
             {"target": t, "type": files.guess_type(t)}
             for t in files.filepaths_from_patterns(targets)

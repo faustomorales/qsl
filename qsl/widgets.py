@@ -21,33 +21,22 @@ def module_version():
 
 
 class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
-    """A widget for labeling a series of media files.
+    """A widget for labeling a series of media files. Please see the documentation
+    in the README to see more about the different ways to configure it.
 
     Args:
-        items: A list of items to label as a list of dicts. Each dict
-            may have the following keys (all optional).
-                - target: A string (URL, filepath, or S3 URL) or
-                    numpy array representing an image or video. If a
-                    numpy array, it must be an image provided as an
-                    HxWx3 array where the final axis represents BGR
-                    values as unsigned 8-bit integers (i.e., OpenCV
-                    style arrays). If not provided, only the metadata
-                    is shown.
-                - metadata: A string-to-string dictionary representing
-                    information that will be shown with the image.
-                - type: The type of the file ("image" or "video"). It
-                    defaults to "image"
-                - labels: The current labels for the target.
-                - defaults: The default labels for the target.
-                - ignored: A boolean value indicating whether the
-                    image is ignored.
-                - jsonpath: A filepath in which to save the labels for
-                    this image.
-        config: The initial configuration for the labeler.
-        allow_config_change: Whether to allow the configuration to be
-            changed in the UI.
-        batch_size: The batch size for the labeler.
-        jsonpath: A filepath in which to save all the current labels.
+
+        - items: This can be as simple as a list of {"target": "path/to/image.png"} objects. See READM for more information.
+        - config: The labeling configuration. See README for more information.
+        - allowConfigChange: Whether to allow the configuration to be edited from the UI.
+        - maxCanvasSize: The maximum size for the segmentation mask canvas.
+        - maxViewHeight: The maximum view height for the UI.
+        - mode: The theme for the UI, one of "light" or "dark".
+        - batchSize: The image labeling batch size.
+        - jsonpath: The path to which we will save the configuration.
+        - images: deprecated, use items instead.
+        - allow_config_change: deprecated, use allowConfigChange.
+        - batch_size: deprecated, use batchSize.
     """
 
     _model_name = t.Unicode("MediaLabelerModel").tag(sync=True)
@@ -112,16 +101,30 @@ class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
         self,
         items=None,
         config=None,
-        allow_config_change=True,
-        batch_size=1,
+        allowConfigChange=True,
+        maxCanvasSize=512,
+        maxViewHeight=512,
+        mode="light",
+        batchSize=1,
         jsonpath=None,
         images=None,
+        allow_config_change=None,
+        batch_size=None,
     ):
+        if allow_config_change is not None:
+            common.deprecate("allow_config_change", "allowConfigChange")
+            allowConfigChange = allow_config_change
+        if batch_size is not None:
+            common.deprecate("batch_size", "batchSize")
+            batchSize = batch_size
         super().__init__(
             items=items,
             config=config,
-            allow_config_change=allow_config_change,
-            batch_size=batch_size,
+            allowConfigChange=allowConfigChange,
+            batchSize=batchSize,
+            maxCanvasSize=maxCanvasSize,
+            maxViewHeight=maxViewHeight,
+            mode=mode,
             jsonpath=jsonpath,
             images=images,
         )

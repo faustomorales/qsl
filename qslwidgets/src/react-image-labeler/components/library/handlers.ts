@@ -132,8 +132,8 @@ export const handleMediaClick = (
           ...drawing.active.region,
           points: drawing.active.region.points.concat([
             snapPolygonCoords({ ...draft.cursor, coords: point }, drawing, {
-              width: refs.source.current.clientWidth,
-              height: refs.source.current.clientHeight,
+              width: refs.source.current.clientWidth * mediaViewerScale,
+              height: refs.source.current.clientHeight * mediaViewerScale,
             }).coords!,
           ]),
         },

@@ -318,14 +318,19 @@ export const useMediaMouseCallbacks = (
     onMouseMove: useMediaEvent(
       (coords) => {
         if (!showCursor || !refs.source.current) return;
+        const mediaViewerScale = parseFloat(
+          getComputedStyle(refs.source.current).getPropertyValue(
+            "--media-viewer-scale"
+          ) || "1"
+        );
         setDraft({
           ...draft,
           cursor: snapPolygonCoords(
             { ...draft.cursor, coords },
             draft.drawing,
             {
-              width: refs.source.current.clientWidth,
-              height: refs.source.current.clientHeight,
+              width: refs.source.current.clientWidth * mediaViewerScale,
+              height: refs.source.current.clientHeight * mediaViewerScale,
             }
           ),
         });

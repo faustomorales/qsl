@@ -15,7 +15,7 @@ const MediaViewerBox = styled(Box)`
   }
 
   & .minimap img,
-  & minimap video {
+  & .minimap video {
     transform: scale(calc(1 / var(--media-viewer-scale, 1)));
     transform-origin: 0 0;
   }

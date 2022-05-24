@@ -234,3 +234,5 @@ export interface TimeSeriesLabelerProps
   target?: TimeSeriesTarget;
   metadata?: ArbitraryMetadata;
 }
+
+export type MediaLoadState = "loading" | "loaded" | "error";

@@ -29,13 +29,10 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
     source: React.useRef<HTMLImageElement>(null),
     canvas: React.useRef<HTMLCanvasElement>(null),
   };
-  const {
-    loader,
-    disableControls,
-    disableContents,
-    visibleSource,
-    mediaState,
-  } = useLoader<{ size: Dimensions; layout: "horizontal" | "vertical" }>(
+  const loader = useLoader<{
+    size: Dimensions;
+    layout: "horizontal" | "vertical";
+  }>(
     React.useCallback(
       (event: React.SyntheticEvent<HTMLImageElement, Event>) =>
         new Promise((resolve, reject) => {
@@ -62,10 +59,10 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
       callbacks?.onSave
         ? callbacks.onSave({
             ...draft2labels(draft.labels),
-            dimensions: mediaState?.size,
+            dimensions: loader.mediaState?.size,
           })
         : undefined,
-    [draft, mediaState, callbacks?.onSave]
+    [draft, loader.mediaState, callbacks?.onSave]
   );
   const imageCallbacks = useMediaMouseCallbacks(
     draft,
@@ -78,13 +75,13 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
     <LabelerLayout
       metadata={metadata}
       progress={options?.progress}
-      layout={mediaState?.layout || "horizontal"}
+      layout={loader.mediaState?.layout || "horizontal"}
       control={
         <ControlMenu
           config={config}
-          disabled={disableControls}
+          disabled={loader.loadState === "loading"}
           direction={
-            (mediaState?.layout || "horizontal") === "horizontal"
+            (loader.mediaState?.layout || "horizontal") === "horizontal"
               ? "column"
               : "row"
           }
@@ -103,15 +100,16 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
           <Box>
             <Box>
               <MediaViewer
-                size={mediaState?.size}
+                size={loader.mediaState?.size}
                 maxViewHeight={options?.maxViewHeight}
                 media={{
                   main: (
                     <img
                       {...imageCallbacks}
                       ref={refs.source}
-                      onLoad={loader}
-                      src={visibleSource}
+                      onLoad={loader.callbacks.onLoad}
+                      onError={loader.callbacks.onError}
+                      src={loader.src}
                       style={{
                         cursor:
                           config.regions && config.regions.length > 0
@@ -120,9 +118,9 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
                       }}
                     />
                   ),
-                  mini: <img src={visibleSource} />,
+                  mini: <img src={loader.src} />,
                 }}
-                loading={disableContents}
+                loadState={loader.loadState}
                 onMouseLeave={() =>
                   setDraft({
                     ...draft,
@@ -138,7 +136,7 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
               </MediaViewer>
             </Box>
             <canvas style={{ display: "none" }} ref={refs.canvas} />
-            {!disableContents && preload ? (
+            {loader.loadState !== "loading" && preload ? (
               <ImagePreloader images={preload} />
             ) : null}
           </Box>

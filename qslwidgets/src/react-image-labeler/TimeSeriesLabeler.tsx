@@ -96,7 +96,7 @@ const TimeSeriesLabeler: React.FC<TimeSeriesLabelerProps> = ({
             ) : undefined,
           }}
           size={size}
-          loading={false}
+          loadState={"loaded"}
           maxViewHeight={options?.maxViewHeight}
         />
       }

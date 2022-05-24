@@ -79,13 +79,7 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
     },
     [refs]
   );
-  const {
-    loader,
-    visibleSource,
-    disableContents,
-    disableControls,
-    mediaState,
-  } = useLoader<{
+  const loader = useLoader<{
     duration: number;
     size: Dimensions;
     layout: "horizontal" | "vertical";
@@ -151,14 +145,14 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
   return (
     <LabelerLayout
       metadata={metadata}
-      layout={mediaState?.layout || "horizontal"}
+      layout={loader.mediaState?.layout || "horizontal"}
       progress={options?.progress}
       control={
         <ControlMenu
           config={config}
-          disabled={disableControls || !playbackState.paused}
+          disabled={loader.loadState === "loading" || !playbackState.paused}
           direction={
-            (mediaState?.layout || "horizontal") === "horizontal"
+            (loader.mediaState?.layout || "horizontal") === "horizontal"
               ? "column"
               : "row"
           }
@@ -188,8 +182,8 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
         <Box>
           <MediaViewer
             maxViewHeight={options?.maxViewHeight}
-            size={mediaState?.size}
-            loading={disableContents}
+            size={loader.mediaState?.size}
+            loadState={loader.loadState}
             onMouseLeave={() =>
               setDraft({
                 ...draft,
@@ -200,10 +194,11 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
               main: (
                 <video
                   disablePictureInPicture
-                  onLoadedMetadata={loader}
+                  onLoadedMetadata={loader.callbacks.onLoad}
+                  onError={loader.callbacks.onError}
                   {...mediaCallbacks}
                   ref={refs.main}
-                  src={visibleSource}
+                  src={loader.src}
                   style={{
                     cursor:
                       config.regions && config.regions.length > 0
@@ -235,7 +230,7 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
                 <Playbar
                   marks={(labels || []).map((t) => t.timestamp)}
                   timestamp={playbackState.timestamp}
-                  duration={mediaState?.duration}
+                  duration={loader.mediaState?.duration}
                   secondary={playbackState.end}
                   secondaryThumbnail={
                     <video src={target} ref={refs.secondaryThumbnail} />

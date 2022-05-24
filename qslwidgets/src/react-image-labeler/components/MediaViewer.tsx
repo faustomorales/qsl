@@ -3,7 +3,7 @@ import { Box, Paper, CircularProgress, styled } from "@mui/material";
 import RangeSlider from "./RangeSlider";
 import GlobalLabelerContext from "./GlobalLabelerContext";
 import ClickTarget from "./ClickTarget";
-import { Dimensions, Point } from "./library/types";
+import { Dimensions, Point, MediaLoadState } from "./library/types";
 import { pct2css } from "./library/utils";
 import { useInterval, useMediaEvent } from "./library/hooks";
 
@@ -51,7 +51,7 @@ const MediaViewer: React.FC<
     };
     size?: Dimensions;
     controls?: React.ReactNode;
-    loading?: boolean;
+    loadState: MediaLoadState;
     maxViewHeight?: number;
     onMouseLeave?: () => void;
   } & React.ComponentProps<"div">
@@ -60,7 +60,7 @@ const MediaViewer: React.FC<
   media,
   size,
   controls,
-  loading,
+  loadState,
   onMouseLeave,
   maxViewHeight = 512,
 }) => {
@@ -75,7 +75,10 @@ const MediaViewer: React.FC<
     pos: { x: 0, y: 0 } as Point,
     viewportSize: undefined as Dimensions | undefined,
   });
-  React.useEffect(() => setState({ ...state, pos: { x: 0, y: 0 } }), [loading]);
+  React.useEffect(
+    () => setState({ ...state, pos: { x: 0, y: 0 } }),
+    [loadState]
+  );
   useInterval(
     () => {
       if (
@@ -218,7 +221,7 @@ const MediaViewer: React.FC<
         >
           <ClickTarget />
           <Box>
-            {loading ? (
+            {loadState == "loading" ? (
               <CircularProgress
                 style={{
                   position: "absolute",
@@ -231,7 +234,7 @@ const MediaViewer: React.FC<
             ) : null}
             <Box
               className="media"
-              onMouseLeave={loading ? undefined : onMouseLeave}
+              onMouseLeave={loadState == "loaded" ? onMouseLeave : undefined}
               ref={refs.media}
               style={{
                 position: "absolute",
@@ -240,7 +243,7 @@ const MediaViewer: React.FC<
               <Box
                 className="raw"
                 style={
-                  loading
+                  loadState !== "loaded"
                     ? { width: 0, height: 0, overflow: "hidden" }
                     : ({
                         "--media-viewer-scale": state.zoom / 100,
@@ -253,7 +256,7 @@ const MediaViewer: React.FC<
                       } as React.CSSProperties)
                 }
               >
-                {children}
+                {loadState === "loaded" ? children : null}
                 {media.main}
               </Box>
             </Box>
@@ -261,7 +264,10 @@ const MediaViewer: React.FC<
         </Box>
         {controls || null}
       </Box>
-      {loading || !state.viewportSize || !elementSize || !size ? (
+      {loadState !== "loaded" ||
+      !state.viewportSize ||
+      !elementSize ||
+      !size ? (
         <Box sx={{ height: minimapSize?.height || MAP_SIZE }} />
       ) : (
         <Box

@@ -8,6 +8,7 @@ import {
   AlignedBoxLabel,
   TimestampedLabel,
   MediaRefs,
+  MediaLoadState,
 } from "./types";
 import { useTheme, useMediaQuery } from "@mui/material";
 import { labels2draft } from "./utils";
@@ -189,58 +190,49 @@ export const useLoader = <T>(
 ) => {
   const { setToast } = React.useContext(GlobalLabelerContext);
   const [state, setState] = React.useState({
-    disableControls: false,
-    disableContents: !!src,
-    timestamp: new Date().getTime(),
+    src: src,
+    loadState: "loading" as MediaLoadState,
     mediaState: undefined as T | undefined,
   });
-  const [visibleSource, setVisibleSource] = React.useState(src);
   React.useEffect(() => {
-    if (src !== visibleSource) {
+    if (src !== state.src) {
       setState({
-        disableControls: false,
-        disableContents: !!src,
-        timestamp: new Date().getTime(),
+        src,
+        loadState: src ? "loading" : "loaded",
         mediaState: state.mediaState,
       });
-      setVisibleSource(src);
     }
   }, [src]);
-  useInterval(
-    () =>
-      state.disableContents &&
-      !state.disableControls &&
-      new Date().getTime() - state.timestamp > 250
-        ? setState({
-            ...state,
-            disableControls: true,
-          })
-        : null,
-    100,
-    true
-  );
   return {
-    visibleSource,
-    mediaState: state.mediaState,
-    disableControls: state.disableControls,
-    disableContents: state.disableContents,
-    loader: React.useCallback(
-      (
-        event: React.SyntheticEvent<HTMLImageElement | HTMLVideoElement, Event>
-      ) => {
-        loader(event).then(
-          (mediaState) =>
-            setState({
-              mediaState,
-              timestamp: new Date().getTime(),
-              disableControls: false,
-              disableContents: false,
-            }),
-          (message) => setToast(message)
-        );
-      },
-      [loader, visibleSource]
-    ),
+    ...state,
+    callbacks: {
+      onError: React.useCallback(() => {
+        setState({
+          ...state,
+          loadState: "error",
+        });
+        setToast(`An error occurred loading ${state.src}.`);
+      }, [state]),
+      onLoad: React.useCallback(
+        (
+          event: React.SyntheticEvent<
+            HTMLImageElement | HTMLVideoElement,
+            Event
+          >
+        ) => {
+          loader(event).then(
+            (mediaState) =>
+              setState({
+                mediaState,
+                loadState: "loaded",
+                src: state.src,
+              }),
+            (message) => setToast(`An error occurred loading ${state.src}.`)
+          );
+        },
+        [loader, state]
+      ),
+    },
   };
 };
 

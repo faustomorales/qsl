@@ -36,11 +36,21 @@ const Labeler: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
     <GlobalLabelerContext.Provider
       value={{ container: refs.container, setToast, setFocus, hasFocus }}
     >
-      <Box className="react-image-labeler" ref={refs.container}>
+      <Box
+        className="react-image-labeler"
+        ref={refs.container}
+        style={{ position: "relative" }}
+      >
         <Box {...other}>
           {children}
           <HiddenInput ref={refs.hidden} />
           <Snackbar
+            sx={{
+              position: "absolute",
+              height: "100%",
+              left: "50%",
+            }}
+            anchorOrigin={{ horizontal: "center", vertical: "top" }}
             open={toast !== ""}
             autoHideDuration={3000}
             onClose={() => setToast("")}

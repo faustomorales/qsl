@@ -12,9 +12,7 @@ QSL is a simple, open-source media labeling tool that you can use as a Jupyter w
 
 Please note that that QSL is still under development and there are likely to be major bugs, breaking changes, etc. Bug reports and contributions are welcome!
 
-## Getting Started
-
-Install using `pip install qsl`.
+Get started by installing using `pip install qsl`.
 
 ## Examples
 

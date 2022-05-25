@@ -121,7 +121,6 @@ params = dict(
 )
 ```
 
-<video src='https://github.com/faustomorales/qsl/releases/download/example-files/images.mov' />
 
 ### Videos
 
@@ -145,7 +144,6 @@ params = dict(
 )
 ```
 
-<video src='https://github.com/faustomorales/qsl/releases/download/example-files/video.mov' />
 
 ### Image Batches
 
@@ -175,7 +173,6 @@ params = dict(
 )
 ```
 
-<video src='https://github.com/faustomorales/qsl/releases/download/example-files/image-batches.mov' />
 
 ### Time Series
 
@@ -231,7 +228,9 @@ params = dict(
 )
 ```
 
-<video src='https://github.com/faustomorales/qsl/releases/download/example-files/time-series.mov' />
+
+https://user-images.githubusercontent.com/9735401/170155710-77b96780-9282-47c0-afb8-63dddeb0f0e7.mov
+
 
 ## Development
 

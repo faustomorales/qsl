@@ -121,6 +121,9 @@ params = dict(
 )
 ```
 
+![image labeling demo](https://github.com/faustomorales/qsl/releases/download/example-files/images.gif)
+
+
 
 ### Videos
 
@@ -144,7 +147,8 @@ params = dict(
 )
 ```
 
-https://github.com/faustomorales/qsl/releases/download/example-files/video.mov
+
+![video labeling demo](https://github.com/faustomorales/qsl/releases/download/example-files/videos.gif)
 
 
 ### Image Batches
@@ -175,8 +179,7 @@ params = dict(
 )
 ```
 
-https://user-images.githubusercontent.com/9735401/170155793-15802fb2-e4ea-44a0-a8f2-2b3e0c3a09b9.mov
-
+![image batch labeling demo](https://github.com/faustomorales/qsl/releases/download/example-files/image-batches.gif)
 
 ### Time Series
 
@@ -233,8 +236,7 @@ params = dict(
 ```
 
 
-https://user-images.githubusercontent.com/9735401/170155710-77b96780-9282-47c0-afb8-63dddeb0f0e7.mov
-
+![time series labeling demo](https://github.com/faustomorales/qsl/releases/download/example-files/time-series.gif)
 
 ## Development
 

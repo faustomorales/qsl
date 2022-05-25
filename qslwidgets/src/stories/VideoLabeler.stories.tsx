@@ -8,8 +8,8 @@ export const BasicUsage: React.FC = () => {
     src: string;
     labels: TimestampedLabel[];
   }>({
-    src: "video1.m4v",
-    labels: [{ timestamp: 0, labels: { image: {}, boxes: [] }, end: 1.3 }],
+    src: "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    labels: [],
   });
   return (
     <Labeler>

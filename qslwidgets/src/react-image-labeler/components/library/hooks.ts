@@ -346,12 +346,12 @@ const labels4timestamp = (
   labels: TimestampedLabel[],
   timestamp: number
 ): TimestampedLabel => {
-  if (!labels) return { timestamp, end: undefined, labels: {} };
+  if (!labels) return { timestamp, end: undefined, labels: { image: {} } };
   return (
     labels.filter((l) => l.timestamp === timestamp)[0] || {
       timestamp,
       end: undefined,
-      labels: {},
+      labels: { image: {} },
     }
   );
 };
@@ -369,7 +369,9 @@ export const usePlaybackState = (
     paused: true,
     playbackRate: 0,
     muted: false,
-    ...labels4timestamp(labels, 0),
+    timestamp: 0,
+    labels: { image: {} } as Labels,
+    end: undefined as number | undefined,
   });
   React.useEffect(() => {
     if (!refs.main.current) {
@@ -379,7 +381,7 @@ export const usePlaybackState = (
       ...playbackState,
       ...labels4timestamp(labels, refs.main.current.currentTime),
     });
-  }, [labels]);
+  }, [labels, refs.main]);
   useInterval(
     () => {
       if (
@@ -389,7 +391,7 @@ export const usePlaybackState = (
           refs.main.current.currentTime === playbackState.timestamp &&
           refs.main.current.playbackRate === playbackState.playbackRate
         )
-      )
+      ) {
         setPlaybackState({
           ...playbackState,
           paused: refs.main.current.paused,
@@ -399,6 +401,7 @@ export const usePlaybackState = (
             : { end: undefined, labels: {} }),
           timestamp: refs.main.current.currentTime,
         });
+      }
       if (
         refs.secondaryThumbnail.current &&
         playbackState.end &&

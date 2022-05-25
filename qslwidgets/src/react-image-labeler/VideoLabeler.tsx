@@ -233,7 +233,11 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
                   duration={loader.mediaState?.duration}
                   secondary={playbackState.end}
                   secondaryThumbnail={
-                    <video src={target} ref={refs.secondaryThumbnail} />
+                    <video
+                      src={target}
+                      ref={refs.secondaryThumbnail}
+                      style={{ maxWidth: "100%", maxHeight: "100%" }}
+                    />
                   }
                   setSecondary={(timestamp) =>
                     setPlaybackState(0, undefined, timestamp)

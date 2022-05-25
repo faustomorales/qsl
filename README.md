@@ -121,6 +121,8 @@ params = dict(
 )
 ```
 
+<video src='https://github.com/faustomorales/qsl/releases/download/example-files/images.mov' />
+
 ### Videos
 
 ```python
@@ -136,12 +138,14 @@ params = dict(
     },
     items=[
         {
-            "target": "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_2MB.mp4",
+            "target": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
             "type": "video",
         }
     ],
 )
 ```
+
+<video src='https://github.com/faustomorales/qsl/releases/download/example-files/video.mov' />
 
 ### Image Batches
 
@@ -170,6 +174,8 @@ params = dict(
     batchSize=2
 )
 ```
+
+<video src='https://github.com/faustomorales/qsl/releases/download/example-files/image-batches.mov' />
 
 ### Time Series
 
@@ -224,6 +230,8 @@ params = dict(
     ],
 )
 ```
+
+<video src='https://github.com/faustomorales/qsl/releases/download/example-files/time-series.mov' />
 
 ## Development
 

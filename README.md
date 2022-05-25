@@ -16,6 +16,163 @@ Please note that that QSL is still under development and there are likely to be 
 
 Install using `pip install qsl`.
 
+## Examples
+
+Each example below demonstrates different ways to label media using the tool. At the top of each are the arguments used to produce the example.
+
+- To use the example with the Jupyter Widget, use `qsl.MediaLabeler(**params)`
+- To use the example with the command-line application, use `open("project.json").write(json.dumps(params))` and then run `qsl label project.json`.
+
+### Images
+
+```python
+import qsl
+
+params = dict(
+    config={
+        "image": [
+            {"name": "Location", "multiple": False, "options": [{"name": "Indoor"}, {"name": "Outdoor"}]},
+            {"name": "Flags", "multiple": True, "freeform": True},
+            {"name": "Type", "multiple": False, "options": [{"name": "Cat"}, {"name": "Dog"}]},
+        ],
+        "regions": [
+            {"name": "Type", "multiple": False, "options": [{"name": "Eye"}, {"name": "Nose"}]}
+        ]
+    },
+    items=[
+        {"target": "https://picsum.photos/id/1025/500/500", "defaults": {"image": {"Type": ["Dog"]}}},
+    ],
+)
+qsl.MediaLabeler(**params)
+```
+
+![image labeling demo](https://github.com/faustomorales/qsl/releases/download/example-files/images.gif)
+
+
+
+### Videos
+
+```python
+import qsl
+
+params = dict(
+    config={
+        "image": [
+            {"name": "Location", "multiple": False, "options": [{"name": "Indoor"}, {"name": "Outdoor"}]},
+            {"name": "Flags", "multiple": True, "freeform": True},
+        ],
+        "regions": [
+            {"name": "Type", "multiple": False, "options": [{"name": "Eye"}, {"name": "Nose"}]}
+        ]
+    },
+    items=[
+        {
+            "target": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+            "type": "video",
+        }
+    ],
+)
+qsl.MediaLabeler(**params)
+```
+
+
+![video labeling demo](https://github.com/faustomorales/qsl/releases/download/example-files/videos.gif)
+
+
+### Image Batches
+
+```python
+import qsl
+
+params = dict(
+    config={
+        "image": [
+            {"name": "Type", "multiple": False, "options": [{"name": "Cat"}, {"name": "Dog"}]},
+            {"name": "Location", "multiple": False, "options": [{"name": "Indoor"}, {"name": "Outdoor"}]},
+            {"name": "Flags", "multiple": True, "freeform": True},
+        ],
+        "regions": [
+            {"name": "Type", "multiple": False, "options": [{"name": "Eye"}, {"name": "Nose"}]}
+        ]
+    },
+    items=[
+        {"target": "https://picsum.photos/id/1025/500/500", "defaults": {"image": {"Type": ["Dog"]}}},
+        {"target": "https://picsum.photos/id/1062/500/500", "metadata": {"source": "picsum"}},
+        {"target": "https://picsum.photos/id/1074/500/500"},
+        {"target": "https://picsum.photos/id/219/500/500"},
+        {"target": "https://picsum.photos/id/215/500/500"},
+        {"target": "https://picsum.photos/id/216/500/500"},
+        {"target": "https://picsum.photos/id/217/500/500"},
+        {"target": "https://picsum.photos/id/218/500/500"},
+    ],
+    batchSize=2
+)
+qsl.MediaLabeler(**params)
+```
+
+![image batch labeling demo](https://github.com/faustomorales/qsl/releases/download/example-files/image-batches.gif)
+
+### Time Series
+
+```python
+import qsl
+import numpy as np
+
+x = np.linspace(0, 2 * np.pi, 100)
+params = dict(
+    config={
+        "image": [
+            {"name": "Peaks", "multiple": True},
+            {"name": "A or B", "freeform": True},
+        ]
+    },
+    items=[
+        {
+            "target": {
+                "plots": [
+                    {
+                        "x": {"name": "time", "values": x},
+                        "y": {
+                            "lines": [
+                                {
+                                    "name": "value",
+                                    "values": np.sin(x),
+                                    "color": "green",
+                                    "dot": {"labelKey": "Peaks"},
+                                }
+                            ]
+                        },
+                        "areas": [
+                            {
+                                "x1": 0,
+                                "x2": np.pi,
+                                "label": "a",
+                                "labelKey": "A or B",
+                                "labelVal": "a",
+                            },
+                            {
+                                "x1": np.pi,
+                                "x2": 2 * np.pi,
+                                "label": "b",
+                                "labelKey": "A or B",
+                                "labelVal": "b",
+                            },
+                        ],
+                    }
+                ],
+            },
+            "type": "time-series",
+        }
+    ],
+)
+qsl.MediaLabeler(**params)
+```
+
+
+![time series labeling demo](https://github.com/faustomorales/qsl/releases/download/example-files/time-series.gif)
+
+## API
+
 ### Jupyter Widget
 
 Check out the [Colab Notebook](https://colab.research.google.com/drive/1FUFt3fDs7BYpGI1E2z44L-zSRdoDtF8O?usp=sharing) for an example of how to use the Jupyter Widget.
@@ -93,150 +250,6 @@ Check out the [Colab Notebook](https://colab.research.google.com/drive/1FUFt3fDs
 ### Command Line Application
 
 You can launch the same labeling interface from the command line using `qsl label <project-json-file> <...files>`. If the project file does not exist, it will be created. The files you provide will be added. If the project file already exists, files that aren't already on the list will be added. You can edit the project file to modify the settings that cannot be changed from within the UI (i.e., `allowConfigChange`, `maxCanvasSize`, `maxViewHeight`, `mode`, and `batchSize`).
-
-## Examples
-
-Each example below demonstrates different ways to label media using the tool. At the top of each are the arguments used to produce the example.
-
-- To use the example with the Jupyter Widget, use `qsl.MediaLabeler(**params)`
-- To use the example with the command-line application, use `open("project.json").write(json.dumps(params))` and then run `qsl label project.json`.
-
-### Images
-
-```python
-params = dict(
-    config={
-        "image": [
-            {"name": "Location", "multiple": False, "options": [{"name": "Indoor"}, {"name": "Outdoor"}]},
-            {"name": "Flags", "multiple": True, "freeform": True},
-            {"name": "Type", "multiple": False, "options": [{"name": "Cat"}, {"name": "Dog"}]},
-        ],
-        "regions": [
-            {"name": "Type", "multiple": False, "options": [{"name": "Eye"}, {"name": "Nose"}]}
-        ]
-    },
-    items=[
-        {"target": "https://picsum.photos/id/1025/500/500", "defaults": {"image": {"Type": ["Dog"]}}},
-    ],
-)
-```
-
-![image labeling demo](https://github.com/faustomorales/qsl/releases/download/example-files/images.gif)
-
-
-
-### Videos
-
-```python
-params = dict(
-    config={
-        "image": [
-            {"name": "Location", "multiple": False, "options": [{"name": "Indoor"}, {"name": "Outdoor"}]},
-            {"name": "Flags", "multiple": True, "freeform": True},
-        ],
-        "regions": [
-            {"name": "Type", "multiple": False, "options": [{"name": "Eye"}, {"name": "Nose"}]}
-        ]
-    },
-    items=[
-        {
-            "target": "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-            "type": "video",
-        }
-    ],
-)
-```
-
-
-![video labeling demo](https://github.com/faustomorales/qsl/releases/download/example-files/videos.gif)
-
-
-### Image Batches
-
-```python
-params = dict(
-    config={
-        "image": [
-            {"name": "Type", "multiple": False, "options": [{"name": "Cat"}, {"name": "Dog"}]},
-            {"name": "Location", "multiple": False, "options": [{"name": "Indoor"}, {"name": "Outdoor"}]},
-            {"name": "Flags", "multiple": True, "freeform": True},
-        ],
-        "regions": [
-            {"name": "Type", "multiple": False, "options": [{"name": "Eye"}, {"name": "Nose"}]}
-        ]
-    },
-    items=[
-        {"target": "https://picsum.photos/id/1025/500/500", "defaults": {"image": {"Type": ["Dog"]}}},
-        {"target": "https://picsum.photos/id/1062/500/500", "metadata": {"source": "picsum"}},
-        {"target": "https://picsum.photos/id/1074/500/500"},
-        {"target": "https://picsum.photos/id/219/500/500"},
-        {"target": "https://picsum.photos/id/215/500/500"},
-        {"target": "https://picsum.photos/id/216/500/500"},
-        {"target": "https://picsum.photos/id/217/500/500"},
-        {"target": "https://picsum.photos/id/218/500/500"},
-    ],
-    batchSize=2
-)
-```
-
-![image batch labeling demo](https://github.com/faustomorales/qsl/releases/download/example-files/image-batches.gif)
-
-### Time Series
-
-```python
-import numpy as np
-
-x = np.linspace(0, 2 * np.pi, 100)
-params = dict(
-    config={
-        "image": [
-            {"name": "Peaks", "multiple": True},
-            {"name": "A or B", "freeform": True},
-        ]
-    },
-    items=[
-        {
-            "target": {
-                "plots": [
-                    {
-                        "x": {"name": "time", "values": x},
-                        "y": {
-                            "lines": [
-                                {
-                                    "name": "value",
-                                    "values": np.sin(x),
-                                    "color": "green",
-                                    "dot": {"labelKey": "Peaks"},
-                                }
-                            ]
-                        },
-                        "areas": [
-                            {
-                                "x1": 0,
-                                "x2": np.pi,
-                                "label": "a",
-                                "labelKey": "A or B",
-                                "labelVal": "a",
-                            },
-                            {
-                                "x1": np.pi,
-                                "x2": 2 * np.pi,
-                                "label": "b",
-                                "labelKey": "A or B",
-                                "labelVal": "b",
-                            },
-                        ],
-                    }
-                ],
-            },
-            "type": "time-series",
-        }
-    ],
-)
-```
-
-
-![time series labeling demo](https://github.com/faustomorales/qsl/releases/download/example-files/time-series.gif)
 
 ## Development
 

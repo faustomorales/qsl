@@ -434,16 +434,14 @@ class BaseMediaLabeler:
         if reset:
             self.set_urls_and_type()
             self.viewState = "labeling"
-        base_item = next(i for t, i in self.targets_and_items if t["visible"])
+        base_item = next((i for t, i in self.targets_and_items if t["visible"]), None)
         self.labels: typing.Union[dict, list] = typing.cast(
             typing.Union[dict, list],
             (
                 base_item.get("labels")
                 or base_item.get("defaults")
-                or ({} if self.type == "image" else [])
-            )
-            if reset
-            else self.labels,
+                or ([] if self.type == "video" else {})
+            ),
         )
         sIdx = self.sortedIdxs.index(self.idx)
         if self.base and sIdx + 1 < len(self.sortedIdxs):

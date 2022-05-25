@@ -269,7 +269,7 @@ const MediaViewer: React.FC<
           onClick={onMapClick}
         >
           {loadState === "loaded" && size ? (
-            <div>
+            <div style={{ width: "100%", height: "100%" }}>
               <div
                 style={{
                   transform: `scale(${state.minimapSize.width / size.width})`,

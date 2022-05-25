@@ -33,6 +33,7 @@ const TimeSeriesLabeler: React.FC<TimeSeriesLabelerProps> = ({
         labels: {
           ...draft.labels,
           image: {
+            ...draft.labels.image,
             [label]: processSelectionChange(
               value,
               draft.labels.image[label] || [],

@@ -96,51 +96,49 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
         />
       }
       content={
-        target ? (
+        <Box>
           <Box>
-            <Box>
-              <MediaViewer
-                size={loader.mediaState?.size}
-                maxViewHeight={options?.maxViewHeight}
-                media={{
-                  main: (
-                    <img
-                      {...imageCallbacks}
-                      ref={refs.source}
-                      onLoad={loader.callbacks.onLoad}
-                      onError={loader.callbacks.onError}
-                      src={loader.src}
-                      style={{
-                        cursor:
-                          config.regions && config.regions.length > 0
-                            ? "none"
-                            : undefined,
-                      }}
-                    />
-                  ),
-                  mini: <img src={loader.src} />,
-                }}
-                loadState={loader.loadState}
-                onMouseLeave={() =>
-                  setDraft({
-                    ...draft,
-                    cursor: { ...draft.cursor, coords: undefined },
-                  })
-                }
-              >
-                <RegionList
-                  config={config}
-                  draft={draft}
-                  callbacks={imageCallbacks}
-                />
-              </MediaViewer>
-            </Box>
-            <canvas style={{ display: "none" }} ref={refs.canvas} />
-            {loader.loadState !== "loading" && preload ? (
-              <ImagePreloader images={preload} />
-            ) : null}
+            <MediaViewer
+              size={loader.mediaState?.size}
+              maxViewHeight={options?.maxViewHeight}
+              media={{
+                main: target ? (
+                  <img
+                    {...imageCallbacks}
+                    ref={refs.source}
+                    onLoad={loader.callbacks.onLoad}
+                    onError={loader.callbacks.onError}
+                    src={loader.src}
+                    style={{
+                      cursor:
+                        config.regions && config.regions.length > 0
+                          ? "none"
+                          : undefined,
+                    }}
+                  />
+                ) : null,
+                mini: target ? <img src={loader.src} /> : null,
+              }}
+              loadState={loader.loadState}
+              onMouseLeave={() =>
+                setDraft({
+                  ...draft,
+                  cursor: { ...draft.cursor, coords: undefined },
+                })
+              }
+            >
+              <RegionList
+                config={config}
+                draft={draft}
+                callbacks={imageCallbacks}
+              />
+            </MediaViewer>
           </Box>
-        ) : null
+          <canvas style={{ display: "none" }} ref={refs.canvas} />
+          {loader.loadState !== "loading" && preload ? (
+            <ImagePreloader images={preload} />
+          ) : null}
+        </Box>
       }
     />
   );

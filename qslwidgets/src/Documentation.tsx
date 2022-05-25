@@ -415,13 +415,13 @@ const ExampleElement: React.FC<{
         <Box sx={{ pt: 2 }}>{description}</Box>
         <Box sx={{ overflow: "scroll" }}>
           <Typography variant="caption" sx={{ px: 0, pt: 0, pb: 1 }}>
-            Notebook
-          </Typography>
-          <Highlight className="python">{snippet.notebook}</Highlight>
-          <Typography variant="caption" sx={{ px: 0, pt: 0, pb: 1 }}>
             Command Line
           </Typography>
           <Highlight className="shell">{snippet.cli}</Highlight>
+          <Typography variant="caption" sx={{ px: 0, pt: 0, pb: 1 }}>
+            Notebook
+          </Typography>
+          <Highlight className="python">{snippet.notebook}</Highlight>
         </Box>
       </Box>
       <Paper elevation={5} sx={{ my: 2, width: "100%", p: 2 }}>

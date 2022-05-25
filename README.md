@@ -12,7 +12,7 @@ QSL is a simple, open-source media labeling tool that you can use as a Jupyter w
 
 Please note that that QSL is still under development and there are likely to be major bugs, breaking changes, etc. Bug reports and contributions are welcome!
 
-Get started by installing using `pip install qsl`.
+Get started by installing using `pip install qsl`. Label a folder of images and save the labels to JSON using the standalone interface using `qsl label labels.json images/*.jpg`. Check out the [Colab Notebook](https://colab.research.google.com/drive/1FUFt3fDs7BYpGI1E2z44L-zSRdoDtF8O?usp=sharing) for an example of how to use the Jupyter Widget.
 
 ## Examples
 
@@ -46,8 +46,6 @@ qsl.MediaLabeler(**params)
 
 ![image labeling demo](https://github.com/faustomorales/qsl/releases/download/example-files/images.gif)
 
-
-
 ### Videos
 
 ```python
@@ -73,9 +71,7 @@ params = dict(
 qsl.MediaLabeler(**params)
 ```
 
-
 ![video labeling demo](https://github.com/faustomorales/qsl/releases/download/example-files/videos.gif)
-
 
 ### Image Batches
 
@@ -166,14 +162,11 @@ params = dict(
 qsl.MediaLabeler(**params)
 ```
 
-
 ![time series labeling demo](https://github.com/faustomorales/qsl/releases/download/example-files/time-series.gif)
 
 ## API
 
 ### Jupyter Widget
-
-Check out the [Colab Notebook](https://colab.research.google.com/drive/1FUFt3fDs7BYpGI1E2z44L-zSRdoDtF8O?usp=sharing) for an example of how to use the Jupyter Widget.
 
 `qsl.MediaLabeler` accepts the following arguments:
 

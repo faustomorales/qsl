@@ -126,7 +126,8 @@ class BaseMediaLabeler:
             ]
         if jsonpath is not None:
             assert all(
-                isinstance(item.get("target"), (type(None), str)) for item in items
+                isinstance(item.get("target"), (type(None), str, dict))
+                for item in items
             ), "Using a jsonpath is incompatible with raw array targets. Please remove the jsonpath argument. You can access labels by looking at `labeler.items`."
             jsondata = files.json_or_none(jsonpath)
             if jsondata is not None:

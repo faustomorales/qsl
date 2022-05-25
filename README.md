@@ -19,7 +19,7 @@ Get started by installing using `pip install qsl`. Label a folder of images and 
 Each example below demonstrates different ways to label media using the tool. At the top of each are the arguments used to produce the example.
 
 - To use the example with the Jupyter Widget, use `qsl.MediaLabeler(**params)`
-- To use the example with the command-line application, use `open("project.json").write(json.dumps(params))` and then run `qsl label project.json`.
+- To use the example with the command-line application, use `open("project.json", "w").write(json.dumps(params))` and then run `qsl label project.json`.
 
 ### Images
 

@@ -412,8 +412,8 @@ const ExampleElement: React.FC<{
           width: "100%",
         }}
       >
-        <Box sx={{ pt: 2 }}>{description}</Box>
-        <Box sx={{ overflow: "scroll" }}>
+        <Box>{description}</Box>
+        <Box sx={{ overflow: "auto" }}>
           <Typography variant="caption" sx={{ px: 0, pt: 0, pb: 1 }}>
             Command Line
           </Typography>
@@ -646,11 +646,9 @@ const App: React.FC = () => {
             ))}
           </Tabs>
         </Box>
-        {tabs.map((t, i) => (
-          <Box hidden={i !== page} key={t.id}>
-            {t.component}
-          </Box>
-        ))}
+        {tabs.map((t, i) =>
+          i === page ? <Box key={t.id}>{t.component}</Box> : <Box key={t.id} />
+        )}
       </Container>
     </ThemeProvider>
   );

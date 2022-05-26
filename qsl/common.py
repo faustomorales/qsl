@@ -354,13 +354,13 @@ class BaseMediaLabeler:
         for target, item in self.targets_and_items:
             if target["visible"] and target["selected"]:
                 item["labels"] = self.labels
-                if self.type != "video":
+                if item.get("type", "image") != "video":
                     target["visible"] = False
                 jsonpath = item.get("jsonpath")
                 if jsonpath:
                     files.labels2json(item, jsonpath)
         self.save_to_disk()
-        if self.type != "video" and not any(t["visible"] for t in self.targets):
+        if not any(t["visible"] or (t["type"] == "video") for t in self.targets):
             self.next()
         else:
             self.update(False)
@@ -400,7 +400,7 @@ class BaseMediaLabeler:
                 if jsonpath:
                     files.labels2json(item, jsonpath)
         self.save_to_disk()
-        if self.type == "image" and not any(t["visible"] for t in self.targets):
+        if not any(t["visible"] or (t["type"] == "video") for t in self.targets):
             self.next()
         else:
             self.update(False)

@@ -80,6 +80,8 @@ const TimeSeries: React.FC<{
             label={plot.x.name}
           />
           <YAxis
+            type={plot.y.types?.left || "number"}
+            allowDataOverflow={plot.y.allowDataOverflow?.left || true}
             domain={plot.y.limits?.left}
             label={
               plot.y.labels?.left
@@ -95,6 +97,8 @@ const TimeSeries: React.FC<{
             orientation="left"
           />
           <YAxis
+            type={plot.y.types?.right || "number"}
+            allowDataOverflow={plot.y.allowDataOverflow?.right || true}
             domain={plot.y.limits?.right}
             label={
               plot.y.labels?.right

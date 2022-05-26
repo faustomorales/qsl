@@ -201,6 +201,14 @@ export interface TimeSeriesTarget {
         left?: number;
         right?: number;
       };
+      types?: {
+        left?: "number" | "category";
+        right?: "number" | "category";
+      };
+      allowDataOverflow?: {
+        left?: boolean;
+        right?: boolean;
+      };
       labels?: {
         left?: string;
         right?: string;

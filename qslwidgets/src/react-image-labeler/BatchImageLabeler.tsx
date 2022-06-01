@@ -108,6 +108,8 @@ const BatchImageLabeler: React.FC<BatchImageLabelerProps> = ({
       progress={options?.progress}
       control={
         <ControlMenu
+          cursor={{ radius: 0, threshold: 0, coords: undefined }}
+          setCursor={(cursor) => undefined}
           disabled={false}
           direction="column"
           showNavigation={options?.showNavigation}

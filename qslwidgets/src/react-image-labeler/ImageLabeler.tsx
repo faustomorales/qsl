@@ -23,7 +23,10 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
   preload,
   config = { image: [], regions: [] },
 }) => {
-  const { draft, setDraft, resetDraft } = useDraftLabelState(labels, [target]);
+  const { draft, setDraft, resetDraft, cursor, setCursor } = useDraftLabelState(
+    labels,
+    [target]
+  );
   const refs = {
     viewer: React.useRef<HTMLDivElement>(null),
     source: React.useRef<HTMLImageElement>(null),
@@ -67,6 +70,8 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
   const imageCallbacks = useMediaMouseCallbacks(
     draft,
     setDraft,
+    cursor,
+    setCursor,
     refs,
     config.regions && config.regions.length > 0 ? true : false,
     options?.maxCanvasSize
@@ -78,6 +83,8 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
       layout={loader.mediaState?.layout || "horizontal"}
       control={
         <ControlMenu
+          cursor={cursor}
+          setCursor={setCursor}
           config={config}
           disabled={loader.loadState === "loading"}
           direction={
@@ -101,6 +108,7 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
             <MediaViewer
               size={loader.mediaState?.size}
               maxViewHeight={options?.maxViewHeight}
+              cursor={cursor.coords}
               media={{
                 main: target ? (
                   <img
@@ -120,14 +128,10 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
                 mini: target ? <img src={loader.src} /> : null,
               }}
               loadState={loader.loadState}
-              onMouseLeave={() =>
-                setDraft({
-                  ...draft,
-                  cursor: { ...draft.cursor, coords: undefined },
-                })
-              }
+              onMouseLeave={() => setCursor({ ...cursor, coords: undefined })}
             >
               <RegionList
+                cursor={cursor}
                 config={config}
                 draft={draft}
                 callbacks={imageCallbacks}

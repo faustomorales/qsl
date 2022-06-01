@@ -44,6 +44,7 @@ const MediaViewer: React.FC<
     controls?: React.ReactNode;
     loadState: MediaLoadState;
     maxViewHeight?: number;
+    cursor?: Point;
     onMouseLeave?: () => void;
   } & React.ComponentProps<"div">
 > = ({
@@ -53,6 +54,7 @@ const MediaViewer: React.FC<
   controls,
   loadState,
   onMouseLeave,
+  cursor,
   maxViewHeight = 512,
 }) => {
   const { setFocus } = React.useContext(GlobalLabelerContext);
@@ -62,133 +64,134 @@ const MediaViewer: React.FC<
     media: React.useRef<HTMLDivElement>(null),
   };
   const [state, setState] = React.useState({
-    zoom: 100,
+    zoom: 1.0,
     pos: { x: 0, y: 0 } as Point,
-    viewportSize: undefined as Dimensions | undefined,
     minimapSize: { width: MAP_SIZE, height: MAP_SIZE },
+    zoomInitialized: false,
   });
+  const [maxViewWidth, setMaxViewWidth] = React.useState(maxViewHeight);
   React.useEffect(() => {
     if (loadState === "loading") {
-      setState({ ...state, pos: { x: 0, y: 0 } });
+      setState({ ...state, pos: { x: 0, y: 0 }, zoomInitialized: false });
+    } else if (
+      loadState == "loaded" &&
+      size &&
+      !state.zoomInitialized &&
+      maxViewWidth > 0
+    ) {
+      const minimapScale = MAP_SIZE / Math.max(size.width, size.height);
+      setState({
+        ...state,
+        zoomInitialized: true,
+        zoom: Math.min(maxViewWidth / size.width, maxViewHeight / size.height),
+        minimapSize: {
+          width: minimapScale * size.width,
+          height: minimapScale * size.height,
+        },
+      });
     }
-  }, [loadState]);
+  }, [loadState, size, maxViewWidth]);
   useInterval(
     () => {
       if (
         refs.viewport.current &&
-        (!state.viewportSize ||
-          refs.viewport.current.clientHeight !== state.viewportSize.height ||
-          refs.viewport.current.clientWidth !== state.viewportSize.width)
+        (!maxViewWidth || refs.viewport.current.clientWidth !== maxViewWidth)
       ) {
-        setState({
-          ...state,
-          viewportSize: {
-            width: refs.viewport.current.clientWidth,
-            height: refs.viewport.current.clientHeight,
-          },
-        });
+        setMaxViewWidth(refs.viewport.current.clientWidth);
       }
     },
     100,
-    true
+    true,
+    [maxViewWidth]
   );
-  React.useEffect(() => {
-    if (!size || !refs.viewport.current) {
-      return;
-    }
-    const minimapScale = size
-      ? MAP_SIZE / Math.max(size.width, size.height)
-      : undefined;
-    setState({
-      ...state,
-      zoom:
-        100 *
-        Math.min(
-          refs.viewport.current.clientWidth / size.width,
-          maxViewHeight / size.height
-        ),
-      minimapSize: minimapScale
-        ? {
-            width: minimapScale * size.width,
-            height: minimapScale * size.height,
-          }
-        : state.minimapSize || { width: MAP_SIZE, height: MAP_SIZE },
-    });
-  }, [size, refs.viewport]);
-  const scale = React.useMemo(() => state.zoom / 100, [state.zoom]);
   const zoomedSize = React.useMemo(() => {
     if (!size) {
       return;
     }
     return {
-      width: scale * size.width,
-      height: scale * size.height,
+      width: state.zoom * size.width,
+      height: state.zoom * size.height,
     };
-  }, [state.zoom, size]);
-  const margin = React.useMemo(() => {
-    return state.viewportSize && zoomedSize
-      ? {
-          x:
-            Math.min(state.viewportSize.width, zoomedSize.width) /
-            zoomedSize.width /
-            2,
-          y:
-            Math.min(state.viewportSize.height, zoomedSize.height) /
-            zoomedSize.height /
-            2,
-        }
-      : { x: 0, y: 0 };
-  }, [state.viewportSize, zoomedSize]);
-  const setPos = React.useCallback(
-    (point) => {
-      if (!margin) {
-        console.error("Tried to set position without available data.");
-        return;
-      }
-      setState({
-        ...state,
-        pos: {
-          x: Math.min(Math.max(point.x, 0), Math.max(0, 1 - 2 * margin.x)),
-          y: Math.min(Math.max(point.y, 0), Math.max(0, 1 - 2 * margin.y)),
-        },
-      });
-    },
-    [state, margin]
-  );
-  React.useEffect(() => {
-    const offsetX = Math.min(1 - (state.pos.x + 2 * margin.x), 0);
-    const offsetY = Math.min(1 - (state.pos.y + 2 * margin.y), 0);
-    if (offsetX || offsetY) {
-      setPos({ x: state.pos.x + offsetX, y: state.pos.y + offsetY });
+  }, [state.zoom]);
+  const viewportSize = React.useMemo(() => {
+    if (!zoomedSize) {
+      return;
     }
-  }, [margin]);
+    return {
+      width: Math.min(maxViewWidth, zoomedSize.width),
+      height: Math.min(maxViewHeight, zoomedSize.height),
+    };
+  }, [maxViewWidth, maxViewHeight, zoomedSize]);
   const onMapClick = useMediaEvent(
     (point) => {
       setFocus();
-      setPos({ x: point.x - margin.x, y: point.y - margin.y });
+      if (!zoomedSize || !viewportSize) {
+        throw "Failed to process minimap position.";
+      }
+      const margin = {
+        x: viewportSize.width / zoomedSize.width / 2,
+        y: viewportSize.height / zoomedSize.height / 2,
+      };
+      setState({
+        ...state,
+        pos: {
+          x: Math.max(point.x - margin.x, 0),
+          y: Math.max(point.y - margin.y, 0),
+        },
+      });
     },
     refs.minimap,
-    [setPos, margin, setFocus]
+    [setFocus, state, viewportSize, zoomedSize]
   );
   const onImageScroll = React.useCallback(
     (event: WheelEvent) => {
-      if (!zoomedSize) return;
+      if (!size) return;
       event.preventDefault();
       event.stopPropagation();
       if (!event.ctrlKey) {
-        setPos({
-          x: state.pos.x + event.deltaX / zoomedSize.width,
-          y: state.pos.y + event.deltaY / zoomedSize.height,
-        });
-      } else {
         setState({
           ...state,
-          zoom: state.zoom - event.deltaY / 2,
+          pos: {
+            x: Math.max(
+              state.pos.x + event.deltaX / (size.width * state.zoom),
+              0
+            ),
+            y: Math.max(
+              state.pos.y + event.deltaY / (size.height * state.zoom),
+              0
+            ),
+          },
+        });
+      } else {
+        const newZoom = Math.max(
+          state.zoom - event.deltaY / (2 * 100),
+          10 / Math.min(size.width, size.height)
+        );
+        let newPos: Point;
+        if (cursor) {
+          newPos = {
+            x: Math.max(
+              cursor.x - (state.zoom * (cursor.x - state.pos.x)) / newZoom,
+              0
+            ),
+            y: Math.max(
+              cursor.y - (state.zoom * (cursor.y - state.pos.y)) / newZoom,
+              0
+            ),
+          };
+        } else {
+          newPos = state.pos;
+        }
+        setState({
+          ...state,
+          zoom: newZoom,
+          pos: newPos,
         });
       }
+      setFocus();
       return false;
     },
-    [state, zoomedSize]
+    [state, cursor, size]
   );
   React.useEffect(() => {
     if (!refs.media.current) return;
@@ -210,7 +213,7 @@ const MediaViewer: React.FC<
             overflow: "hidden",
             height: Math.min(
               maxViewHeight,
-              zoomedSize ? zoomedSize.height : maxViewHeight
+              zoomedSize?.height || maxViewHeight
             ),
           }}
           ref={refs.viewport}
@@ -234,8 +237,8 @@ const MediaViewer: React.FC<
             style={
               loadState === "loaded"
                 ? ({
-                    "--media-viewer-scale": scale,
-                    transform: `scale(${scale}) translate(${pct2css(
+                    "--media-viewer-scale": state.zoom,
+                    transform: `scale(${state.zoom}) translate(${pct2css(
                       -state.pos.x
                     )}, ${pct2css(-state.pos.y)})`,
                     transformOrigin: "0 0",
@@ -279,7 +282,7 @@ const MediaViewer: React.FC<
                 {media.mini}
               </div>
               {children}
-              {state.viewportSize && zoomedSize ? (
+              {viewportSize && zoomedSize ? (
                 <div
                   style={{
                     outline: "2px solid red",
@@ -290,13 +293,13 @@ const MediaViewer: React.FC<
                     width: pct2css(
                       Math.min(
                         1 - state.pos.x,
-                        state.viewportSize.width / zoomedSize.width
+                        viewportSize.width / zoomedSize.width
                       )
                     ),
                     height: pct2css(
                       Math.min(
                         1 - state.pos.y,
-                        state.viewportSize.height / zoomedSize.height
+                        viewportSize.height / zoomedSize.height
                       )
                     ),
                   }}
@@ -318,14 +321,14 @@ const MediaViewer: React.FC<
         <RangeSlider
           name="Zoom"
           className={"zoom"}
-          min={1}
-          max={Math.max(500, state.zoom)}
+          min={Math.min(1, Math.round(100 * state.zoom))}
+          max={Math.max(500, Math.round(100 * state.zoom))}
           width={"100%"}
-          value={state.zoom}
+          value={Math.round(100 * state.zoom)}
           onValueChange={(zoom) =>
             setState({
               ...state,
-              zoom,
+              zoom: zoom / 100,
             })
           }
         />

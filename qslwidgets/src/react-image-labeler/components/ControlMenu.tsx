@@ -33,7 +33,7 @@ import {
   useMediaLarge,
   simulateClick,
 } from "./library/hooks";
-import { DraftState, Config } from "./library/types";
+import { DraftState, Config, CursorData } from "./library/types";
 
 interface Callbacks {
   onKeyboardEvent?: (event: KeyboardEvent) => void;
@@ -54,6 +54,8 @@ const ControlMenu: React.FC<{
   config: Config;
   draft: DraftState;
   setDraft: (draft: DraftState) => void;
+  cursor: CursorData;
+  setCursor: (cursor: CursorData) => void;
   callbacks: Callbacks;
   disabled: boolean;
   showNavigation?: boolean;
@@ -61,10 +63,12 @@ const ControlMenu: React.FC<{
   direction: "column" | "row";
 }> = ({
   draft,
+  cursor,
   disabled,
   callbacks,
   showNavigation,
   setDraft,
+  setCursor,
   allowRegion = true,
   ...other
 }) => {
@@ -83,11 +87,36 @@ const ControlMenu: React.FC<{
     ].map((key) => [key, React.useRef<HTMLButtonElement>(null)])
   );
   const isLarge = useMediaLarge();
-  const config: Config = {
-    image: shortcutify(other.config?.image || []),
-    regions: shortcutify(other.config?.regions || []),
-  };
-  const direction = isLarge ? other.direction : "column";
+  const computedState = React.useMemo(() => {
+    const level = draft.drawing.active ? "regions" : "image";
+    const config = {
+      image: shortcutify(other.config?.image || []),
+      regions: shortcutify(other.config?.regions || []),
+    };
+    const activeConfig = config[level] || [];
+    return {
+      level: level as "regions" | "image",
+      activeConfig,
+      config,
+      direction: isLarge ? other.direction : "column",
+      allowRegionSelection:
+        config?.regions && config.regions.length > 0 && allowRegion,
+      disableLabelPanel:
+        disabled ||
+        (draft.drawing.active !== undefined &&
+          draft.drawing.active.region.readonly === true),
+      labels: draft.drawing.active
+        ? draft.drawing.active.region.labels
+        : draft.labels.image,
+      editConfig: callbacks?.onSaveConfig
+        ? (name: string) =>
+            setState({
+              configEditorOpen: true,
+              index: activeConfig.findIndex((c) => c.name == name),
+            })
+        : undefined,
+    };
+  }, [other.config, draft.labels, draft.drawing.active, allowRegion, disabled]);
   const [state, setState] = React.useState({
     configEditorOpen: false,
     index: null as number | null,
@@ -177,10 +206,33 @@ const ControlMenu: React.FC<{
     },
     [callbacks, state, draft, refs, setFocus]
   );
-  const level = draft.drawing.active ? "regions" : "image";
-  const activeConfig = config[level] || [];
-  const allowRegionSelection =
-    config?.regions && config.regions.length > 0 && allowRegion;
+  const setLabels = React.useCallback(
+    (current) => {
+      setDraft({
+        ...draft,
+        dirty: true,
+        labels: draft.drawing.active
+          ? draft.labels
+          : {
+              ...draft.labels,
+              image: current,
+            },
+        drawing: draft.drawing.active
+          ? {
+              ...draft.drawing,
+              active: {
+                ...draft.drawing.active,
+                region: {
+                  ...draft.drawing.active.region,
+                  labels: current,
+                } as any,
+              },
+            }
+          : draft.drawing,
+      });
+    },
+    [draft, setDraft]
+  );
   return (
     <Box>
       <ClickTarget />
@@ -191,59 +243,31 @@ const ControlMenu: React.FC<{
         message={error}
       />
       <LabelPanel
-        config={activeConfig}
-        disabled={
-          disabled ||
-          (draft.drawing.active !== undefined &&
-            draft.drawing.active.region.readonly === true)
-        }
-        editConfig={
-          callbacks?.onSaveConfig
-            ? (index) => setState({ configEditorOpen: true, index })
-            : undefined
-        }
-        labels={
-          draft.drawing.active
-            ? draft.drawing.active.region.labels
-            : draft.labels.image
-        }
-        setLabels={(current) => {
-          setDraft({
-            ...draft,
-            dirty: true,
-            labels: draft.drawing.active
-              ? draft.labels
-              : {
-                  ...draft.labels,
-                  image: current,
-                },
-            drawing: draft.drawing.active
-              ? {
-                  ...draft.drawing,
-                  active: {
-                    ...draft.drawing.active,
-                    region: {
-                      ...draft.drawing.active.region,
-                      labels: current,
-                    } as any,
-                  },
-                }
-              : draft.drawing,
-          });
-        }}
+        config={computedState.activeConfig}
+        disabled={computedState.disableLabelPanel}
+        labels={computedState.labels}
+        editConfig={computedState.editConfig}
+        setLabels={setLabels}
       />
       {draft.drawing && draft.drawing.active?.region.metadata ? (
         <Box sx={{ position: "relative", zIndex: 1 }}>
           <Metadata data={draft.drawing.active.region.metadata} />
         </Box>
       ) : null}
-      {Object.keys((draft.drawing.active ? config.regions : config.image) || [])
-        .length > 0 ? (
+      {Object.keys(
+        (draft.drawing.active
+          ? computedState.config.regions
+          : computedState.config.image) || []
+      ).length > 0 ? (
         <Divider sx={{ mb: 3 }} />
       ) : null}
-      {allowRegionSelection ? (
+      {computedState.allowRegionSelection ? (
         <Box>
-          <Stack alignContent="center" direction={direction} spacing={2}>
+          <Stack
+            alignContent="center"
+            direction={computedState.direction}
+            spacing={2}
+          >
             <Box
               sx={{
                 borderRight:
@@ -293,9 +317,11 @@ const ControlMenu: React.FC<{
                 style={{
                   display: "grid",
                   gridTemplateColumns:
-                    direction == "row" ? `100px 200px 200px` : `100px 200px`,
+                    computedState.direction == "row"
+                      ? `100px 200px 200px`
+                      : `100px 200px`,
                   gridTemplateAreas:
-                    direction == "row"
+                    computedState.direction == "row"
                       ? '"toggle threshold size"'
                       : '"toggle threshold" "size size"',
                   gridTemplateRows: "auto",
@@ -323,19 +349,16 @@ const ControlMenu: React.FC<{
                 <Box style={{ gridArea: "threshold", display: "inline-flex" }}>
                   <RangeSlider
                     name="Flood Threshold"
-                    value={draft.cursor.threshold}
+                    value={cursor.threshold}
                     min={0}
                     disabled={!draft.drawing.flood}
                     max={20}
                     width="100%"
                     aria-label="segmentation mask flood threshold"
                     onValueChange={(value) =>
-                      setDraft({
-                        ...draft,
-                        cursor: {
-                          ...draft.cursor,
-                          threshold: value as number,
-                        },
+                      setCursor({
+                        ...cursor,
+                        threshold: value as number,
                       })
                     }
                   />
@@ -343,18 +366,15 @@ const ControlMenu: React.FC<{
                 <Box style={{ gridArea: "size", display: "inline-flex" }}>
                   <RangeSlider
                     name="Cursor Size"
-                    value={draft.cursor.radius}
+                    value={cursor.radius}
                     min={1}
                     max={50}
                     width="100%"
                     aria-label="segmentation mask labeling radius"
                     onValueChange={(value) =>
-                      setDraft({
-                        ...draft,
-                        cursor: {
-                          ...draft.cursor,
-                          radius: value,
-                        },
+                      setCursor({
+                        ...cursor,
+                        radius: value,
                       })
                     }
                   />
@@ -365,7 +385,7 @@ const ControlMenu: React.FC<{
           <Divider sx={{ mb: 2, mt: 2 }} />
         </Box>
       ) : null}
-      <Stack direction={direction} spacing={2}>
+      <Stack direction={computedState.direction} spacing={2}>
         {draft.drawing.active ? (
           <ButtonGroup fullWidth size="small" aria-label="region control menu">
             <Button
@@ -386,7 +406,11 @@ const ControlMenu: React.FC<{
             </Button>
           </ButtonGroup>
         ) : (
-          <Stack direction={direction} spacing={2} style={{ width: "100%" }}>
+          <Stack
+            direction={computedState.direction}
+            spacing={2}
+            style={{ width: "100%" }}
+          >
             {callbacks?.onSelectAll || callbacks?.onSelectNone ? (
               <ButtonGroup
                 fullWidth
@@ -531,20 +555,25 @@ const ControlMenu: React.FC<{
           onClose={() => setState({ ...state, configEditorOpen: false })}
           existing={
             state.index !== null
-              ? { config: activeConfig[state.index], level }
+              ? {
+                  config: computedState.activeConfig[state.index],
+                  level: computedState.level,
+                }
               : undefined
           }
           onSave={(newLabelConfig, level) => {
             if (
               state.index === null &&
-              (config[level] || []).find((c) => c.name === newLabelConfig.name)
+              (computedState.config[level] || []).find(
+                (c) => c.name === newLabelConfig.name
+              )
             ) {
               throw "User attempted to add a config with the name of an existing config.";
             }
-            const previous = config[level] || [];
+            const previous = computedState.activeConfig;
             const index = state.index === null ? previous.length : state.index;
             callbacks.onSaveConfig!({
-              ...config,
+              ...computedState.config,
               [level]: previous
                 .slice(0, index)
                 .concat([newLabelConfig])

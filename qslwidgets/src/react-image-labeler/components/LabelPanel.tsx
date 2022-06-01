@@ -8,7 +8,7 @@ type LabelPanelProps = {
   labels: LabelData;
   disabled: boolean;
   setLabels: (labels: LabelData) => void;
-  editConfig?: (index: number) => void;
+  editConfig?: (name: string) => void;
 };
 
 const LabelPanel: React.FC<LabelPanelProps> = ({
@@ -18,6 +18,11 @@ const LabelPanel: React.FC<LabelPanelProps> = ({
   disabled,
   editConfig,
 }) => {
+  const setSelected = React.useCallback(
+    (name: string, selected: string[]) =>
+      setLabels({ ...labels, [name]: selected }),
+    [labels]
+  );
   return (
     <Box ml={-3} mr={-3}>
       {config.map((c, i) => (
@@ -25,11 +30,9 @@ const LabelPanel: React.FC<LabelPanelProps> = ({
           key={c.name}
           config={c}
           disabled={disabled}
-          editConfig={editConfig ? () => editConfig(i) : undefined}
+          editConfig={editConfig}
           selected={labels[c.name]}
-          setSelected={(selected) =>
-            setLabels({ ...labels, [c.name]: selected })
-          }
+          setSelected={setSelected}
         />
       ))}
     </Box>

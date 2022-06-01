@@ -8,12 +8,14 @@ import {
   AlignedBoxLabel,
   Point,
   MediaRefs,
+  CursorData,
 } from "./types";
 
 const DEFAULT_MAX_CANVAS_SIZE = 512;
 
 export const handleMediaClick = (
   draft: DraftState,
+  cursor: CursorData,
   point: Point,
   refs: MediaRefs,
   altKey: boolean,
@@ -70,16 +72,10 @@ export const handleMediaClick = (
     const fillOptions = {
       previous: drawing.active ? drawing.active.region.map : undefined,
       radius: {
-        dx:
-          draft.cursor.radius /
-          refs.source.current.clientWidth /
-          mediaViewerScale,
-        dy:
-          draft.cursor.radius /
-          refs.source.current.clientHeight /
-          mediaViewerScale,
+        dx: cursor.radius / refs.source.current.clientWidth / mediaViewerScale,
+        dy: cursor.radius / refs.source.current.clientHeight / mediaViewerScale,
       },
-      threshold: draft.cursor.threshold,
+      threshold: cursor.threshold,
     };
     if (drawing.active) {
       // There's already an active mask and we are adding to it.
@@ -131,7 +127,7 @@ export const handleMediaClick = (
         region: {
           ...drawing.active.region,
           points: drawing.active.region.points.concat([
-            snapPolygonCoords({ ...draft.cursor, coords: point }, drawing, {
+            snapPolygonCoords({ ...cursor, coords: point }, drawing, {
               width: refs.source.current.clientWidth * mediaViewerScale,
               height: refs.source.current.clientHeight * mediaViewerScale,
             }).coords!,

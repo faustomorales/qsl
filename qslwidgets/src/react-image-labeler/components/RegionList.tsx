@@ -5,11 +5,12 @@ import AlignedBox from "./AlignedBox";
 import RegionCursor from "./RegionCursor";
 import Mask from "./Mask";
 import { isPolygonClosed } from "./library/geometry";
-import { Config, DraftState } from "./library/types";
+import { Config, DraftState, CursorData } from "./library/types";
 
 interface RegionListProps {
   config: Config;
   draft: DraftState;
+  cursor: CursorData;
   callbacks: {
     onClick: (
       event: React.MouseEvent<Element, MouseEvent>,
@@ -37,8 +38,9 @@ const RegionList: React.FC<RegionListProps> = ({
   config,
   draft,
   callbacks,
+  cursor,
 }) => {
-  const cursor =
+  const cursorStyle =
     config?.regions && config.regions.length > 0 ? "none" : undefined;
   return (
     <StyledBox>
@@ -50,7 +52,7 @@ const RegionList: React.FC<RegionListProps> = ({
             key={index}
             bitmap={mask.map}
             style={{
-              cursor,
+              cursor: cursorStyle,
               pointerEvents:
                 draft.drawing.mode === "masks" ? undefined : "none",
             }}
@@ -64,7 +66,7 @@ const RegionList: React.FC<RegionListProps> = ({
           <Polygon
             polygon={polygon}
             style={{
-              cursor,
+              cursor: cursorStyle,
               pointerEvents:
                 draft.drawing.mode === "polygons" ? undefined : "none",
             }}
@@ -85,7 +87,7 @@ const RegionList: React.FC<RegionListProps> = ({
             box={box}
             key={index}
             style={{
-              cursor,
+              cursor: cursorStyle,
               pointerEvents:
                 draft.drawing.mode === "boxes" ? undefined : "none",
             }}
@@ -101,19 +103,15 @@ const RegionList: React.FC<RegionListProps> = ({
           color="red"
           polygon={draft.drawing.active.region}
           {...callbacks}
-          candidate={
-            draft.drawing.active.idx > -1 ? undefined : draft.cursor.coords
-          }
-          style={{ cursor }}
+          candidate={draft.drawing.active.idx > -1 ? undefined : cursor.coords}
+          style={{ cursor: cursorStyle }}
         />
       ) : draft.drawing.mode === "boxes" ? (
         <AlignedBox
           color="red"
           box={draft.drawing.active.region}
-          candidate={
-            draft.drawing.active.idx > -1 ? undefined : draft.cursor.coords
-          }
-          style={{ cursor }}
+          candidate={draft.drawing.active.idx > -1 ? undefined : cursor.coords}
+          style={{ cursor: cursorStyle }}
           {...callbacks}
         />
       ) : draft.drawing.mode === "masks" ? (
@@ -121,22 +119,22 @@ const RegionList: React.FC<RegionListProps> = ({
           color="red"
           {...callbacks}
           bitmap={draft.drawing.active.region.map}
-          style={{ cursor }}
+          style={{ cursor: cursorStyle }}
         />
       ) : null}
-      {draft.cursor.coords && cursor !== undefined ? (
+      {cursor.coords && cursor !== undefined ? (
         <RegionCursor
           {...callbacks}
-          radius={draft.drawing.mode === "masks" ? draft.cursor.radius : 5}
-          x={draft.cursor.coords.x}
-          y={draft.cursor.coords.y}
+          radius={draft.drawing.mode === "masks" ? cursor.radius : 5}
+          x={cursor.coords.x}
+          y={cursor.coords.y}
           crosshair={
             draft.drawing.mode === "masks"
               ? false
               : draft.drawing.mode === "boxes"
               ? true
               : isPolygonClosed(
-                  draft.cursor.coords,
+                  cursor.coords,
                   draft.drawing.active?.region?.points
                 )
               ? false

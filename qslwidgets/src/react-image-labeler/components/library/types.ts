@@ -112,7 +112,6 @@ export interface Labels {
 }
 
 export interface DraftState {
-  cursor: CursorData;
   labels: DraftLabels;
   dirty: boolean;
   canvas: CanvasData | null;

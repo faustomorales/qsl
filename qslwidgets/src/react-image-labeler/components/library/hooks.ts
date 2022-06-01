@@ -9,6 +9,7 @@ import {
   TimestampedLabel,
   MediaRefs,
   MediaLoadState,
+  CursorData,
 } from "./types";
 import { useTheme, useMediaQuery } from "@mui/material";
 import { labels2draft } from "./utils";
@@ -244,14 +245,14 @@ export const useDraftLabelState = (
     labels: labels2draft(labels || {}),
     dirty: false,
     canvas: null,
-    cursor: {
-      radius: 5,
-      threshold: 1,
-      coords: undefined,
-    },
     drawing: {
       mode: "boxes",
     },
+  });
+  const [cursor, setCursor] = React.useState<CursorData>({
+    radius: 5,
+    threshold: 1,
+    coords: undefined,
   });
   const resetDraft = React.useCallback(
     () =>
@@ -275,12 +276,14 @@ export const useDraftLabelState = (
   React.useEffect(() => {
     resetDraft();
   }, [labels].concat(deps || []));
-  return { draft, setDraft, resetDraft };
+  return { cursor, setCursor, draft, setDraft, resetDraft };
 };
 
 export const useMediaMouseCallbacks = (
   draft: DraftState,
   setDraft: (draft: DraftState) => void,
+  cursor: CursorData,
+  setCursor: (cursor: CursorData) => void,
   refs: MediaRefs,
   showCursor: boolean,
   maxCanvasSize?: number
@@ -300,6 +303,7 @@ export const useMediaMouseCallbacks = (
           setDraft(
             handleMediaClick(
               draft,
+              cursor,
               point,
               refs,
               event.altKey,
@@ -313,7 +317,7 @@ export const useMediaMouseCallbacks = (
         }
       },
       refs.source,
-      [draft]
+      [draft, cursor]
     ),
     onMouseMove: useMediaEvent(
       (coords) => {
@@ -323,20 +327,15 @@ export const useMediaMouseCallbacks = (
             "--media-viewer-scale"
           ) || "1"
         );
-        setDraft({
-          ...draft,
-          cursor: snapPolygonCoords(
-            { ...draft.cursor, coords },
-            draft.drawing,
-            {
-              width: refs.source.current.clientWidth * mediaViewerScale,
-              height: refs.source.current.clientHeight * mediaViewerScale,
-            }
-          ),
-        });
+        setCursor(
+          snapPolygonCoords({ ...cursor, coords }, draft.drawing, {
+            width: refs.source.current.clientWidth * mediaViewerScale,
+            height: refs.source.current.clientHeight * mediaViewerScale,
+          })
+        );
       },
       refs.source,
-      [draft],
+      [draft, cursor],
       0
     ),
   };

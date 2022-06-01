@@ -21,8 +21,8 @@ interface LabelPanelEntryProps {
   config: LabelConfig;
   disabled?: boolean;
   selected?: string[];
-  setSelected: (selected: string[]) => void;
-  editConfig?: () => void;
+  setSelected: (name: string, selected: string[]) => void;
+  editConfig?: (name: string) => void;
 }
 
 const StyledBox = styled(Box)`
@@ -73,7 +73,11 @@ const LabelPanelEntry: React.FC<LabelPanelEntryProps> = ({
     [availableOptions]
   );
   const toggleSelected = React.useCallback(
-    (o) => setSelected(processSelectionChange(o, selected, config.multiple)),
+    (o) =>
+      setSelected(
+        config.name,
+        processSelectionChange(o, selected, config.multiple)
+      ),
     [selected, config, setSelected]
   );
   useKeyboardEvent(
@@ -101,10 +105,7 @@ const LabelPanelEntry: React.FC<LabelPanelEntryProps> = ({
     [keyIndexMap, ref, setFocus]
   );
   const [state, setState] = React.useState({
-    freeform:
-      availableOptions || config.multiple || !config.freeform || !selected
-        ? ""
-        : selected[0],
+    freeform: "",
   });
   React.useEffect(
     () =>
@@ -132,7 +133,7 @@ const LabelPanelEntry: React.FC<LabelPanelEntryProps> = ({
             <IconButton
               aria-label={`edit ${config.name}`}
               className="edit-label-entry"
-              onClick={editConfig}
+              onClick={() => editConfig(config.name)}
             >
               <Edit />
             </IconButton>

@@ -462,7 +462,10 @@ class BaseMediaLabeler:
                 if len(preload) == self.maxPreload:
                     break
             self.preload = preload
+        progress_before = self.progress
         self.update_progress()
+        if self.progress == 100 and progress_before < 100:
+            self.message = "All items have been labeled."
 
     def update_progress(self):
         self.progress = (

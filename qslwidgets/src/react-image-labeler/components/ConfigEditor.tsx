@@ -134,7 +134,9 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
             }}
           />
           <LabelPanelEntry
-            setSelected={(properties) => setState({ ...state, properties })}
+            setSelected={(name, properties) =>
+              setState({ ...state, properties })
+            }
             selected={state.properties}
             config={{
               options: [
@@ -147,7 +149,7 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
             }}
           />
           <LabelPanelEntry
-            setSelected={(options) => setState({ ...state, options })}
+            setSelected={(name, options) => setState({ ...state, options })}
             selected={state.options}
             config={{
               options: [],
@@ -194,7 +196,7 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
             <Box sx={{ ml: -3, mr: -3, mt: 1, mb: -3 }}>
               <LabelPanelEntry
                 selected={state.mockSelected}
-                setSelected={(selected) =>
+                setSelected={(name, selected) =>
                   setState({ ...state, mockSelected: selected })
                 }
                 config={{

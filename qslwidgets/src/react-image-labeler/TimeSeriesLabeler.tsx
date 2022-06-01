@@ -3,8 +3,9 @@ import MediaViewer from "./components/MediaViewer";
 import TimeSeries from "./components/TimeSeries";
 import ControlMenu from "./components/ControlMenu";
 import LabelerLayout from "./components/LabelerLayout";
+import { Box } from "@mui/material";
 import { draft2labels } from "./components/library/utils";
-import { useDraftLabelState } from "./components/library/hooks";
+import { useDraftLabelState, useMediaEvent } from "./components/library/hooks";
 import { processSelectionChange } from "./components/library/handlers";
 import { TimeSeriesLabelerProps } from "./components/library/types";
 
@@ -16,7 +17,22 @@ const TimeSeriesLabeler: React.FC<TimeSeriesLabelerProps> = ({
   callbacks,
   metadata,
 }) => {
-  const { draft, setDraft, resetDraft } = useDraftLabelState(labels, [target]);
+  const ref = React.useRef<HTMLDivElement>(null);
+  const { draft, setDraft, resetDraft, cursor, setCursor } = useDraftLabelState(
+    labels,
+    [target]
+  );
+  const onMouseMove = useMediaEvent(
+    (coords) => {
+      setCursor({ ...cursor, coords });
+    },
+    ref,
+    [cursor]
+  );
+  const onMouseLeave = React.useCallback(
+    () => setCursor({ ...cursor, coords: undefined }),
+    [cursor]
+  );
   const save = React.useCallback(
     () =>
       callbacks?.onSave
@@ -68,7 +84,9 @@ const TimeSeriesLabeler: React.FC<TimeSeriesLabelerProps> = ({
       layout={"vertical"}
       control={
         <ControlMenu
+          cursor={cursor}
           config={{ image: config.image || [] }}
+          setCursor={setCursor}
           allowRegion={false}
           disabled={false}
           direction={"row"}
@@ -84,13 +102,17 @@ const TimeSeriesLabeler: React.FC<TimeSeriesLabelerProps> = ({
       }
       content={
         <MediaViewer
+          cursor={cursor.coords}
+          onMouseLeave={onMouseLeave}
           media={{
             main: target ? (
-              <TimeSeries
-                target={target}
-                labels={draft.labels}
-                toggle={toggle}
-              />
+              <Box ref={ref} onMouseMove={onMouseMove}>
+                <TimeSeries
+                  target={target}
+                  labels={draft.labels}
+                  toggle={toggle}
+                />
+              </Box>
             ) : undefined,
             mini: target ? (
               <TimeSeries target={target} labels={draft.labels} />

@@ -45,13 +45,13 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
     fastforward: React.useRef<HTMLButtonElement>(null),
     mute: React.useRef<HTMLButtonElement>(null),
   };
-  const { setFocus } = React.useContext(GlobalLabelerContext);
+  const { setFocus, setToast } = React.useContext(GlobalLabelerContext);
   const memoized = React.useMemo(() => labels || [], [labels]);
   const { playbackState, setPlaybackState, toggleMute } = usePlaybackState(
     refs,
     memoized
   );
-  const { draft, setDraft, resetDraft } = useDraftLabelState(
+  const { draft, setDraft, resetDraft, cursor, setCursor } = useDraftLabelState(
     playbackState.labels,
     [playbackState.timestamp]
   );
@@ -62,9 +62,15 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
         case "Spacebar":
         case " ":
           target = !draft.dirty ? "playpause" : null;
+          if (!target) {
+            setToast("Save or reset your labels to continue playback.");
+          }
           break;
         case "ArrowRight":
           target = event.altKey && !draft.dirty ? "fastforward" : null;
+          if (!target) {
+            setToast("Save or reset your labels to continue playback.");
+          }
           break;
         case "m":
           target = event.altKey ? "mute" : null;
@@ -105,10 +111,22 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
   const mediaCallbacks = useMediaMouseCallbacks(
     draft,
     setDraft,
+    cursor,
+    setCursor,
     { source: refs.main, canvas: refs.canvas },
     config.regions && config.regions.length > 0 ? true : false,
     options?.maxCanvasSize
   );
+  const playbackSensitiveMediaCallbacks = React.useMemo(() => {
+    if (playbackState.paused) {
+      return mediaCallbacks;
+    } else {
+      return {
+        onClick: () => setPlaybackState(0),
+        onMouseMove: undefined,
+      };
+    }
+  }, [playbackState.paused, setPlaybackState]);
   const buttons = [
     {
       icon: playbackState.paused ? PlayArrow : Pause,
@@ -149,6 +167,8 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
       progress={options?.progress}
       control={
         <ControlMenu
+          cursor={cursor}
+          setCursor={setCursor}
           config={config}
           disabled={loader.loadState === "loading" || !playbackState.paused}
           direction={
@@ -184,24 +204,22 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
             maxViewHeight={options?.maxViewHeight}
             size={loader.mediaState?.size}
             loadState={loader.loadState}
-            onMouseLeave={() =>
-              setDraft({
-                ...draft,
-                cursor: { ...draft.cursor, coords: undefined },
-              })
-            }
+            cursor={cursor.coords}
+            onMouseLeave={() => setCursor({ ...cursor, coords: undefined })}
             media={{
               main: (
                 <video
                   disablePictureInPicture
                   onLoadedMetadata={loader.callbacks.onLoad}
                   onError={loader.callbacks.onError}
-                  {...mediaCallbacks}
+                  {...playbackSensitiveMediaCallbacks}
                   ref={refs.main}
                   src={loader.src}
                   style={{
                     cursor:
-                      config.regions && config.regions.length > 0
+                      config.regions &&
+                      config.regions.length > 0 &&
+                      playbackState.paused
                         ? "none"
                         : undefined,
                   }}
@@ -251,6 +269,7 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
           >
             <RegionList
               config={config}
+              cursor={cursor}
               draft={draft}
               callbacks={mediaCallbacks}
             />

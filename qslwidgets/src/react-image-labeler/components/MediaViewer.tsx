@@ -5,7 +5,12 @@ import GlobalLabelerContext from "./GlobalLabelerContext";
 import ClickTarget from "./ClickTarget";
 import { Dimensions, Point, MediaLoadState } from "./library/types";
 import { pct2css } from "./library/utils";
-import { useInterval, useMediaEvent } from "./library/hooks";
+import {
+  useInterval,
+  useMediaEvent,
+  convertCoordinates,
+} from "./library/hooks";
+import { useGesture } from "@use-gesture/react";
 
 const MAP_SIZE = 96;
 
@@ -18,7 +23,8 @@ const MediaViewerBox = styled(Box)`
     visibility: hidden;
   }
 
-  & .viewport img .viewport video {
+  & .viewport img,
+  .viewport video {
     vertical-align: bottom;
   }
 
@@ -31,6 +37,11 @@ const MediaViewerBox = styled(Box)`
     max-width: none;
     max-height: none;
     image-rendering: pixelated;
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
   }
 `;
 
@@ -69,6 +80,7 @@ const MediaViewer: React.FC<
     minimapSize: { width: MAP_SIZE, height: MAP_SIZE },
     zoomInitialized: false,
   });
+  const [dragging, setDragging] = React.useState(false);
   const [maxViewWidth, setMaxViewWidth] = React.useState(maxViewHeight);
   React.useEffect(() => {
     if (loadState === "loading") {
@@ -144,10 +156,17 @@ const MediaViewer: React.FC<
     [setFocus, state, viewportSize, zoomedSize]
   );
   const onImageScroll = React.useCallback(
-    (event: WheelEvent) => {
+    (event: {
+      deltaX: number;
+      deltaY: number;
+      ctrlKey: boolean;
+      preventDefault?: () => void;
+      stopPropagation?: () => void;
+      cursor?: Point;
+    }) => {
       if (!size) return;
-      event.preventDefault();
-      event.stopPropagation();
+      event.preventDefault ? event.preventDefault() : null;
+      event.stopPropagation ? event.stopPropagation() : null;
       if (!event.ctrlKey) {
         setState({
           ...state,
@@ -163,19 +182,20 @@ const MediaViewer: React.FC<
           },
         });
       } else {
+        const center = event.cursor || cursor;
         const newZoom = Math.max(
           state.zoom - event.deltaY / (2 * 100),
           10 / Math.min(size.width, size.height)
         );
         let newPos: Point;
-        if (cursor) {
+        if (center) {
           newPos = {
             x: Math.max(
-              cursor.x - (state.zoom * (cursor.x - state.pos.x)) / newZoom,
+              center.x - (state.zoom * (center.x - state.pos.x)) / newZoom,
               0
             ),
             y: Math.max(
-              cursor.y - (state.zoom * (cursor.y - state.pos.y)) / newZoom,
+              center.y - (state.zoom * (center.y - state.pos.y)) / newZoom,
               0
             ),
           };
@@ -193,6 +213,39 @@ const MediaViewer: React.FC<
     },
     [state, cursor, size]
   );
+  const bind = useGesture({
+    onDrag: ({ delta: [deltaX, deltaY] }) => {
+      if (deltaX !== 0 || deltaY !== 0) {
+        onImageScroll({
+          deltaX: -deltaX,
+          deltaY: -deltaY,
+          ctrlKey: false,
+        });
+        setDragging(true);
+      }
+    },
+    onDragEnd: () => setTimeout(() => setDragging(false), 250),
+    onPinch: (event) => {
+      if (event.memo && event.memo > 0 && zoomedSize) {
+        const cursor = convertCoordinates(
+          {
+            x: event.origin[0] + window.scrollX,
+            y: event.origin[1] + window.scrollY,
+          },
+          refs.media.current
+        );
+        onImageScroll({
+          deltaX: 0,
+          deltaY: event.memo - event.da[0],
+          ctrlKey: true,
+          cursor,
+        });
+      }
+      return event.last ? -1 : event.da[0];
+    },
+  });
+  // Do this instead of onWheel in order to
+  // make it non-passive.
   React.useEffect(() => {
     if (!refs.media.current) return;
     refs.media.current.addEventListener("wheel", onImageScroll, {
@@ -233,6 +286,7 @@ const MediaViewer: React.FC<
           <Box
             className="media"
             ref={refs.media}
+            {...bind()}
             onMouseLeave={loadState == "loaded" ? onMouseLeave : undefined}
             style={
               loadState === "loaded"
@@ -241,8 +295,10 @@ const MediaViewer: React.FC<
                     transform: `scale(${state.zoom}) translate(${pct2css(
                       -state.pos.x
                     )}, ${pct2css(-state.pos.y)})`,
+                    "--media-viewer-dragging": dragging ? 1 : 0,
                     transformOrigin: "0 0",
                     position: "absolute",
+                    touchAction: "none",
                   } as React.CSSProperties)
                 : { width: 0, height: 0, overflow: "hidden" }
             }

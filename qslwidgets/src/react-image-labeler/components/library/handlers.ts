@@ -32,6 +32,14 @@ export const handleMediaClick = (
       "--media-viewer-scale"
     ) || "1"
   );
+  const mediaViewerDragging = parseFloat(
+    getComputedStyle(refs.source.current).getPropertyValue(
+      "--media-viewer-dragging"
+    ) || "0"
+  );
+  if (mediaViewerDragging == 1) {
+    return draft;
+  }
   if (drawing.active && drawing.active.idx > -1) {
     // We have selected a pre-existing label and the user has
     // re-clicked. This results in de-selection.

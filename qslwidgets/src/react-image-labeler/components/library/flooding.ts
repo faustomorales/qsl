@@ -166,8 +166,8 @@ const img2hsv = (
       width: canvas.width,
       height: canvas.height,
     };
-  } catch {
-    console.error("Failed to load image, likely due to CORS issues.");
+  } catch (e) {
+    console.error(`Failed to load image, likely due to CORS issues: ${e}.`);
     return { width: canvas.width, height: canvas.height };
   }
 };

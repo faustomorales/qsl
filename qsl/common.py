@@ -153,7 +153,7 @@ class BaseMediaLabeler:
         self.batchSize = batchSize
         self.maxPreload = 3
         self.mediaIndex = self.get_media_index()
-        self.progress = self.update_progress()
+        self.update_progress()
         self.update(True)
 
     def get_temporary_directory(self):
@@ -218,15 +218,17 @@ class BaseMediaLabeler:
                     else "time series"
                     if ttype == "time-series"
                     else "",
-                    "labeled": "Yes" if labels else "No",
+                    "labeled": "Yes" if labels or ignored else "No",
+                    "ignored": "Yes" if ignored else "No",
                 }
-                for index, (target, metadata, labels, ttype) in enumerate(
+                for index, (target, metadata, labels, ttype, ignored) in enumerate(
                     [
                         (
                             item.get("target"),
                             item.get("metadata", {}),
                             item.get("labels", {}),
                             item.get("type", "image"),
+                            item.get("ignore", False),
                         )
                         for item in self.items
                     ]
@@ -240,13 +242,14 @@ class BaseMediaLabeler:
                     "headerName": "Target",
                 },
                 {"field": "labeled", "type": "string", "headerName": "Labeled"},
+                {"field": "ignored", "type": "string", "headerName": "Ignored"},
             ]
             + [{"field": k, "type": "string", "flex": 1} for k in metadata_keys],
         }
 
     def set_buttons(self):
         self.buttons = {
-            "prev": self.idx != self.sortedIdxs,
+            "prev": self.idx != self.sortedIdxs[0],
             "next": (
                 all(t["labeled"] or t["ignored"] for t in self.targets)
                 and self.targets[-1]["idx"] != self.sortedIdxs[-1]
@@ -275,15 +278,15 @@ class BaseMediaLabeler:
     def prev(self):
         sidx = self.sortedIdxs.index(self.idx)
         if sidx > 0:
-            includes_video = False
+            includes_nonimage = False
             for count, sidx in enumerate(
                 range(sidx - 1, max(0, sidx - self.batchSize) - 1, -1)
             ):
-                includes_video = (
-                    includes_video
-                    or self.items[self.sortedIdxs[sidx]].get("type", "image") == "video"
+                includes_nonimage = (
+                    includes_nonimage
+                    or self.items[self.sortedIdxs[sidx]].get("type", "image") != "image"
                 )
-                if count == 0 or not includes_video:
+                if count == 0 or not includes_nonimage:
                     # We can always include at least one.
                     continue
                 # We've hit a video in a batch. Do not allow this.
@@ -294,19 +297,19 @@ class BaseMediaLabeler:
 
     @property
     def idxs(self):
-        includes_video = False
+        includes_nonimage = False
         sidx_initial = self.sortedIdxs.index(self.idx)
         for count, sidx in enumerate(
             range(sidx_initial, min(sidx_initial + self.batchSize, len(self.items)))
         ):
-            includes_video = (
-                includes_video
-                or self.items[self.sortedIdxs[sidx]].get("type", "image") == "video"
+            includes_nonimage = (
+                includes_nonimage
+                or self.items[self.sortedIdxs[sidx]].get("type", "image") != "image"
             )
             if count == 0:
                 # We can always include at least one.
                 yield self.sortedIdxs[sidx]
-            elif not includes_video:
+            elif not includes_nonimage:
                 # We can include an arbitrary number of non-videos.
                 yield self.sortedIdxs[sidx]
             else:

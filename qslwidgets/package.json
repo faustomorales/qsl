@@ -1,6 +1,6 @@
 {
   "name": "qslwidgets",
-  "version": "0.0.30",
+  "version": "0.0.31",
   "description": "Widgets for the QSL image labeling package.",
   "keywords": [
     "jupyter",
@@ -58,6 +58,7 @@
     "@mui/icons-material": "^5.6.1",
     "@mui/material": "^5.6.1",
     "@mui/x-data-grid": "^5.11.0",
+    "@use-gesture/react": "^10.2.15",
     "lodash.debounce": "^4.0.8",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",

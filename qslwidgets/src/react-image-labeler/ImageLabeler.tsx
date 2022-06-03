@@ -116,6 +116,7 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
                     ref={refs.source}
                     onLoad={loader.callbacks.onLoad}
                     onError={loader.callbacks.onError}
+                    draggable={false}
                     src={loader.src}
                     style={{
                       cursor:
@@ -138,7 +139,9 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
               />
             </MediaViewer>
           </Box>
-          <canvas style={{ display: "none" }} ref={refs.canvas} />
+          {loader.loadState !== "loading" ? (
+            <canvas style={{ display: "none" }} ref={refs.canvas} />
+          ) : null}
           {loader.loadState !== "loading" && preload ? (
             <ImagePreloader images={preload} />
           ) : null}

@@ -104,14 +104,14 @@ const RegionList: React.FC<RegionListProps> = ({
           polygon={draft.drawing.active.region}
           {...callbacks}
           candidate={draft.drawing.active.idx > -1 ? undefined : cursor.coords}
-          style={{ cursor: cursorStyle }}
+          style={{ cursor: cursorStyle, pointerEvents: "none" }}
         />
       ) : draft.drawing.mode === "boxes" ? (
         <AlignedBox
           color="red"
           box={draft.drawing.active.region}
           candidate={draft.drawing.active.idx > -1 ? undefined : cursor.coords}
-          style={{ cursor: cursorStyle }}
+          style={{ cursor: cursorStyle, pointerEvents: "none" }}
           {...callbacks}
         />
       ) : draft.drawing.mode === "masks" ? (
@@ -119,7 +119,7 @@ const RegionList: React.FC<RegionListProps> = ({
           color="red"
           {...callbacks}
           bitmap={draft.drawing.active.region.map}
-          style={{ cursor: cursorStyle }}
+          style={{ cursor: cursorStyle, pointerEvents: "none" }}
         />
       ) : null}
       {cursor.coords && cursor !== undefined ? (

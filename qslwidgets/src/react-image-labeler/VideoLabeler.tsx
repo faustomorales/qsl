@@ -68,7 +68,7 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
           break;
         case "ArrowRight":
           target = event.altKey && !draft.dirty ? "fastforward" : null;
-          if (!target) {
+          if (!target && event.altKey) {
             setToast("Save or reset your labels to continue playback.");
           }
           break;

@@ -1,7 +1,8 @@
 import React from "react";
-import { Snackbar, Box } from "@mui/material";
+import { Snackbar, Box, IconButton } from "@mui/material";
 import HiddenInput from "./components/HiddenInput";
 import GlobalLabelerContext from "./components/GlobalLabelerContext";
+import CloseIcon from "@mui/icons-material/Close";
 import { useInterval } from "./components/library/hooks";
 
 const Labeler: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
@@ -32,6 +33,7 @@ const Labeler: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
     true,
     [refs, hasFocus]
   );
+  const handleClose = () => setToast("");
   return (
     <GlobalLabelerContext.Provider
       value={{ container: refs.container, setToast, setFocus, hasFocus }}
@@ -53,7 +55,19 @@ const Labeler: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
             anchorOrigin={{ horizontal: "center", vertical: "top" }}
             open={toast !== ""}
             autoHideDuration={3000}
-            onClose={() => setToast("")}
+            action={
+              <React.Fragment>
+                <IconButton
+                  size="small"
+                  aria-label="close"
+                  color="inherit"
+                  onClick={handleClose}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </React.Fragment>
+            }
+            onClose={handleClose}
             message={toast}
           />
         </Box>

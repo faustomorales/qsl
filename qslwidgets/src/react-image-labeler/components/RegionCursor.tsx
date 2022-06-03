@@ -1,6 +1,8 @@
 import React from "react";
 import { pct2css } from "./library/utils";
 
+const BORDER_THICKNESS = 2;
+
 const RegionCursor: React.FC<
   {
     radius: number;
@@ -18,14 +20,17 @@ const RegionCursor: React.FC<
         ...(other.style || {}),
         height: `${radius * 2}px`,
         width: `${radius * 2}px`,
+        boxSizing: "content-box",
         // Sort this out later after implementing
         // the calculations for radial search in fill()
-        borderRadius: round ? `${radius}px` : undefined,
-        transform: `translate(${-radius}px, ${-radius}px) scale(calc(1/var(--media-viewer-scale, 1)))`,
+        borderRadius: round ? `${radius + BORDER_THICKNESS}px` : undefined,
+        transform: `translate(${-radius - BORDER_THICKNESS}px, ${
+          -radius - BORDER_THICKNESS
+        }px) scale(calc(1/var(--media-viewer-scale, 1)))`,
         left: pct2css(x),
         top: pct2css(y),
         position: "absolute",
-        outline: "2px solid red",
+        border: `${BORDER_THICKNESS}px solid red`,
         cursor: "none",
         overflow: "visible",
         pointerEvents: "none",
@@ -35,10 +40,10 @@ const RegionCursor: React.FC<
         <svg
           style={{
             position: "absolute",
-            left: 0,
-            top: 0,
-            height: "100%",
-            width: "100%",
+            left: "-10%",
+            top: "-10%",
+            height: "120%",
+            width: "120%",
             overflow: "visible",
             pointerEvents: "none",
           }}

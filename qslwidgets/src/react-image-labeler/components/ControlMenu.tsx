@@ -10,7 +10,6 @@ import {
   ButtonGroup,
   FormControlLabel,
   Checkbox,
-  Snackbar,
   RadioGroup,
   useTheme,
 } from "@mui/material";
@@ -121,8 +120,8 @@ const ControlMenu: React.FC<{
     configEditorOpen: false,
     index: null as number | null,
   });
-  const [error, setError] = React.useState("");
-  const { setFocus, hasFocus } = React.useContext(GlobalLabelerContext);
+  const { setFocus, hasFocus, setToast } =
+    React.useContext(GlobalLabelerContext);
   const finishPolygon = React.useCallback(
     (save) =>
       setDraft({
@@ -164,18 +163,20 @@ const ControlMenu: React.FC<{
           break;
         case "ArrowRight":
           target = event.ctrlKey || event.shiftKey ? null : "next";
-          if (draft.dirty && callbacks.onNext) {
-            setError(
-              "Please save or reset your changes before advancing to next image."
+          if (draft.dirty) {
+            setToast(
+              "Please save or reset your changes before advancing to next item."
             );
+            target = null;
           }
           break;
         case "ArrowLeft":
           target = "prev";
-          if (draft.dirty && callbacks.onPrev) {
-            setError(
-              "Please save or reset your changes before returning to previous image."
+          if (draft.dirty) {
+            setToast(
+              "Please save or reset your changes before returning to previous item."
             );
+            target = null;
           }
           break;
         case "Enter":
@@ -236,12 +237,6 @@ const ControlMenu: React.FC<{
   return (
     <Box>
       <ClickTarget />
-      <Snackbar
-        open={error !== ""}
-        autoHideDuration={3000}
-        onClose={() => setError("")}
-        message={error}
-      />
       <LabelPanel
         config={computedState.activeConfig}
         disabled={computedState.disableLabelPanel}

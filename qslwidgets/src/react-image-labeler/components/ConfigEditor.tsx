@@ -100,13 +100,15 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
         </Typography>
         <Box ml={-3} mr={-3}>
           <LabelPanelEntry
-            setSelected={([name]) => setState({ ...state, name })}
+            setSelected={(_, [name]) => setState({ ...state, name })}
             selected={[state.name]}
             disabled={!!existing}
             config={{ multiple: false, freeform: true, name: "Name" }}
           />
           <LabelPanelEntry
-            setSelected={([displayName]) => setState({ ...state, displayName })}
+            setSelected={(_, [displayName]) =>
+              setState({ ...state, displayName })
+            }
             selected={[state.displayName]}
             disabled={!!existing}
             config={{ multiple: false, freeform: true, name: "Display Name" }}
@@ -114,7 +116,7 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
           <Divider sx={{ mb: 2 }} />
           <LabelPanelEntry
             disabled={!!existing}
-            setSelected={([level]) =>
+            setSelected={(_, [level]) =>
               setState({
                 ...state,
                 level: (level as "image" | "regions") || state.level,
@@ -134,9 +136,7 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
             }}
           />
           <LabelPanelEntry
-            setSelected={(name, properties) =>
-              setState({ ...state, properties })
-            }
+            setSelected={(_, properties) => setState({ ...state, properties })}
             selected={state.properties}
             config={{
               options: [
@@ -149,7 +149,7 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
             }}
           />
           <LabelPanelEntry
-            setSelected={(name, options) => setState({ ...state, options })}
+            setSelected={(_, options) => setState({ ...state, options })}
             selected={state.options}
             config={{
               options: [],
@@ -196,7 +196,7 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
             <Box sx={{ ml: -3, mr: -3, mt: 1, mb: -3 }}>
               <LabelPanelEntry
                 selected={state.mockSelected}
-                setSelected={(name, selected) =>
+                setSelected={(_, selected) =>
                   setState({ ...state, mockSelected: selected })
                 }
                 config={{

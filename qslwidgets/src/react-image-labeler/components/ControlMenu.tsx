@@ -543,7 +543,7 @@ const ControlMenu: React.FC<{
           />
         </Box>
       </Stack>
-      {callbacks && callbacks.onSaveConfig ? (
+      {callbacks && callbacks.onSaveConfig && state.configEditorOpen ? (
         <ConfigEditor
           allowRegion={allowRegion}
           open={state.configEditorOpen}
@@ -565,7 +565,7 @@ const ControlMenu: React.FC<{
             ) {
               throw "User attempted to add a config with the name of an existing config.";
             }
-            const previous = computedState.activeConfig;
+            const previous = computedState.config[level];
             const index = state.index === null ? previous.length : state.index;
             callbacks.onSaveConfig!({
               ...computedState.config,

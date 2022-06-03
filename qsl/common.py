@@ -153,6 +153,7 @@ class BaseMediaLabeler:
         self.batchSize = batchSize
         self.maxPreload = 3
         self.mediaIndex = self.get_media_index()
+        self.progress = self.update_progress()
         self.update(True)
 
     def get_temporary_directory(self):

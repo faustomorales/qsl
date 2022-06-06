@@ -213,37 +213,44 @@ const MediaViewer: React.FC<
     },
     [state, cursor, size]
   );
-  const bind = useGesture({
-    onDrag: ({ delta: [deltaX, deltaY] }) => {
-      if (deltaX !== 0 || deltaY !== 0) {
-        onImageScroll({
-          deltaX: -deltaX,
-          deltaY: -deltaY,
-          ctrlKey: false,
-        });
-        setDragging(true);
-      }
+  const bind = useGesture(
+    {
+      onDrag: ({ delta: [deltaX, deltaY] }) => {
+        if (deltaX !== 0 || deltaY !== 0) {
+          onImageScroll({
+            deltaX: -deltaX,
+            deltaY: -deltaY,
+            ctrlKey: false,
+          });
+          setDragging(true);
+        }
+      },
+      onDragEnd: () => setTimeout(() => setDragging(false), 250),
+      onPinch: (event) => {
+        if (event.memo && event.memo > 0 && zoomedSize) {
+          const cursor = convertCoordinates(
+            {
+              x: event.origin[0] + window.scrollX,
+              y: event.origin[1] + window.scrollY,
+            },
+            refs.media.current
+          );
+          onImageScroll({
+            deltaX: 0,
+            deltaY: event.memo - event.da[0],
+            ctrlKey: true,
+            cursor,
+          });
+        }
+        return event.last ? -1 : event.da[0];
+      },
     },
-    onDragEnd: () => setTimeout(() => setDragging(false), 250),
-    onPinch: (event) => {
-      if (event.memo && event.memo > 0 && zoomedSize) {
-        const cursor = convertCoordinates(
-          {
-            x: event.origin[0] + window.scrollX,
-            y: event.origin[1] + window.scrollY,
-          },
-          refs.media.current
-        );
-        onImageScroll({
-          deltaX: 0,
-          deltaY: event.memo - event.da[0],
-          ctrlKey: true,
-          cursor,
-        });
-      }
-      return event.last ? -1 : event.da[0];
-    },
-  });
+    {
+      drag: {
+        preventDefault: true,
+      },
+    }
+  );
   // Do this instead of onWheel in order to
   // make it non-passive.
   React.useEffect(() => {

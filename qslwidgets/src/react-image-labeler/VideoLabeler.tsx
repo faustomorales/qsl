@@ -274,7 +274,9 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
               callbacks={mediaCallbacks}
             />
           </MediaViewer>
-          <canvas style={{ display: "none" }} ref={refs.canvas} />
+          {loader.loadState !== "loading" ? (
+            <canvas style={{ display: "none" }} ref={refs.canvas} />
+          ) : null}
         </Box>
       }
     />

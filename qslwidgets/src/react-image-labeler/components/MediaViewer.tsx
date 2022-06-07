@@ -116,44 +116,44 @@ const MediaViewer: React.FC<
     true,
     [maxViewWidth]
   );
-  const zoomedSize = React.useMemo(() => {
+  const contentSizes = React.useMemo(() => {
     if (!size) {
       return;
     }
-    return {
+    const zoomed = {
       width: state.zoom * size.width,
       height: state.zoom * size.height,
     };
-  }, [state.zoom]);
-  const viewportSize = React.useMemo(() => {
-    if (!zoomedSize) {
-      return;
-    }
-    return {
-      width: Math.min(maxViewWidth, zoomedSize.width),
-      height: Math.min(maxViewHeight, zoomedSize.height),
+    const viewport = {
+      width: Math.min(maxViewWidth, zoomed.width),
+      height: Math.min(maxViewHeight, zoomed.height),
     };
-  }, [maxViewWidth, maxViewHeight, zoomedSize]);
+    return {
+      raw: size,
+      zoomed,
+      viewport,
+      margin: {
+        width: viewport.width / zoomed.width / 2,
+        height: viewport.height / zoomed.height / 2,
+      },
+    };
+  }, [size, maxViewWidth, maxViewHeight, state.zoom]);
   const onMapClick = useMediaEvent(
     (point) => {
       setFocus();
-      if (!zoomedSize || !viewportSize) {
-        throw "Failed to process minimap position.";
+      if (!contentSizes) {
+        throw `Failed to process minimap position.`;
       }
-      const margin = {
-        x: viewportSize.width / zoomedSize.width / 2,
-        y: viewportSize.height / zoomedSize.height / 2,
-      };
       setState({
         ...state,
         pos: {
-          x: Math.max(point.x - margin.x, 0),
-          y: Math.max(point.y - margin.y, 0),
+          x: Math.max(point.x - contentSizes.margin.width, 0),
+          y: Math.max(point.y - contentSizes.margin.height, 0),
         },
       });
     },
     refs.minimap,
-    [setFocus, state, viewportSize, zoomedSize]
+    [setFocus, state, contentSizes]
   );
   const onImageScroll = React.useCallback(
     (event: {
@@ -164,7 +164,7 @@ const MediaViewer: React.FC<
       stopPropagation?: () => void;
       cursor?: Point;
     }) => {
-      if (!size) return;
+      if (!contentSizes) return;
       event.preventDefault ? event.preventDefault() : null;
       event.stopPropagation ? event.stopPropagation() : null;
       if (!event.ctrlKey) {
@@ -172,11 +172,11 @@ const MediaViewer: React.FC<
           ...state,
           pos: {
             x: Math.max(
-              state.pos.x + event.deltaX / (size.width * state.zoom),
+              state.pos.x + event.deltaX / contentSizes.zoomed.width,
               0
             ),
             y: Math.max(
-              state.pos.y + event.deltaY / (size.height * state.zoom),
+              state.pos.y + event.deltaY / contentSizes.zoomed.height,
               0
             ),
           },
@@ -185,7 +185,7 @@ const MediaViewer: React.FC<
         const center = event.cursor || cursor;
         const newZoom = Math.max(
           state.zoom - event.deltaY / (2 * 100),
-          10 / Math.min(size.width, size.height)
+          10 / Math.min(contentSizes.raw.width, contentSizes.raw.height)
         );
         let newPos: Point;
         if (center) {
@@ -211,7 +211,7 @@ const MediaViewer: React.FC<
       setFocus();
       return false;
     },
-    [state, cursor, size]
+    [state, cursor, contentSizes]
   );
   const bind = useGesture(
     {
@@ -227,7 +227,7 @@ const MediaViewer: React.FC<
       },
       onDragEnd: () => setTimeout(() => setDragging(false), 250),
       onPinch: (event) => {
-        if (event.memo && event.memo > 0 && zoomedSize) {
+        if (event.memo && event.memo > 0 && contentSizes) {
           const cursor = convertCoordinates(
             {
               x: event.origin[0] + window.scrollX,
@@ -273,7 +273,7 @@ const MediaViewer: React.FC<
             overflow: "hidden",
             height: Math.min(
               maxViewHeight,
-              zoomedSize?.height || maxViewHeight
+              contentSizes?.zoomed.height || maxViewHeight
             ),
           }}
           ref={refs.viewport}
@@ -345,7 +345,7 @@ const MediaViewer: React.FC<
                 {media.mini}
               </div>
               {children}
-              {viewportSize && zoomedSize ? (
+              {contentSizes ? (
                 <div
                   style={{
                     outline: "2px solid red",
@@ -356,13 +356,15 @@ const MediaViewer: React.FC<
                     width: pct2css(
                       Math.min(
                         1 - state.pos.x,
-                        viewportSize.width / zoomedSize.width
+                        contentSizes.viewport.width /
+                          contentSizes.viewport.width
                       )
                     ),
                     height: pct2css(
                       Math.min(
                         1 - state.pos.y,
-                        viewportSize.height / zoomedSize.height
+                        contentSizes.viewport.height /
+                          contentSizes.viewport.height
                       )
                     ),
                   }}

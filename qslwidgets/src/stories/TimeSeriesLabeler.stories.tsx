@@ -18,7 +18,9 @@ export const BasicUsage: React.FC = () => {
             { name: "uvs", freeform: true, multiple: true },
           ],
         }}
+        metadata={{ foo: "bar" }}
         target={{
+          filename: "chart",
           plots: [
             {
               x: { name: "name", values: base.map((i) => i) },

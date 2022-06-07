@@ -181,6 +181,7 @@ export type MediaRefs = {
 type AxisDomainDefinition = ["dataMin" | number, "dataMax" | number];
 
 export interface TimeSeriesTarget {
+  filename?: string;
   plots: {
     x: {
       name: string;

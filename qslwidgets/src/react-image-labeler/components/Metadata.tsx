@@ -14,7 +14,12 @@ type MetadataProps = {
 
 const Metadata: React.FC<MetadataProps> = ({ data }) => {
   return (
-    <TableContainer tabIndex={0} component={Paper} sx={{ mb: 0, mt: 0 }}>
+    <TableContainer
+      tabIndex={0}
+      component={Paper}
+      sx={{ mb: 0, mt: 0 }}
+      className="metadata"
+    >
       <Table aria-label="metadata table">
         <TableBody>
           {Object.entries(data).map(([key, value], idx) => (

@@ -47,6 +47,7 @@ interface Callbacks {
   onSelectAll?: () => void;
   onSelectNone?: () => void;
   onShowIndex?: () => void;
+  onDownload?: () => void;
 }
 
 const ControlMenu: React.FC<{
@@ -466,12 +467,14 @@ const ControlMenu: React.FC<{
                   Delete
                 </Button>
               ) : null}
-              <Button
-                disabled={disabled || !draft.dirty}
-                onClick={callbacks?.onReset}
-              >
-                Reset
-              </Button>
+              {callbacks?.onReset ? (
+                <Button disabled={disabled} onClick={callbacks.onReset}>
+                  Reset
+                </Button>
+              ) : null}
+              {callbacks.onDownload ? (
+                <Button onClick={callbacks.onDownload}>Download</Button>
+              ) : null}
             </ButtonGroup>
             {callbacks?.onPrev || callbacks?.onNext || showNavigation ? (
               <ButtonGroup

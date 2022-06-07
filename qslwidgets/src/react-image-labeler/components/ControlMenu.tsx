@@ -467,7 +467,7 @@ const ControlMenu: React.FC<{
                   Delete
                 </Button>
               ) : null}
-              {callbacks?.onReset ? (
+              {callbacks?.onReset && draft.dirty ? (
                 <Button disabled={disabled} onClick={callbacks.onReset}>
                   Reset
                 </Button>

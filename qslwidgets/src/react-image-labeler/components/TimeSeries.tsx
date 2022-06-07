@@ -124,6 +124,8 @@ const TimeSeries: React.FC<{
               x2={a.x2}
               y1={a.y1}
               y2={a.y2}
+              stroke={a.stroke || "black"}
+              strokeDasharray={a.strokeDashArray || "4"}
               className={
                 (labels.image && labels.image[a.labelKey]
                   ? labels.image[a.labelKey]

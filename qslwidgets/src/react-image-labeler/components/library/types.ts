@@ -226,6 +226,8 @@ export interface TimeSeriesTarget {
       x2: number;
       y1?: number;
       y2?: number;
+      stroke?: string;
+      strokeDashArray?: string;
       label: string;
       labelKey: string;
       labelVal: string;

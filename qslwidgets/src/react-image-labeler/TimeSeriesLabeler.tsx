@@ -65,6 +65,7 @@ const TimeSeriesLabeler: React.FC<TimeSeriesLabelerProps> = ({
     (label, value) =>
       setDraft({
         ...draft,
+        dirty: true,
         labels: {
           ...draft.labels,
           image: {

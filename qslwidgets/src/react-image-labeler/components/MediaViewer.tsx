@@ -356,15 +356,14 @@ const MediaViewer: React.FC<
                     width: pct2css(
                       Math.min(
                         1 - state.pos.x,
-                        contentSizes.viewport.width /
-                          contentSizes.viewport.width
+                        contentSizes.viewport.width / contentSizes.zoomed.width
                       )
                     ),
                     height: pct2css(
                       Math.min(
                         1 - state.pos.y,
                         contentSizes.viewport.height /
-                          contentSizes.viewport.height
+                          contentSizes.zoomed.height
                       )
                     ),
                   }}

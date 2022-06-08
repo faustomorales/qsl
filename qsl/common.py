@@ -197,7 +197,7 @@ class BaseMediaLabeler:
             LOGGER.warning(
                 "All items have already been labeled. Starting from beginning."
             )
-            self.idx = 0
+            self.idx = self.sortedIdxs[0]
         else:
             self.idx = self.sortedIdxs[unlabeled]
         self.update(True)

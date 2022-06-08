@@ -67,6 +67,7 @@ def start(jsonpath: str, targets: typing.List[str]):
         ],
         jsonpath=jsonpath,
     )
+    labeler.advance_to_unlabeled()
     eel.start(
         "index.html",
         mode="chrome-app",

@@ -109,7 +109,7 @@ def filepaths_from_patterns(patterns: typing.List[str], s3=None) -> typing.List[
             # We have no way of handling wildcards for HTTP URLs.
             filepaths.append(file_or_pattern)
         else:
-            filepaths.extend(glob.glob(file_or_pattern))
+            filepaths.extend(glob.glob(file_or_pattern, recursive=True))
     return filepaths
 
 

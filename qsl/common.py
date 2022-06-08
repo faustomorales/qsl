@@ -193,7 +193,13 @@ class BaseMediaLabeler:
 
     def advance_to_unlabeled(self):
         unlabeled = next(
-            (idx for idx in self.sortedIdxs if not self.items[idx].get("labels")), None
+            (
+                idx
+                for idx in self.sortedIdxs
+                if not self.items[idx].get("labels")
+                and not self.items[idx].get("ignore")
+            ),
+            None,
         )
         if unlabeled is None:
             LOGGER.warning(

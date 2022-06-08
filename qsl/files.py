@@ -250,5 +250,6 @@ def guess_type(target: typing.Union[str, "np.ndarray"]):
         return "image" if ext in IMAGE_EXTENSIONS else "video"
     if isinstance(target, str) and os.path.isfile(target):
         kind = filetype.guess(target)
-        return "image" if kind.mime.startswith("image") else "video"
+        if kind:
+            return "image" if kind.mime.startswith("image") else "video"
     return "image"

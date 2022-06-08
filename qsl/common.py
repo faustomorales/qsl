@@ -152,7 +152,9 @@ class BaseMediaLabeler:
         self.sortedIdxs = list(range(len(items)))
         self.batchSize = batchSize
         self.maxPreload = 3
+        self.progress = 0
         self.mediaIndex = self.get_media_index()
+        self.advance_to_unlabeled()
         self.update_progress()
         self.update(True)
 

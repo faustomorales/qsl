@@ -252,7 +252,20 @@ class BaseMediaLabeler:
                 {"field": "labeled", "type": "string", "headerName": "Labeled"},
                 {"field": "ignored", "type": "string", "headerName": "Ignored"},
             ]
-            + [{"field": k, "type": "string", "flex": 1} for k in metadata_keys],
+            + [
+                {
+                    "field": k,
+                    "type": "number"
+                    if all(
+                        k not in item.get("metadata", {})
+                        or isinstance(item["metadata"][k], (float, int))
+                        for item in self.items
+                    )
+                    else "string",
+                    "flex": 1,
+                }
+                for k in metadata_keys
+            ],
         }
 
     def set_buttons(self):

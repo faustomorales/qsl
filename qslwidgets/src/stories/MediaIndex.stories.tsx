@@ -1,7 +1,7 @@
 import React from "react";
 import { MediaIndex, Labeler } from "../react-image-labeler";
 
-const grid = {
+const indexState = {
   columns: [
     { field: "id", headerName: "ID", width: 90 },
     {
@@ -32,24 +32,22 @@ const grid = {
     { id: 7, lastName: "Frances", firstName: "Rossini", age: 36 },
     { id: 8, lastName: "Roxie", firstName: "Harvey", age: 65 },
   ],
+  rowCount: 9,
+  page: 1,
+  rowsPerPage: 5,
+  sortModel: []
 };
 
 export const BasicUsage: React.FC = () => {
   const [idx, setIdx] = React.useState(0);
-  const [sortedIdxs, setSortedIdxs] = React.useState(
-    grid.rows.map((r) => r.id)
-  );
   return (
     <Labeler>
       <MediaIndex
-        viewHeight={400}
-        setSortedIdxs={setSortedIdxs}
-        sortedIdxs={sortedIdxs}
-        grid={grid}
+        indexState={indexState}
+        setIndexState={(newIndexState) => console.error("Index state changed.")}
         idx={idx}
         label={setIdx}
         rowKey={"id"}
-        visible={true}
       />
     </Labeler>
   );

@@ -17,7 +17,10 @@ import {
   TimeSeriesLabeler,
 } from "./react-image-labeler";
 import GlobalLabelerContext from "./react-image-labeler/components/GlobalLabelerContext";
-import { TimeSeriesTarget } from "./react-image-labeler/components/library/types";
+import {
+  TimeSeriesTarget,
+  IndexState,
+} from "./react-image-labeler/components/library/types";
 
 interface BaseWidgetState<T, U, V> {
   states: {
@@ -48,11 +51,7 @@ interface BaseWidgetState<T, U, V> {
   maxViewHeight: number;
   idx: number;
   viewState: "transitioning" | "labeling" | "index";
-  sortedIdxs: number[];
-  mediaIndex: {
-    rows: { [key: string]: string | number; qslId: number }[];
-    columns: { field: string; headerName: string; type: "number" | "string" }[];
-  };
+  indexState: IndexState<string>;
   buttons: {
     next: boolean;
     prev: boolean;
@@ -92,8 +91,14 @@ const defaultWidgetState: WidgetState = {
   maxViewHeight: 512 as number,
   idx: 0,
   viewState: "labeling",
-  sortedIdxs: [],
-  mediaIndex: { rows: [], columns: [] },
+  indexState: {
+    rows: [],
+    columns: [],
+    rowsPerPage: 5,
+    rowCount: 0,
+    sortModel: [],
+    page: 1,
+  },
   buttons: {
     next: true,
     prev: true,
@@ -133,12 +138,10 @@ const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
   const buttons = extract("buttons");
   const preload = extract("preload");
   const maxCanvasSize = extract("maxCanvasSize");
-  const maxViewHeight = extract("maxViewHeight");
   const viewState = extract("viewState");
-  const mediaIndex = extract("mediaIndex");
+  const indexState = extract("indexState");
   const idx = extract("idx");
   const message = extract("message");
-  const sortedIdxs = extract("sortedIdxs");
   React.useEffect(() => {
     if (message.value !== "") {
       setToast(message.value);
@@ -155,7 +158,6 @@ const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
       progress: progress.value,
       maxCanvasSize: maxCanvasSize.value,
       showNavigation: true,
-      maxViewHeight: maxViewHeight.value,
     },
     callbacks: {
       onSave: buttons.value.save
@@ -188,17 +190,17 @@ const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
         <Box style={{ padding: 16 }}>
           <Box hidden={viewState.value !== "index"}>
             <MediaIndex
-              grid={mediaIndex.value}
-              setSortedIdxs={sortedIdxs.set}
+              indexState={indexState.value}
+              setIndexState={(newIndexState) => {
+                indexState.set(newIndexState);
+                action.set("index");
+              }}
               rowKey="qslId"
               idx={idx.value}
-              visible={viewState.value === "index"}
-              sortedIdxs={sortedIdxs.value}
               label={(newIdx) => {
                 idx.set(newIdx);
                 action.set("label");
               }}
-              viewHeight={maxViewHeight.value}
             />
           </Box>
           {states.value.length === 0 ||
@@ -265,7 +267,7 @@ const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
 };
 
 const CommonWidget: React.FC<CommonWidgetProps> = (props) => (
-  <Labeler>
+  <Labeler maxViewHeight={props.extract("maxViewHeight").value}>
     <InnerCommonWidget {...props} />
   </Labeler>
 );

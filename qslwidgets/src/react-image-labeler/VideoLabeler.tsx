@@ -201,7 +201,6 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
       content={
         <Box>
           <MediaViewer
-            maxViewHeight={options?.maxViewHeight}
             size={loader.mediaState?.size}
             loadState={loader.loadState}
             cursor={cursor.coords}

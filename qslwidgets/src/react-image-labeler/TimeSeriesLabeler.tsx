@@ -162,7 +162,6 @@ const TimeSeriesLabeler: React.FC<TimeSeriesLabelerProps> = ({
             }}
             size={size}
             loadState={"loaded"}
-            maxViewHeight={options?.maxViewHeight}
           />
         }
       />

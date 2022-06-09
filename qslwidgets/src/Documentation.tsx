@@ -165,7 +165,7 @@ export const LabelingImages: React.FC = () => {
         },
       ]}
     >
-      <Labeler>
+      <Labeler maxViewHeight={256}>
         <ImageLabeler
           callbacks={{
             onSaveConfig: (config) => setState({ ...state, config }),
@@ -175,7 +175,6 @@ export const LabelingImages: React.FC = () => {
           config={state.config}
           labels={state.labels}
           target={state.src}
-          options={{ maxViewHeight: 256 }}
         />
       </Labeler>
     </Demonstrator>
@@ -219,7 +218,7 @@ export const LabelingVideos: React.FC = () => {
         },
       ]}
     >
-      <Labeler>
+      <Labeler maxViewHeight={256}>
         <VideoLabeler
           target={state.src}
           config={config}
@@ -274,7 +273,7 @@ export const LabelingBatches: React.FC = () => {
         },
       ]}
     >
-      <Labeler>
+      <Labeler maxViewHeight={256}>
         <BatchImageLabeler
           columns={2}
           target={state.target.map((t) => t.url)}

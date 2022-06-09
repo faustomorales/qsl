@@ -107,7 +107,6 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
           <Box>
             <MediaViewer
               size={loader.mediaState?.size}
-              maxViewHeight={options?.maxViewHeight}
               cursor={cursor.coords}
               media={{
                 main: target ? (

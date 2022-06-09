@@ -1,3 +1,5 @@
+import { GridColDef, GridSortModel } from "@mui/x-data-grid";
+
 export type ArbitraryMetadata = { [key: string]: string };
 export type Point = { x: number; y: number };
 export type Vec = { dx: number; dy: number };
@@ -125,7 +127,6 @@ export interface BaseLabelerProps<T, U> {
   options?: {
     progress?: number;
     maxCanvasSize?: number;
-    maxViewHeight?: number;
     showNavigation?: boolean;
   };
   callbacks?: {
@@ -242,3 +243,14 @@ export interface TimeSeriesLabelerProps
 }
 
 export type MediaLoadState = "loading" | "loaded" | "error";
+
+export interface IndexState<T extends string> {
+  rows: {
+    [key in T | string]: key extends T ? number : number | string | null;
+  }[];
+  columns: GridColDef[];
+  rowCount: number;
+  rowsPerPage: number;
+  sortModel: GridSortModel;
+  page: number;
+}

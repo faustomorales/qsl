@@ -1,4 +1,5 @@
 import os
+import math
 import typing
 import logging
 import tempfile
@@ -49,6 +50,19 @@ def counts2bitmap(counts: typing.List[int], dimensions: typing.Dict) -> "np.ndar
 def deprecate(old, new):
     """Log a deprecation message."""
     LOGGER.warning("%s has been deprecated. Use %s instead.", old, new)
+
+
+def target2repr(target, ttype):
+    """Convert any labling target to a string representation."""
+    return (
+        target
+        if isinstance(target, str)
+        else "numpy array"
+        if files.is_array(target)
+        else "time series"
+        if ttype == "time-series"
+        else ""
+    )
 
 
 def merge_items(initial, insert):
@@ -149,13 +163,20 @@ class BaseMediaLabeler:
         self.config = config
         self.items = items
         self.idx = 0
-        self.sortedIdxs = list(range(len(items)))
+        self._sortedIdxs = list(range(len(items)))
         self.batchSize = batchSize
         self.maxPreload = 3
-        self.progress = 0
-        self.mediaIndex = self.get_media_index()
+        self.previousIndexState = {
+            "rows": [],
+            "columns": [],
+            "rowCount": 0,
+            "page": 0,
+            "rowsPerPage": 5,
+            "sortModel": [],
+        }
+        self.progress = self.get_progress()
+        self.indexState = self.get_index_state()
         self.advance_to_unlabeled()
-        self.update_progress()
         self.update(True)
 
     def get_temporary_directory(self):
@@ -178,6 +199,42 @@ class BaseMediaLabeler:
     def allowConfigChange(self, allowConfigChange):
         self._allowConfigChange = allowConfigChange
         self.set_buttons()
+
+    @property
+    def sortedIdxs(self):
+        if self.previousIndexState["sortModel"] != self.indexState["sortModel"]:
+            sortKey = (
+                self.indexState["sortModel"][0]["field"]
+                if self.indexState["sortModel"]
+                else None
+            )
+            unsorted = list(range(len(self.items)))
+            if not sortKey:
+                self._sortedIdxs = unsorted
+            else:
+                sortOrd = self.indexState["sortModel"][0]["sort"]
+                if sortKey == "target":
+                    keys = [
+                        target2repr(item.get("target"), item.get("type", "image"))
+                        for item in self.items
+                    ]
+                elif sortKey == "labeled":
+                    keys = [
+                        bool(item.get("labels") or item.get("ignored"))
+                        for item in self.items
+                    ]
+                elif sortKey == "ignored":
+                    keys = [bool(item.get("ignore")) for item in self.items]
+                else:
+                    keys = [
+                        item.get("metadata", {}).get(sortKey) for item in self.items
+                    ]
+                self._sortedIdxs = [
+                    idx
+                    for _, idx in sorted(zip(keys, unsorted), reverse=sortOrd != "asc")
+                ]
+                self.previousIndexState["sortModel"] = self.indexState["sortModel"]
+        return self._sortedIdxs
 
     @property
     def targets(self) -> typing.List[Target]:
@@ -210,37 +267,44 @@ class BaseMediaLabeler:
             self.idx = self.sortedIdxs[unlabeled]
         self.update(True)
 
-    def get_media_index(self):
+    def get_index_state(self, reset_page=False):
+        rowsPerPage = round(self.maxViewHeight / 70)
+        page = (
+            math.floor(self.sortedIdxs.index(self.idx) / rowsPerPage)
+            if reset_page
+            else self.indexState["page"]
+        )
+        startIdx = page * rowsPerPage
+        endIdx = startIdx + rowsPerPage
+        idxs = self.sortedIdxs[startIdx:endIdx]
+        items = [self.items[idx] for idx in idxs]
         metadata_keys = list(
-            set(flatten([item.get("metadata", {}).keys() for item in self.items]))
+            set(flatten([item.get("metadata", {}).keys() for item in items]))
         )[:5]
         return {
+            **self.indexState,
+            "page": page,
+            "rowCount": len(self.items),
+            "rowsPerPage": rowsPerPage,
             "rows": [
                 {
                     **{k: metadata.get(k) for k in metadata_keys},
                     "qslId": index,
-                    "target": target
-                    if isinstance(target, str)
-                    else "numpy array"
-                    if files.is_array(target)
-                    else "time series"
-                    if ttype == "time-series"
-                    else "",
+                    "target": target2repr(target, ttype),
                     "labeled": "Yes" if labels or ignored else "No",
                     "ignored": "Yes" if ignored else "No",
                 }
-                for index, (target, metadata, labels, ttype, ignored) in enumerate(
-                    [
-                        (
-                            item.get("target"),
-                            item.get("metadata", {}),
-                            item.get("labels", {}),
-                            item.get("type", "image"),
-                            item.get("ignore", False),
-                        )
-                        for item in self.items
-                    ]
-                )
+                for index, target, metadata, labels, ttype, ignored in [
+                    (
+                        idx,
+                        item.get("target"),
+                        item.get("metadata", {}),
+                        item.get("labels", {}),
+                        item.get("type", "image"),
+                        item.get("ignore", False),
+                    )
+                    for idx, item in zip(idxs, items)
+                ]
             ],
             "columns": [
                 {
@@ -371,7 +435,8 @@ class BaseMediaLabeler:
             self.update(True)
             self.viewState = "labeling"
         if value == "index":
-            self.mediaIndex = self.get_media_index()
+            self.indexState = self.get_index_state(reset_page=self.viewState != "index")
+            self.previousIndexState = self.indexState
             self.viewState = "index"
         self.action = ""
 
@@ -488,12 +553,13 @@ class BaseMediaLabeler:
                     break
             self.preload = preload
         progress_before = self.progress
-        self.update_progress()
-        if self.progress == 100 and progress_before < 100:
+        progress_after = self.get_progress()
+        if progress_after == 100 and progress_before < 100:
             self.message = "All items have been labeled."
+        self.progress = progress_after
 
-    def update_progress(self):
-        self.progress = (
+    def get_progress(self):
+        return (
             100
             * sum(
                 [

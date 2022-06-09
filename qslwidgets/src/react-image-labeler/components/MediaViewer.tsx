@@ -54,21 +54,11 @@ const MediaViewer: React.FC<
     size?: Dimensions;
     controls?: React.ReactNode;
     loadState: MediaLoadState;
-    maxViewHeight?: number;
     cursor?: Point;
     onMouseLeave?: () => void;
   } & React.ComponentProps<"div">
-> = ({
-  children,
-  media,
-  size,
-  controls,
-  loadState,
-  onMouseLeave,
-  cursor,
-  maxViewHeight = 512,
-}) => {
-  const { setFocus } = React.useContext(GlobalLabelerContext);
+> = ({ children, media, size, controls, loadState, onMouseLeave, cursor }) => {
+  const { setFocus, maxViewHeight } = React.useContext(GlobalLabelerContext);
   const refs = {
     viewport: React.useRef<HTMLDivElement>(null),
     minimap: React.useRef<HTMLDivElement>(null),

@@ -5,10 +5,9 @@ import GlobalLabelerContext from "./components/GlobalLabelerContext";
 import CloseIcon from "@mui/icons-material/Close";
 import { useInterval } from "./components/library/hooks";
 
-const Labeler: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
-  children,
-  ...other
-}) => {
+const Labeler: React.FC<
+  { maxViewHeight?: number } & React.HTMLAttributes<HTMLDivElement>
+> = ({ maxViewHeight = 256, children, ...other }) => {
   const refs = {
     hidden: React.useRef<HTMLInputElement>(null),
     container: React.useRef<HTMLElement>(null),
@@ -36,7 +35,13 @@ const Labeler: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   const handleClose = () => setToast("");
   return (
     <GlobalLabelerContext.Provider
-      value={{ container: refs.container, setToast, setFocus, hasFocus }}
+      value={{
+        container: refs.container,
+        setToast,
+        setFocus,
+        hasFocus,
+        maxViewHeight,
+      }}
     >
       <Box
         className="react-image-labeler"

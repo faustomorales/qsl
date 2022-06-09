@@ -53,9 +53,17 @@ class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
     urls = t.List(default_value=[]).tag(sync=True)
     type = t.Unicode(default_value="image").tag(sync=True)
     idx = t.Int(default_value=0).tag(sync=True)
-    sortedIdxs = t.List(default_value=[]).tag(sync=True)
     viewState = t.Unicode("labeling").tag(sync=True)
-    mediaIndex = t.Dict(default_value={"rows": [], "columns": []}).tag(sync=True)
+    indexState = t.Dict(
+        default_value={
+            "rows": [],
+            "columns": [],
+            "rowCount": 0,
+            "page": 0,
+            "rowsPerPage": 5,
+            "sortModel": [],
+        }
+    ).tag(sync=True)
     labels = t.Union(
         [
             t.Dict(

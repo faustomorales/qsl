@@ -37,10 +37,8 @@ const TimeSeriesLabeler: React.FC<TimeSeriesLabelerProps> = ({
     downloadable: React.useRef<HTMLDivElement>(null),
   };
   const { setToast } = React.useContext(GlobalLabelerContext);
-  const { draft, setDraft, resetDraft, cursor, setCursor } = useDraftLabelState(
-    labels,
-    [target]
-  );
+  const { draft, setDraft, resetDraft, cursor, setCursor, undo } =
+    useDraftLabelState(labels, [target], [target]);
   const onMouseMove = useMediaEvent(
     (coords) => {
       setCursor({ ...cursor, coords });
@@ -139,6 +137,7 @@ const TimeSeriesLabeler: React.FC<TimeSeriesLabelerProps> = ({
               onSave: callbacks?.onSave ? save : undefined,
               onReset: resetDraft,
               onDownload: target?.filename ? onDownload : undefined,
+              onUndo: undo,
             }}
           />
         }

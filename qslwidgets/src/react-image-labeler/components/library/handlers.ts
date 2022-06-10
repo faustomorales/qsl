@@ -10,6 +10,7 @@ import {
   MediaRefs,
   CursorData,
 } from "./types";
+import cloneDeep from "lodash.clonedeep";
 
 const DEFAULT_MAX_CANVAS_SIZE = 512;
 
@@ -23,7 +24,7 @@ export const handleMediaClick = (
   maxCanvasSize?: number,
   idx?: number
 ): DraftState => {
-  let drawing: DrawingState = draft.drawing;
+  let drawing: DrawingState = cloneDeep(draft.drawing);
   if (!refs.source.current) {
     throw "Did not find relevant media elements.";
   }

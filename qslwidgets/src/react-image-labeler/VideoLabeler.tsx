@@ -51,10 +51,12 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
     refs,
     memoized
   );
-  const { draft, setDraft, resetDraft, cursor, setCursor } = useDraftLabelState(
-    playbackState.labels,
-    [playbackState.timestamp]
-  );
+  const { draft, setDraft, resetDraft, cursor, setCursor, undo } =
+    useDraftLabelState(
+      playbackState.labels,
+      [playbackState.timestamp, target],
+      [playbackState.timestamp, target]
+    );
   useKeyboardEvent(
     (event: KeyboardEvent) => {
       let target: keyof typeof refs | null;
@@ -195,6 +197,7 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
                   )
                 : undefined,
             onReset: resetDraft,
+            onUndo: undo,
           }}
         />
       }

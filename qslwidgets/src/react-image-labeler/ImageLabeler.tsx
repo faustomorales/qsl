@@ -23,10 +23,8 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
   preload,
   config = { image: [], regions: [] },
 }) => {
-  const { draft, setDraft, resetDraft, cursor, setCursor } = useDraftLabelState(
-    labels,
-    [target]
-  );
+  const { draft, setDraft, resetDraft, cursor, setCursor, undo } =
+    useDraftLabelState(labels, [target], [target]);
   const refs = {
     viewer: React.useRef<HTMLDivElement>(null),
     source: React.useRef<HTMLImageElement>(null),
@@ -99,6 +97,7 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
             ...callbacks,
             onSave: callbacks?.onSave ? save : undefined,
             onReset: resetDraft,
+            onUndo: undo,
           }}
         />
       }

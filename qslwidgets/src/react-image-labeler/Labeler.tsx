@@ -7,7 +7,7 @@ import { useInterval } from "./components/library/hooks";
 
 const Labeler: React.FC<
   { maxViewHeight?: number } & React.HTMLAttributes<HTMLDivElement>
-> = ({ maxViewHeight = 256, children, ...other }) => {
+> = ({ maxViewHeight = 512, children, ...other }) => {
   const refs = {
     hidden: React.useRef<HTMLInputElement>(null),
     container: React.useRef<HTMLElement>(null),

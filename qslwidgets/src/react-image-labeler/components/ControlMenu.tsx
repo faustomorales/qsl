@@ -48,6 +48,7 @@ interface Callbacks {
   onSelectNone?: () => void;
   onShowIndex?: () => void;
   onDownload?: () => void;
+  onUndo?: () => void;
 }
 
 const ControlMenu: React.FC<{
@@ -84,6 +85,8 @@ const ControlMenu: React.FC<{
       "ignore",
       "selectAll",
       "selectNone",
+      "undoRegion",
+      "undo",
     ].map((key) => [key, React.useRef<HTMLButtonElement>(null)])
   );
   const isLarge = useMediaLarge();
@@ -161,6 +164,14 @@ const ControlMenu: React.FC<{
           break;
         case "a":
           target = event.ctrlKey && !event.shiftKey ? "selectAll" : null;
+          break;
+        case "z":
+          target =
+            event.metaKey !== event.ctrlKey
+              ? draft.drawing.active
+                ? "undoRegion"
+                : "undo"
+              : null;
           break;
         case "ArrowRight":
           target = event.ctrlKey || event.shiftKey ? null : "next";
@@ -299,7 +310,10 @@ const ControlMenu: React.FC<{
                       key={i}
                       value={name}
                       control={
-                        <Radio className="drawing-mode-option" size="small" />
+                        <Radio
+                          className="drawing-mode-option react-image-labeler-input-target"
+                          size="small"
+                        />
                       }
                       label={displayName}
                       disabled={!!draft.drawing.active || disabled}
@@ -400,6 +414,16 @@ const ControlMenu: React.FC<{
             >
               Delete
             </Button>
+            {callbacks?.onUndo ? (
+              <Button
+                disabled={disabled}
+                onClick={callbacks.onUndo}
+                startIcon={"\u2303Z"}
+                ref={refs.undoRegion}
+              >
+                Undo
+              </Button>
+            ) : null}
           </ButtonGroup>
         ) : (
           <Stack
@@ -470,6 +494,16 @@ const ControlMenu: React.FC<{
               {callbacks?.onReset && draft.dirty ? (
                 <Button disabled={disabled} onClick={callbacks.onReset}>
                   Reset
+                </Button>
+              ) : null}
+              {callbacks?.onUndo ? (
+                <Button
+                  disabled={disabled}
+                  onClick={callbacks.onUndo}
+                  ref={refs.undo}
+                  startIcon={"\u2303Z"}
+                >
+                  Undo
                 </Button>
               ) : null}
               {callbacks.onDownload ? (

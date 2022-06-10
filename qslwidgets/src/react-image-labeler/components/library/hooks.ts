@@ -17,6 +17,8 @@ import { handleMediaClick } from "./handlers";
 import { snapPolygonCoords } from "./geometry";
 import GlobalLabelerContext from "../GlobalLabelerContext";
 
+const MAX_UNDO_HISTORY = 10;
+
 export const convertCoordinates = (
   point: Point,
   image: HTMLElement | null
@@ -239,9 +241,10 @@ export const useLoader = <T>(
 
 export const useDraftLabelState = (
   labels: Labels,
-  deps?: React.DependencyList
+  deps?: React.DependencyList,
+  historyDeps?: React.DependencyList
 ) => {
-  const [draft, setDraft] = React.useState<DraftState>({
+  const [draft, setDraftInner] = React.useState<DraftState>({
     labels: labels2draft(labels || {}),
     dirty: false,
     canvas: null,
@@ -249,6 +252,17 @@ export const useDraftLabelState = (
       mode: "boxes",
     },
   });
+  const [history, setHistory] = React.useState<DraftState[]>([]);
+
+  const setDraft = React.useCallback(
+    (update: DraftState) => {
+      if (historyDeps && historyDeps.length > 0) {
+        setHistory([draft].concat(history).slice(0, MAX_UNDO_HISTORY));
+      }
+      setDraftInner(update);
+    },
+    [history, draft]
+  );
   const [cursor, setCursor] = React.useState<CursorData>({
     radius: 5,
     threshold: 1,
@@ -273,10 +287,23 @@ export const useDraftLabelState = (
       }),
     [labels, draft]
   );
-  React.useEffect(() => {
-    resetDraft();
-  }, [labels].concat(deps || []));
-  return { cursor, setCursor, draft, setDraft, resetDraft };
+  const resetHistory = React.useCallback(() => setHistory([]), []);
+  const undo = React.useCallback(() => {
+    if (history.length > 0) {
+      setDraftInner({ ...history[0], dirty: true });
+      setHistory(history.slice(1));
+    }
+  }, [history]);
+  React.useEffect(resetDraft, [labels].concat(deps || []));
+  React.useEffect(resetHistory, historyDeps || []);
+  return {
+    cursor,
+    setCursor,
+    draft,
+    setDraft,
+    resetDraft,
+    undo: history.length > 0 ? undo : undefined,
+  };
 };
 
 export const useMediaMouseCallbacks = (

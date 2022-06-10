@@ -29,14 +29,12 @@ class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
         - items: This can be as simple as a list of {"target": "path/to/image.png"} objects. See READM for more information.
         - config: The labeling configuration. See README for more information.
         - allowConfigChange: Whether to allow the configuration to be edited from the UI.
+        - advanceOnSave: Whether to automatically advance to the next item when it is saved.
         - maxCanvasSize: The maximum size for the segmentation mask canvas.
         - maxViewHeight: The maximum view height for the UI.
         - mode: The theme for the UI, one of "light" or "dark".
         - batchSize: The image labeling batch size.
         - jsonpath: The path to which we will save the configuration.
-        - images: deprecated, use items instead.
-        - allow_config_change: deprecated, use allowConfigChange.
-        - batch_size: deprecated, use batchSize.
     """
 
     _model_name = t.Unicode("MediaLabelerModel").tag(sync=True)
@@ -110,31 +108,23 @@ class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
         items=None,
         config=None,
         allowConfigChange=True,
+        advanceOnSave=True,
         maxCanvasSize=512,
         maxViewHeight=512,
         mode="light",
         batchSize=1,
         jsonpath=None,
-        images=None,
-        allow_config_change=None,
-        batch_size=None,
     ):
-        if allow_config_change is not None:
-            common.deprecate("allow_config_change", "allowConfigChange")
-            allowConfigChange = allow_config_change
-        if batch_size is not None:
-            common.deprecate("batch_size", "batchSize")
-            batchSize = batch_size
         super().__init__(
             items=items,
             config=config,
             allowConfigChange=allowConfigChange,
+            advanceOnSave=advanceOnSave,
             batchSize=batchSize,
             maxCanvasSize=maxCanvasSize,
             maxViewHeight=maxViewHeight,
             mode=mode,
             jsonpath=jsonpath,
-            images=images,
         )
         self.observe(self.handle_base_change, ["base"])
         self.observe(self.handle_action_change, ["action"])
@@ -157,15 +147,3 @@ class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
         if not change["new"]:
             return
         self.apply_action(change["new"])
-
-
-class ImageSeriesLabeler(MediaLabeler):
-    def __init__(self, *args, **kwargs):
-        common.deprecate("ImageSeriesLabeler", "MediaLabeler")
-        super().__init__(*args, **kwargs)
-
-
-class ImageSeriesLabelerJSON(MediaLabeler):
-    def __init__(self, *args, **kwargs):
-        common.deprecate("ImageSeriesLabelerJSON", "MediaLabeler")
-        super().__init__(*args, **kwargs)

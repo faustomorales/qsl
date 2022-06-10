@@ -95,7 +95,7 @@ def merge_items(initial, insert):
 
 
 class BaseMediaLabeler:
-    """A widget for labeling a single image."""
+    """A widget for labeling media."""
 
     def __init__(
         self,
@@ -103,10 +103,10 @@ class BaseMediaLabeler:
         config=None,
         allowConfigChange=True,
         batchSize=1,
-        images=None,
         jsonpath=None,
         base=None,
         mode="light",
+        advanceOnSave=True,
         maxCanvasSize=512,
         maxViewHeight=512,
     ):
@@ -122,7 +122,7 @@ class BaseMediaLabeler:
         # Items needs to be handled specially depending
         # on if labeler-wide or items-specific jsonpaths
         # are provided.
-        items = items or images or []
+        items = items or []
         jsonpath_item = [bool(item.get("jsonpath")) for item in items]
         if any(jsonpath_item):
             assert all(
@@ -151,15 +151,15 @@ class BaseMediaLabeler:
                 maxCanvasSize = jsondata.get("maxCanvasSize", maxCanvasSize)
                 maxViewHeight = jsondata.get("maxViewHeight", maxViewHeight)
                 allowConfigChange = jsondata.get("allowConfigChange", allowConfigChange)
+                advanceOnSave = jsondata.get("advanceOnSave", advanceOnSave)
                 batchSize = jsondata.get("batchSize", batchSize)
         assert items, "There must be at least one labeling target."
         self.mode = mode
         self.maxCanvasSize = maxCanvasSize
         self.maxViewHeight = maxViewHeight
+        self.advanceOnSave = advanceOnSave
         self._targets: typing.List[Target] = []
         self._allowConfigChange = allowConfigChange
-        if images is not None:
-            deprecate("The images argument", "items")
         self.config = config
         self.items = items
         self.idx = 0
@@ -402,16 +402,6 @@ class BaseMediaLabeler:
                 break
 
     @property
-    def images(self):
-        deprecate("images", "items")
-        return self.items
-
-    @images.setter
-    def images(self, images):
-        deprecate("images", "items")
-        self.items = images
-
-    @property
     def targets_and_items(self):
         for tIdx, iIdx in enumerate(self.idxs):
             yield self.targets[tIdx], self.items[iIdx]
@@ -450,7 +440,9 @@ class BaseMediaLabeler:
                 if jsonpath:
                     files.labels2json(item, jsonpath)
         self.save_to_disk()
-        if not any(t["visible"] or (t["type"] == "video") for t in self.targets):
+        if self.advanceOnSave and (
+            not any(t["visible"] or (t["type"] == "video") for t in self.targets)
+        ):
             self.next()
         else:
             self.update(False)
@@ -466,6 +458,7 @@ class BaseMediaLabeler:
                     "mode": self.mode,
                     "batchSize": self.batchSize,
                     "allowConfigChange": self.allowConfigChange,
+                    "advanceOnSave": self.advanceOnSave,
                 },
                 self.jsonpath,
             )

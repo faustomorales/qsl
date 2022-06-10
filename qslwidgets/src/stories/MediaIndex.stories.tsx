@@ -35,7 +35,7 @@ const indexState = {
   rowCount: 9,
   page: 1,
   rowsPerPage: 5,
-  sortModel: []
+  sortModel: [],
 };
 
 export const BasicUsage: React.FC = () => {

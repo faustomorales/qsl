@@ -11,7 +11,17 @@ const RangeSlider: React.FC<
     disabled?: boolean;
     onValueChange: (value: number) => void;
   } & React.ComponentProps<typeof Slider>
-> = ({ name, value, onValueChange, min, max, width, disabled, ...other }) => (
+> = ({
+  name,
+  value,
+  onValueChange,
+  min,
+  max,
+  width,
+  disabled,
+  valueLabelDisplay = "on",
+  ...other
+}) => (
   <Stack
     direction="row"
     alignItems="center"
@@ -28,8 +38,8 @@ const RangeSlider: React.FC<
       classes={{ thumb: "slider-thumb" }}
       max={max}
       disabled={disabled}
-      valueLabelDisplay={"on"}
-      valueLabelFormat={Math.round}
+      valueLabelDisplay={valueLabelDisplay}
+      valueLabelFormat={(value) => value}
       onChange={(event, value) => onValueChange(value as number)}
     />
   </Stack>

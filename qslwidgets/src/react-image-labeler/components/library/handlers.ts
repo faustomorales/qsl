@@ -61,14 +61,14 @@ export const handleMediaClick = (
     };
   }
   if (drawing.mode == "masks") {
-    if (!refs.canvas.current) {
+    if (!refs.canvas.current && !draft.canvas) {
       throw "Did not find necessary canvas element.";
     }
     const canvas =
       draft.canvas ||
       img2hsv(
         refs.source.current,
-        refs.canvas.current,
+        refs.canvas.current!,
         maxCanvasSize || DEFAULT_MAX_CANVAS_SIZE
       );
     const image = {

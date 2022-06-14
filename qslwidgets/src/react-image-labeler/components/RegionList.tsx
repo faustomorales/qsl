@@ -32,6 +32,12 @@ const StyledBox = styled(Box)`
       calc(10px / var(--media-viewer-scale, 1))
     );
   }
+
+  svg,
+  .mask-cursor,
+  canvas {
+    z-index: 1;
+  }
 `;
 
 const RegionList: React.FC<RegionListProps> = ({

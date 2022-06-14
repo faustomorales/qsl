@@ -19,9 +19,14 @@ import LabelerLayout from "./components/LabelerLayout";
 import GlobalLabelerContext from "./components/GlobalLabelerContext";
 import ControlMenu from "./components/ControlMenu";
 import ClickTarget from "./components/ClickTarget";
+import EnhancementControls from "./components/EnhancementControls";
 import { BatchImageLabelerProps } from "./components/library/types";
 import { draft2labels } from "./components/library/utils";
-import { useDraftLabelState, useMediaLarge } from "./components/library/hooks";
+import {
+  useDraftLabelState,
+  useMediaLarge,
+  useImageEnhancements,
+} from "./components/library/hooks";
 
 const BatchImageList = styled(ImageList)`
   & .MuiImageListItem-root {
@@ -64,6 +69,7 @@ const BatchImageLabeler: React.FC<BatchImageLabelerProps> = ({
   columns = 3,
 }) => {
   const isLarge = useMediaLarge();
+  const enhancements = useImageEnhancements();
   const toggle = React.useCallback(
     (idx) =>
       setStates(
@@ -188,7 +194,10 @@ const BatchImageLabeler: React.FC<BatchImageLabelerProps> = ({
                     actionPosition="left"
                   />
                   {target[tIdx] ? (
-                    <img src={target[tIdx]} />
+                    <img
+                      src={target[tIdx]}
+                      style={{ filter: enhancements.filter }}
+                    />
                   ) : (
                     <Box sx={{ mb: 5 }} />
                   )}
@@ -219,6 +228,10 @@ const BatchImageLabeler: React.FC<BatchImageLabelerProps> = ({
               ) : null
             )}
           </BatchImageList>
+          <EnhancementControls
+            enhancements={enhancements.value}
+            setEnhancements={enhancements.set}
+          />
         </Box>
       }
     />

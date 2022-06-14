@@ -254,3 +254,9 @@ export interface IndexState<T extends string> {
   sortModel: GridSortModel;
   page: number;
 }
+
+export interface ImageEnhancements {
+  brightness: number;
+  contrast: number;
+  saturation: number;
+}

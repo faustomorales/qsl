@@ -10,6 +10,7 @@ import {
   MediaRefs,
   MediaLoadState,
   CursorData,
+  ImageEnhancements,
 } from "./types";
 import { useTheme, useMediaQuery } from "@mui/material";
 import { labels2draft } from "./utils";
@@ -325,7 +326,12 @@ export const useMediaMouseCallbacks = (
         idx?: number
       ) => {
         setFocus();
-        if (!showCursor || !refs.source.current || !refs.canvas.current) return;
+        if (
+          !showCursor ||
+          !refs.source.current ||
+          (!refs.canvas.current && !draft.canvas)
+        )
+          return;
         try {
           setDraft(
             handleMediaClick(
@@ -486,4 +492,18 @@ export const usePlaybackState = (
     setPlaybackState: setPlayback,
     toggleMute,
   };
+};
+
+export const useImageEnhancements = () => {
+  const [value, set] = React.useState<ImageEnhancements>({
+    contrast: 1.0,
+    brightness: 1.0,
+    saturation: 1.0,
+  });
+  const filter = React.useMemo(
+    () =>
+      `contrast(${value.contrast}) brightness(${value.brightness}) saturate(${value.saturation})`,
+    [value]
+  );
+  return { value, filter, set };
 };

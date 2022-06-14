@@ -6,6 +6,7 @@ import {
   useDraftLabelState,
   useMediaMouseCallbacks,
   useKeyboardEvent,
+  useImageEnhancements,
   simulateClick,
 } from "./components/library/hooks";
 import MediaViewer from "./components/MediaViewer";
@@ -13,6 +14,7 @@ import LabelerLayout from "./components/LabelerLayout";
 import ControlMenu from "./components/ControlMenu";
 import Playbar from "./components/Playbar";
 import RegionList from "./components/RegionList";
+import EnhancementControls from "./components/EnhancementControls";
 import GlobalLabelerContext from "./components/GlobalLabelerContext";
 import { Dimensions, VideoLabelerProps } from "./components/library/types";
 import {
@@ -46,6 +48,7 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
     mute: React.useRef<HTMLButtonElement>(null),
   };
   const { setFocus, setToast } = React.useContext(GlobalLabelerContext);
+  const enhancements = useImageEnhancements();
   const memoized = React.useMemo(() => labels || [], [labels]);
   const { playbackState, setPlaybackState, toggleMute } = usePlaybackState(
     refs,
@@ -218,6 +221,7 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
                   ref={refs.main}
                   src={loader.src}
                   style={{
+                    filter: enhancements.filter,
                     cursor:
                       config.regions &&
                       config.regions.length > 0 &&
@@ -227,46 +231,65 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
                   }}
                 />
               ),
-              mini: <video src={target} ref={refs.mini} />,
+              mini: (
+                <video
+                  src={target}
+                  ref={refs.mini}
+                  style={{ filter: enhancements.filter }}
+                />
+              ),
             }}
             controls={
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <Stack direction="row" alignItems="center" spacing={0}>
-                  {buttons.map((button) => (
-                    <IconButton
-                      {...button.callbacks}
-                      disabled={button.disabled}
-                      className={button.className}
-                      ref={button.ref}
-                      key={button.label}
-                      aria-label={button.label}
-                      title={button.label}
-                      size="small"
-                    >
-                      <button.icon fontSize="small" />
-                    </IconButton>
-                  ))}
+              <Box>
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Stack direction="row" alignItems="center" spacing={0}>
+                    {buttons.map((button) => (
+                      <IconButton
+                        {...button.callbacks}
+                        disabled={button.disabled}
+                        className={button.className}
+                        ref={button.ref}
+                        key={button.label}
+                        aria-label={button.label}
+                        title={button.label}
+                        size="small"
+                      >
+                        <button.icon fontSize="small" />
+                      </IconButton>
+                    ))}
+                  </Stack>
+                  <Playbar
+                    marks={(labels || []).map((t) => t.timestamp)}
+                    timestamp={playbackState.timestamp}
+                    duration={loader.mediaState?.duration}
+                    secondary={playbackState.end}
+                    secondaryThumbnail={
+                      <video
+                        src={target}
+                        ref={refs.secondaryThumbnail}
+                        style={{
+                          maxWidth: "100%",
+                          maxHeight: "100%",
+                          filter: enhancements.filter,
+                        }}
+                      />
+                    }
+                    setSecondary={(timestamp) =>
+                      setPlaybackState(0, undefined, timestamp)
+                    }
+                    setTimestamp={(timestamp) =>
+                      draft.dirty ? undefined : setPlaybackState(0, timestamp)
+                    }
+                  />
                 </Stack>
-                <Playbar
-                  marks={(labels || []).map((t) => t.timestamp)}
-                  timestamp={playbackState.timestamp}
-                  duration={loader.mediaState?.duration}
-                  secondary={playbackState.end}
-                  secondaryThumbnail={
-                    <video
-                      src={target}
-                      ref={refs.secondaryThumbnail}
-                      style={{ maxWidth: "100%", maxHeight: "100%" }}
-                    />
-                  }
-                  setSecondary={(timestamp) =>
-                    setPlaybackState(0, undefined, timestamp)
-                  }
-                  setTimestamp={(timestamp) =>
-                    draft.dirty ? undefined : setPlaybackState(0, timestamp)
-                  }
+                <EnhancementControls
+                  enhancements={enhancements.value}
+                  setEnhancements={(updated) => {
+                    enhancements.set(updated);
+                    setDraft({ ...draft, canvas: null });
+                  }}
                 />
-              </Stack>
+              </Box>
             }
           >
             <RegionList
@@ -276,7 +299,7 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
               callbacks={mediaCallbacks}
             />
           </MediaViewer>
-          {loader.loadState !== "loading" ? (
+          {loader.loadState !== "loading" && draft.canvas === null ? (
             <canvas style={{ display: "none" }} ref={refs.canvas} />
           ) : null}
         </Box>

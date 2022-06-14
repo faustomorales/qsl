@@ -1,6 +1,6 @@
 {
   "name": "qslwidgets",
-  "version": "0.0.37",
+  "version": "0.0.38",
   "description": "Widgets for the QSL image labeling package.",
   "keywords": [
     "jupyter",

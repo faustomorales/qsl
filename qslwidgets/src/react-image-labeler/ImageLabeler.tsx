@@ -5,11 +5,13 @@ import MediaViewer from "./components/MediaViewer";
 import ControlMenu from "./components/ControlMenu";
 import ImagePreloader from "./components/ImagePreloader";
 import RegionList from "./components/RegionList";
+import EnhancementControls from "./components/EnhancementControls";
 import LabelerLayout from "./components/LabelerLayout";
 import {
   useLoader,
   useDraftLabelState,
   useMediaMouseCallbacks,
+  useImageEnhancements,
 } from "./components/library/hooks";
 import { draft2labels } from "./components/library/utils";
 import { Dimensions, ImageLabelerProps } from "./components/library/types";
@@ -30,6 +32,7 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
     source: React.useRef<HTMLImageElement>(null),
     canvas: React.useRef<HTMLCanvasElement>(null),
   };
+  const enhancements = useImageEnhancements();
   const loader = useLoader<{
     size: Dimensions;
     layout: "horizontal" | "vertical";
@@ -107,6 +110,15 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
             <MediaViewer
               size={loader.mediaState?.size}
               cursor={cursor.coords}
+              controls={
+                <EnhancementControls
+                  enhancements={enhancements.value}
+                  setEnhancements={(update) => {
+                    enhancements.set(update);
+                    setDraft({ ...draft, canvas: null });
+                  }}
+                />
+              }
               media={{
                 main: target ? (
                   <img
@@ -121,10 +133,18 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
                         config.regions && config.regions.length > 0
                           ? "none"
                           : undefined,
+                      filter: enhancements.filter,
                     }}
                   />
                 ) : null,
-                mini: target ? <img src={loader.src} /> : null,
+                mini: target ? (
+                  <img
+                    src={loader.src}
+                    style={{
+                      filter: enhancements.filter,
+                    }}
+                  />
+                ) : null,
               }}
               loadState={loader.loadState}
               onMouseLeave={() => setCursor({ ...cursor, coords: undefined })}
@@ -137,7 +157,7 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
               />
             </MediaViewer>
           </Box>
-          {loader.loadState !== "loading" ? (
+          {loader.loadState !== "loading" && draft.canvas === null ? (
             <canvas style={{ display: "none" }} ref={refs.canvas} />
           ) : null}
           {loader.loadState !== "loading" && preload ? (

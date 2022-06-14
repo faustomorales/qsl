@@ -12,7 +12,7 @@ import {
 } from "./library/hooks";
 import { useGesture } from "@use-gesture/react";
 
-const MAP_SIZE = 96;
+const MAP_SIZE = 128;
 
 const MediaViewerBox = styled(Box)`
   & .minimap .mask-cursor {
@@ -304,7 +304,6 @@ const MediaViewer: React.FC<
             {media.main}
           </Box>
         </Box>
-        {controls || null}
       </Box>
       <Box
         className="controls"
@@ -314,6 +313,7 @@ const MediaViewer: React.FC<
           gridTemplateRows: "auto",
           gridTemplateAreas: '"minimap zoom"',
           gridColumnGap: 10,
+          alignItems: "center",
         }}
       >
         <Paper
@@ -372,20 +372,24 @@ const MediaViewer: React.FC<
             </div>
           ) : null}
         </Paper>
-        <RangeSlider
-          name="Zoom"
-          className={"zoom"}
-          min={Math.min(1, Math.round(100 * state.zoom))}
-          max={Math.max(500, Math.round(100 * state.zoom))}
-          width={"100%"}
-          value={Math.round(100 * state.zoom)}
-          onValueChange={(zoom) =>
-            setState({
-              ...state,
-              zoom: zoom / 100,
-            })
-          }
-        />
+        <Box>
+          {controls || null}
+          <RangeSlider
+            name="Zoom"
+            className={"zoom"}
+            min={Math.min(1, Math.round(100 * state.zoom))}
+            max={Math.max(500, Math.round(100 * state.zoom))}
+            width={"100%"}
+            valueLabelDisplay="auto"
+            value={Math.round(100 * state.zoom)}
+            onValueChange={(zoom) =>
+              setState({
+                ...state,
+                zoom: zoom / 100,
+              })
+            }
+          />
+        </Box>
       </Box>
     </MediaViewerBox>
   );

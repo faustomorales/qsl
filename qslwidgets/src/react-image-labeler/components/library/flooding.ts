@@ -142,6 +142,7 @@ const img2hsv = (
   const scale = max_size / Math.max(natural.width, natural.height);
   canvas.width = Math.round(scale * natural.width);
   canvas.height = Math.round(scale * natural.height);
+  context.filter = getComputedStyle(img).filter;
   context.drawImage(
     img,
     0,

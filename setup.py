@@ -21,7 +21,7 @@ jstargets = [
     os.path.join(HERE, namepy, "ui", "labextension", "package.json"),
 ]
 
-builder = jp.npm_builder(os.path.join(HERE, namejs), build_cmd="build:prod")
+builder = jp.npm_builder(os.path.join(HERE, namejs), build_cmd="build")
 cmdclass = jp.wrap_installers(
     pre_develop=builder,
     pre_dist=builder,
@@ -30,7 +30,7 @@ cmdclass = jp.wrap_installers(
 )
 setup_args = dict(
     name=namepy,
-    description="A package for labeling image data quickly",
+    description="A package for labeling image, video, and time series data quickly",
     version=jp.get_version(os.path.join(namepy, "version.py")),
     scripts=glob.glob(os.path.join("scripts", "*")),
     cmdclass=cmdclass,

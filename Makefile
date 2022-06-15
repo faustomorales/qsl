@@ -6,7 +6,7 @@ init: ## Build local development environment
 	mkdir -p .venv
 	yarn --cwd qslwidgets install
 	pipenv install
-	@$(PYTHON_EXEC) jupyter labextension develop --overwrite .
+	@$(PYTHON_EXEC) jupyter labextension develop --overwrite --no-build .
 	@$(PYTHON_EXEC) jupyter nbextension install --sys-prefix --symlink --overwrite --py qsl
 	@$(PYTHON_EXEC) jupyter nbextension enable --sys-prefix --py qsl
 check:  ## Check code for formatting, linting, etc.
@@ -31,7 +31,7 @@ format:  ## Format all files.
 	yarn --cwd qslwidgets format
 build:  # Build the frontend and integrate into the package
 	rm -rf dist
-	@$(PYTHON_EXEC) yarn --cwd qslwidgets build:prod
+	@$(PYTHON_EXEC) yarn --cwd qslwidgets build
 package: build ## Make a local build of the Python package, source dist and wheel
 	@$(PYTHON_EXEC) pyproject-build .
 publish-docs:

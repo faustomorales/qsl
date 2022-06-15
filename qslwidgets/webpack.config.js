@@ -5,7 +5,7 @@ const builder = require("@jupyterlab/builder/lib/extensionConfig").default;
 
 module.exports = (env) => {
   const mode = env.production ? "production" : "development";
-  const watch = env.development;
+  const watch = !env.production;
   const defaults = {
     entry: "./src/index.ts",
     mode,
@@ -39,7 +39,7 @@ module.exports = (env) => {
       ],
     },
     ignoreWarnings: [/Failed to parse source map/],
-    devtool: "source-map",
+    devtool: mode === "development" ? "source-map" : false,
     externals: ["@jupyter-widgets/base"],
     resolve: {
       alias: {
@@ -72,6 +72,7 @@ module.exports = (env) => {
     ),
     mode,
     watchMode: watch,
+    devtool: mode === "development" ? "source-map" : false,
   });
   return [
     /**

@@ -174,6 +174,7 @@ class BaseMediaLabeler:
             "rowsPerPage": 5,
             "sortModel": [],
         }
+        self.indexState = self.previousIndexState
         self.progress = self.get_progress()
         self.indexState = self.get_index_state()
         self.advance_to_unlabeled()

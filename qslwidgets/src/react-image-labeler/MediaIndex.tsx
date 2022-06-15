@@ -10,6 +10,7 @@ interface MediaIndexProps<T extends string> {
   idx: number;
   rowKey: T;
   indexState: IndexState<T>;
+  visible?: boolean;
   setIndexState: (indexState: IndexState<T>) => void;
   label: (idx: number) => void;
 }
@@ -25,13 +26,14 @@ const MediaIndex = <T extends string>({
   indexState,
   setIndexState,
   label,
+  visible = true,
   rowKey,
 }: MediaIndexProps<T>) => {
   const ref = React.useRef<HTMLDivElement>(null);
   const { setFocus, maxViewHeight } = React.useContext(GlobalLabelerContext);
   useKeyboardEvent(
     (event) => {
-      if (!ref.current) {
+      if (!ref.current || !visible) {
         return;
       }
       let target: string;
@@ -54,7 +56,7 @@ const MediaIndex = <T extends string>({
         setFocus();
       }
     },
-    [ref]
+    [ref, visible]
   );
   return (
     <Box onClick={setFocus}>

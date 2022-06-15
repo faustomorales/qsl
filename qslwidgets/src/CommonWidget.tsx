@@ -195,6 +195,7 @@ const InnerCommonWidget: React.FC<CommonWidgetProps> = ({ extract }) => {
                 indexState.set(newIndexState);
                 action.set("index");
               }}
+              visible={viewState.value === "index"}
               rowKey="qslId"
               idx={idx.value}
               label={(newIdx) => {

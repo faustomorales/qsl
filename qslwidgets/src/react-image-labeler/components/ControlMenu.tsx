@@ -175,7 +175,7 @@ const ControlMenu: React.FC<{
           break;
         case "ArrowRight":
           target = event.ctrlKey || event.shiftKey ? null : "next";
-          if (draft.dirty) {
+          if (draft.dirty && target !== null) {
             setToast(
               "Please save or reset your changes before advancing to next item."
             );
@@ -184,7 +184,7 @@ const ControlMenu: React.FC<{
           break;
         case "ArrowLeft":
           target = "prev";
-          if (draft.dirty) {
+          if (draft.dirty && target !== null) {
             setToast(
               "Please save or reset your changes before returning to previous item."
             );
@@ -217,7 +217,7 @@ const ControlMenu: React.FC<{
         event.stopPropagation();
       }
     },
-    [callbacks, state, draft, refs, setFocus]
+    [callbacks, state, draft, refs, setFocus, setToast]
   );
   const setLabels = React.useCallback(
     (current) => {

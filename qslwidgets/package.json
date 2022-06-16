@@ -1,6 +1,6 @@
 {
   "name": "qslwidgets",
-  "version": "0.0.39",
+  "version": "0.0.40",
   "description": "Widgets for the QSL image labeling package.",
   "keywords": [
     "jupyter",
@@ -29,10 +29,12 @@
     "url": "https://github.com/faustomorales/qsl"
   },
   "scripts": {
-    "build": "tsc && webpack --env production",
+    "build": "tsc && yarn copy && webpack --env production",
     "watch": "npm-run-all -p watch:*",
-    "watch:lib": "tsc -w",
-    "watch:build": "parallel-webpack --watch",
+    "copy": "copyfiles --up 1 src/**/*.{css,svelte} lib",
+    "watch:copy": "nodemon -e css,svelte --watch src --exec 'yarn copy'",
+    "watch:tscw": "tsc -w",
+    "watch:pack": "parallel-webpack --watch",
     "clean": "rimraf ../qsl/ui/eelapp && rimraf ../qsl/ui/nbextension/index.js* ../qsl/ui/labextension",
     "format": "prettier --write src",
     "test": "jest",

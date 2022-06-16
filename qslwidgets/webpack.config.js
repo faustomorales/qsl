@@ -2,12 +2,13 @@ const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const version = require("./package.json").version;
 const builder = require("@jupyterlab/builder/lib/extensionConfig").default;
+const merge = require("webpack-merge");
 
 module.exports = (env) => {
   const mode = env.production ? "production" : "development";
   const watch = !env.production;
   const defaults = {
-    entry: "./src/index.ts",
+    entry: "./lib/index.js",
     mode,
     watch,
     module: {
@@ -29,8 +30,6 @@ module.exports = (env) => {
             fullySpecified: false,
           },
         },
-        { test: /\.ts$/, loader: "ts-loader" },
-        { test: /\.[t|j]sx$/, loader: "babel-loader" },
         { test: /\.js$/, loader: "source-map-loader" },
         {
           test: /\.css$/i,
@@ -38,7 +37,7 @@ module.exports = (env) => {
         },
       ],
     },
-    ignoreWarnings: [/Failed to parse source map/],
+    ignoreWarnings: [/Failed to parse source map/, /No required version specified/],
     devtool: mode === "development" ? "source-map" : false,
     externals: ["@jupyter-widgets/base"],
     resolve: {
@@ -58,47 +57,35 @@ module.exports = (env) => {
       ],
     },
   };
-  const [embedder] = builder({
-    packagePath: path.resolve(__dirname),
-    corePath: path.resolve(
-      __dirname,
-      "..",
-      ".venv",
-      "lib",
-      "python3.7",
-      "site-packages",
-      "jupyterlab",
-      "staging"
-    ),
-    mode,
-    watchMode: watch,
-    devtool: mode === "development" ? "source-map" : false,
-  });
-  return [
-    /**
-     * documentation
-     */
-    {
+  const targets = {
+    labwidget: builder({
+      packagePath: path.resolve(__dirname),
+      corePath: path.resolve(
+        __dirname,
+        "..",
+        ".venv",
+        "lib",
+        "python3.7",
+        "site-packages",
+        "jupyterlab",
+        "staging"
+      ),
+      mode,
+      watchMode: watch,
+      devtool: mode === "development" ? "source-map" : false,
+    })[0],
+    nbwidget: {
       ...defaults,
-      entry: "./src/Documentation.tsx",
       output: {
         filename: "index.js",
-        path: path.resolve(__dirname, "..", "docs"),
+        path: path.resolve(__dirname, "..", "qsl", "ui", "nbextension"),
+        libraryTarget: "amd",
+        publicPath: "",
       },
-      plugins: [
-        new HtmlWebpackPlugin({
-          template: "./src/docs.html",
-          filename: "index.html",
-        }),
-      ],
     },
-
-    /**
-     * eel app
-     */
-    {
+    eelwidget: {
       ...defaults,
-      entry: "./src/EelWidget.tsx",
+      entry: "./lib/EelWidget.js",
       output: {
         filename: "index.js",
         path: path.resolve(__dirname, "..", "qsl", "ui", "eelapp"),
@@ -110,24 +97,21 @@ module.exports = (env) => {
         }),
       ],
     },
-
-    /**
-     * Notebook extension
-     */
-    {
+    documentation: {
       ...defaults,
+      entry: "./lib/Documentation.js",
       output: {
         filename: "index.js",
-        path: path.resolve(__dirname, "..", "qsl", "ui", "nbextension"),
-        libraryTarget: "amd",
-        publicPath: "",
+        path: path.resolve(__dirname, "..", "docs"),
       },
+      plugins: [
+        new HtmlWebpackPlugin({
+          template: "./src/docs.html",
+          filename: "index.html",
+        }),
+      ],
     },
-
-    /**
-     * Public package
-     */
-    {
+    public: {
       ...defaults,
       output: {
         filename: "index.js",
@@ -137,10 +121,12 @@ module.exports = (env) => {
         publicPath: "https://unpkg.com/qsl@" + version + "/dist/",
       },
     },
-
-    /**
-     * Lab bundle embedder
-     */
-    embedder,
+  };
+  return [
+    targets.labwidget,
+    targets.eelwidget,
+    targets.nbwidget,
+    targets.documentation,
+    targets.public,
   ];
 };

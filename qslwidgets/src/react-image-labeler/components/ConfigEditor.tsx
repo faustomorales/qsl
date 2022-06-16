@@ -32,6 +32,7 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
     level: "image" as "image" | "regions",
     options: [] as string[],
     mockSelected: [] as string[],
+    required: false,
   };
   const [state, setState] = React.useState(emptyState);
   React.useEffect(() => {
@@ -40,7 +41,8 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
         ...emptyState,
         properties: ([] as string[])
           .concat(existing?.config?.freeform ? ["freeform"] : [])
-          .concat(existing?.config?.multiple ? ["multiple"] : []),
+          .concat(existing?.config?.multiple ? ["multiple"] : [])
+          .concat(existing?.config?.required ? ["required"] : []),
         displayName: existing.config.displayName || "",
         name: (existing.config.name || "") as string,
         level: existing.level || "image",
@@ -142,6 +144,7 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
               options: [
                 { name: "freeform", displayName: "Freeform" },
                 { name: "multiple", displayName: "Multiple" },
+                { name: "required", displayName: "Required" },
               ],
               multiple: true,
               freeform: false,
@@ -169,6 +172,7 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
                   displayName: state.displayName,
                   multiple: state.properties.indexOf("multiple") > -1,
                   freeform: state.properties.indexOf("freeform") > -1,
+                  required: state.properties.indexOf("required") > -1,
                   options,
                 },
                 state.level
@@ -205,6 +209,7 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
                   options,
                   multiple: state.properties.indexOf("multiple") > -1,
                   freeform: state.properties.indexOf("freeform") > -1,
+                  required: state.properties.indexOf("required") > -1,
                 }}
               />
             </Box>

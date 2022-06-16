@@ -176,6 +176,7 @@ qsl.MediaLabeler(**params)
     - `displayName`: The displayed name for the label entry in the UI. Defaults to the same value as `name`.
     - `multiple`: Whether the user can supply multiple labels for this label entry. Defaults to `false`.
     - `freeform`: Whether the user can write in their own labels for this entry. Defaults to `false`.
+    - `required`: Whether the user is required to provide a label for this entry.
     - `options`: A list of options that the user can select from -- each option has the following properties.
       - `name` [required]: The name for the option.
       - `displayName`: The displayed name for the option. Defaults to the same value as `name`.

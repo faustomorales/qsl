@@ -32,7 +32,10 @@ const Labeler: React.FC<
     true,
     [refs, hasFocus]
   );
-  const handleClose = () => setToast("");
+  const handleClose = React.useCallback(() => {
+    setToast("");
+    setFocus();
+  }, [setToast, setFocus]);
   return (
     <GlobalLabelerContext.Provider
       value={{

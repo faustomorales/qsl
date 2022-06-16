@@ -49,14 +49,12 @@ export const handleMediaClick = (
       drawing: { ...drawing, active: undefined },
       labels: {
         ...draft.labels,
-        [drawing.mode]: !drawing.active
-          ? draft.labels[drawing.mode]
-          : insertOrAppend(
-              draft.labels[drawing.mode],
-              draft.drawing.active!.region,
-              draft.drawing.active!.idx,
-              true
-            ),
+        [drawing.mode]: insertOrAppend(
+          draft.labels[drawing.mode],
+          drawing.active.region,
+          drawing.active.idx,
+          true
+        ),
       },
     };
   }

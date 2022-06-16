@@ -71,6 +71,7 @@ export const config: Config = {
       ],
       multiple: false,
       freeform: false,
+      required: true,
     },
   ],
 };

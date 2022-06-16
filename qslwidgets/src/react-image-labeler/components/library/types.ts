@@ -94,6 +94,7 @@ export interface LabelConfig {
   options?: Option[];
   multiple: boolean;
   freeform: boolean;
+  required?: boolean;
 }
 
 export interface Config {

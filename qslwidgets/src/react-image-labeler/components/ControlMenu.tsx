@@ -11,7 +11,9 @@ import {
   FormControlLabel,
   Checkbox,
   RadioGroup,
+  Tooltip,
   useTheme,
+  styled,
 } from "@mui/material";
 import {
   KeyboardArrowRight,
@@ -50,6 +52,32 @@ interface Callbacks {
   onDownload?: () => void;
   onUndo?: () => void;
 }
+
+const StyledButton = styled(Button)`
+  &.Mui-disabled {
+    pointer-events: auto;
+  }
+`;
+
+const ButtonWithTooltip = React.forwardRef<
+  HTMLButtonElement,
+  {
+    tooltipText?: string;
+    disabled: boolean;
+    onClick?: () => void;
+  } & React.ComponentProps<typeof Button>
+>(({ tooltipText, disabled, onClick, ...other }, ref) => {
+  const adjustedButtonProps = {
+    disabled: disabled,
+    component: disabled ? "div" : undefined,
+    onClick: disabled ? undefined : onClick,
+  };
+  return (
+    <Tooltip title={tooltipText || ""}>
+      <StyledButton ref={ref} {...other} {...adjustedButtonProps} />
+    </Tooltip>
+  );
+});
 
 const ControlMenu: React.FC<{
   config: Config;
@@ -126,8 +154,24 @@ const ControlMenu: React.FC<{
   });
   const { setFocus, hasFocus, setToast } =
     React.useContext(GlobalLabelerContext);
-  const finishPolygon = React.useCallback(
-    (save) =>
+  const requiredFieldsFilled = React.useMemo(() => {
+    if (draft.drawing.active) {
+      return computedState.activeConfig.every(
+        (c) =>
+          !c.required ||
+          (draft.drawing.active!.region.labels[c.name] || []).length > 0
+      );
+    } else {
+      return computedState.activeConfig.every(
+        (c) => !c.required || (draft.labels.image[c.name] || []).length > 0
+      );
+    }
+  }, [draft, computedState]);
+  const finishRegion = React.useCallback(
+    (save) => {
+      if (!draft.drawing.active) {
+        throw "Called to finish region but no region is selected.";
+      }
       setDraft({
         ...draft,
         dirty: true,
@@ -146,8 +190,9 @@ const ControlMenu: React.FC<{
           ...draft.drawing,
           active: undefined,
         },
-      }),
-    [draft]
+      });
+    },
+    [draft, computedState, setToast]
   );
   useKeyboardEvent(
     (event: KeyboardEvent) => {
@@ -211,13 +256,18 @@ const ControlMenu: React.FC<{
         default:
           return;
       }
-      if (target && refs[target].current) {
+      if (
+        (target == "finishRegion" || target == "save") &&
+        !requiredFieldsFilled
+      ) {
+        setToast("Please fill in all required fields.");
+      } else if (target && refs[target].current) {
         simulateClick(refs[target].current).then(setFocus);
         event.preventDefault();
         event.stopPropagation();
       }
     },
-    [callbacks, state, draft, refs, setFocus, setToast]
+    [callbacks, state, draft, refs, setFocus, setToast, requiredFieldsFilled]
   );
   const setLabels = React.useCallback(
     (current) => {
@@ -398,18 +448,24 @@ const ControlMenu: React.FC<{
       <Stack direction={computedState.direction} spacing={2}>
         {draft.drawing.active ? (
           <ButtonGroup fullWidth size="small" aria-label="region control menu">
-            <Button
+            <ButtonWithTooltip
               ref={refs.finishRegion}
-              onClick={() => finishPolygon(true)}
+              onClick={() => finishRegion(true)}
               startIcon={"\u23CE"}
+              disabled={!requiredFieldsFilled}
               className="finish-region"
+              tooltipText={
+                requiredFieldsFilled
+                  ? undefined
+                  : "Please fill all required fields."
+              }
             >
               {draft.drawing.active.region.readonly ? "Deselect" : "Finish"}
-            </Button>
+            </ButtonWithTooltip>
             <Button
               startIcon={"\u232B"}
               disabled={draft.drawing.active.region.readonly}
-              onClick={() => finishPolygon(false)}
+              onClick={() => finishRegion(false)}
               ref={refs.clearRegion}
             >
               Delete
@@ -463,15 +519,23 @@ const ControlMenu: React.FC<{
               </ButtonGroup>
             ) : null}
             <ButtonGroup fullWidth size="small" aria-label="label control menu">
-              <Button
+              <ButtonWithTooltip
                 ref={refs.save}
-                disabled={!callbacks?.onSave || disabled}
+                disabled={
+                  !callbacks?.onSave || disabled || !requiredFieldsFilled
+                }
                 onClick={callbacks?.onSave}
                 startIcon={"\u23CE"}
                 className="save"
+                tooltipText={
+                  requiredFieldsFilled
+                    ? undefined
+                    : "Please fill all required fields."
+                }
               >
                 Save
-              </Button>
+              </ButtonWithTooltip>
+
               {callbacks?.onIgnore || callbacks?.onUnignore ? (
                 <Button
                   ref={refs.ignore}

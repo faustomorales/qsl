@@ -127,7 +127,11 @@ const LabelPanelEntry: React.FC<LabelPanelEntryProps> = ({
         disabled={!!disabled}
         name={config.name}
       >
-        <FormLabel component="legend" className="label-panel-entry-label">
+        <FormLabel
+          component="legend"
+          className="label-panel-entry-label"
+          required={config.required}
+        >
           {config.displayName || config.name}{" "}
           {editConfig ? (
             <IconButton

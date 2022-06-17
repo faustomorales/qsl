@@ -435,6 +435,7 @@ class BaseMediaLabeler:
         for target, item in self.targets_and_items:
             if target["visible"] and target["selected"]:
                 item["labels"] = self.labels
+                item["ignore"] = False
                 if item.get("type", "image") != "video":
                     target["visible"] = False
                 jsonpath = item.get("jsonpath")

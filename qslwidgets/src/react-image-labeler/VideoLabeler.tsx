@@ -8,6 +8,7 @@ import {
   useKeyboardEvent,
   useImageEnhancements,
   simulateClick,
+  useCursorStyle,
 } from "./components/library/hooks";
 import MediaViewer from "./components/MediaViewer";
 import LabelerLayout from "./components/LabelerLayout";
@@ -164,7 +165,7 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
       },
     },
   ];
-
+  const cursorStyle = useCursorStyle(draft.drawing, config);
   return (
     <LabelerLayout
       metadata={metadata}
@@ -172,8 +173,6 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
       progress={options?.progress}
       control={
         <ControlMenu
-          cursor={cursor}
-          setCursor={setCursor}
           config={config}
           disabled={loader.loadState === "loading" || !playbackState.paused}
           direction={
@@ -209,7 +208,7 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
           <MediaViewer
             size={loader.mediaState?.size}
             loadState={loader.loadState}
-            cursor={cursor.coords}
+            cursor={playbackState.paused ? cursorStyle : undefined}
             onMouseLeave={() => setCursor({ ...cursor, coords: undefined })}
             media={{
               main: (
@@ -222,12 +221,6 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
                   src={loader.src}
                   style={{
                     filter: enhancements.filter,
-                    cursor:
-                      config.regions &&
-                      config.regions.length > 0 &&
-                      playbackState.paused
-                        ? "none"
-                        : undefined,
                   }}
                 />
               ),

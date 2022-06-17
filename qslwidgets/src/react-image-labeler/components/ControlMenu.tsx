@@ -34,7 +34,7 @@ import {
   useMediaLarge,
   simulateClick,
 } from "./library/hooks";
-import { DraftState, Config, CursorData } from "./library/types";
+import { DraftState, Config } from "./library/types";
 
 interface Callbacks {
   onKeyboardEvent?: (event: KeyboardEvent) => void;
@@ -83,8 +83,6 @@ const ControlMenu: React.FC<{
   config: Config;
   draft: DraftState;
   setDraft: (draft: DraftState) => void;
-  cursor: CursorData;
-  setCursor: (cursor: CursorData) => void;
   callbacks: Callbacks;
   disabled: boolean;
   showNavigation?: boolean;
@@ -92,12 +90,10 @@ const ControlMenu: React.FC<{
   direction: "column" | "row";
 }> = ({
   draft,
-  cursor,
   disabled,
   callbacks,
   showNavigation,
   setDraft,
-  setCursor,
   allowRegion = true,
   ...other
 }) => {
@@ -341,12 +337,14 @@ const ControlMenu: React.FC<{
                   onChange={(event) =>
                     setDraft({
                       ...draft,
-                      drawing:
-                        event.target.value === "masks"
-                          ? { flood: false, mode: "masks" }
-                          : {
-                              mode: event.target.value as "boxes" | "polygons",
-                            },
+                      drawing: {
+                        ...draft.drawing,
+                        mode: event.target.value as
+                          | "polygons"
+                          | "masks"
+                          | "boxes",
+                        active: undefined,
+                      },
                     })
                   }
                   value={draft.drawing.mode}
@@ -409,16 +407,19 @@ const ControlMenu: React.FC<{
                 <Box style={{ gridArea: "threshold", display: "inline-flex" }}>
                   <RangeSlider
                     name="Flood Threshold"
-                    value={cursor.threshold}
+                    value={draft.drawing.threshold}
                     min={0}
                     disabled={!draft.drawing.flood}
                     max={20}
                     width="100%"
                     aria-label="segmentation mask flood threshold"
                     onValueChange={(value) =>
-                      setCursor({
-                        ...cursor,
-                        threshold: value as number,
+                      setDraft({
+                        ...draft,
+                        drawing: {
+                          ...draft.drawing,
+                          threshold: value as number,
+                        },
                       })
                     }
                   />
@@ -426,15 +427,18 @@ const ControlMenu: React.FC<{
                 <Box style={{ gridArea: "size", display: "inline-flex" }}>
                   <RangeSlider
                     name="Cursor Size"
-                    value={cursor.radius}
+                    value={draft.drawing.radius}
                     min={1}
                     max={50}
                     width="100%"
                     aria-label="segmentation mask labeling radius"
                     onValueChange={(value) =>
-                      setCursor({
-                        ...cursor,
-                        radius: value,
+                      setDraft({
+                        ...draft,
+                        drawing: {
+                          ...draft.drawing,
+                          radius: value,
+                        },
                       })
                     }
                   />

@@ -12,6 +12,7 @@ import {
   useDraftLabelState,
   useMediaMouseCallbacks,
   useImageEnhancements,
+  useCursorStyle,
 } from "./components/library/hooks";
 import { draft2labels } from "./components/library/utils";
 import { Dimensions, ImageLabelerProps } from "./components/library/types";
@@ -77,6 +78,7 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
     config.regions && config.regions.length > 0 ? true : false,
     options?.maxCanvasSize
   );
+  const cursorStyle = useCursorStyle(draft.drawing, config);
   return (
     <LabelerLayout
       metadata={metadata}
@@ -84,8 +86,6 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
       layout={loader.mediaState?.layout || "horizontal"}
       control={
         <ControlMenu
-          cursor={cursor}
-          setCursor={setCursor}
           config={config}
           disabled={loader.loadState === "loading"}
           direction={
@@ -109,7 +109,7 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
           <Box>
             <MediaViewer
               size={loader.mediaState?.size}
-              cursor={cursor.coords}
+              cursor={cursorStyle}
               controls={
                 <EnhancementControls
                   enhancements={enhancements.value}
@@ -129,10 +129,6 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
                     draggable={false}
                     src={loader.src}
                     style={{
-                      cursor:
-                        config.regions && config.regions.length > 0
-                          ? "none"
-                          : undefined,
                       filter: enhancements.filter,
                     }}
                   />

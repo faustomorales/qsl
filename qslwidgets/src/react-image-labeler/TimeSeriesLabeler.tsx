@@ -6,7 +6,7 @@ import ControlMenu from "./components/ControlMenu";
 import LabelerLayout from "./components/LabelerLayout";
 import { Box, styled } from "@mui/material";
 import { draft2labels } from "./components/library/utils";
-import { useDraftLabelState, useMediaEvent } from "./components/library/hooks";
+import { useDraftLabelState } from "./components/library/hooks";
 import { processSelectionChange } from "./components/library/handlers";
 import { TimeSeriesLabelerProps } from "./components/library/types";
 import html2canvas from "html2canvas";
@@ -37,18 +37,10 @@ const TimeSeriesLabeler: React.FC<TimeSeriesLabelerProps> = ({
     downloadable: React.useRef<HTMLDivElement>(null),
   };
   const { setToast } = React.useContext(GlobalLabelerContext);
-  const { draft, setDraft, resetDraft, cursor, setCursor, undo } =
-    useDraftLabelState(labels, [target], [target]);
-  const onMouseMove = useMediaEvent(
-    (coords) => {
-      setCursor({ ...cursor, coords });
-    },
-    refs.container,
-    [cursor]
-  );
-  const onMouseLeave = React.useCallback(
-    () => setCursor({ ...cursor, coords: undefined }),
-    [cursor]
+  const { draft, setDraft, resetDraft, undo } = useDraftLabelState(
+    labels,
+    [target],
+    [target]
   );
   const save = React.useCallback(
     () =>
@@ -123,9 +115,7 @@ const TimeSeriesLabeler: React.FC<TimeSeriesLabelerProps> = ({
         layout={"vertical"}
         control={
           <ControlMenu
-            cursor={cursor}
             config={{ image: config.image || [] }}
-            setCursor={setCursor}
             allowRegion={false}
             disabled={false}
             direction={"row"}
@@ -143,11 +133,9 @@ const TimeSeriesLabeler: React.FC<TimeSeriesLabelerProps> = ({
         }
         content={
           <MediaViewer
-            cursor={cursor.coords}
-            onMouseLeave={onMouseLeave}
             media={{
               main: target ? (
-                <Box ref={refs.container} onMouseMove={onMouseMove}>
+                <Box ref={refs.container}>
                   <TimeSeries
                     target={target}
                     labels={draft.labels}

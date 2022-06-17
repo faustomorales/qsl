@@ -56,20 +56,24 @@ export interface DraftLabels {
   dimensions?: Dimensions;
 }
 
-export type DrawingState =
+export type DrawingState = {
+  flood: boolean;
+  radius: number;
+  threshold: number;
+} & (
   | {
       mode: "polygons";
       active?: { idx: number; region: PolygonLabel };
     }
   | {
       mode: "masks";
-      flood: boolean;
       active?: { idx: number; region: MaskLabel<Bitmap> };
     }
   | {
       mode: "boxes";
       active?: { idx: number; region: AlignedBoxLabel };
-    };
+    }
+);
 export interface CanvasData {
   hsv?: Uint8ClampedArray;
   width: number;
@@ -77,8 +81,6 @@ export interface CanvasData {
 }
 
 export interface CursorData {
-  radius: number;
-  threshold: number;
   coords: { x: number; y: number } | undefined;
 }
 

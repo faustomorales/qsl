@@ -11,6 +11,8 @@ import {
   MediaLoadState,
   CursorData,
   ImageEnhancements,
+  Config,
+  DrawingState,
 } from "./types";
 import { useTheme, useMediaQuery } from "@mui/material";
 import { labels2draft } from "./utils";
@@ -251,6 +253,9 @@ export const useDraftLabelState = (
     canvas: null,
     drawing: {
       mode: "boxes",
+      radius: 5,
+      threshold: 1,
+      flood: false,
     },
   });
   const [history, setHistory] = React.useState<DraftState[]>([]);
@@ -265,8 +270,6 @@ export const useDraftLabelState = (
     [history, draft]
   );
   const [cursor, setCursor] = React.useState<CursorData>({
-    radius: 5,
-    threshold: 1,
     coords: undefined,
   });
   const resetDraft = React.useCallback(
@@ -276,15 +279,7 @@ export const useDraftLabelState = (
         labels: labels2draft(labels || {}),
         dirty: false,
         canvas: null,
-        drawing:
-          draft.drawing.mode === "masks"
-            ? {
-                mode: "masks",
-                flood: draft.drawing.flood,
-              }
-            : {
-                mode: draft.drawing.mode,
-              },
+        drawing: { ...draft.drawing, active: undefined },
       }),
     [labels, draft]
   );
@@ -336,7 +331,6 @@ export const useMediaMouseCallbacks = (
           setDraft(
             handleMediaClick(
               draft,
-              cursor,
               point,
               refs,
               event.altKey,
@@ -507,3 +501,19 @@ export const useImageEnhancements = () => {
   );
   return { value, filter, set };
 };
+
+export const useCursorStyle = (drawing: DrawingState, config: Config) =>
+  React.useMemo(() => {
+    if (!config.regions || config.regions.length == 0) {
+      return undefined;
+    }
+    if (drawing.mode === "masks") {
+      const size = (drawing.radius * devicePixelRatio) / 2;
+      return `url(data:image/svg+xml;base64,${btoa(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+        <rect width="${size}" height="${size}" x="0" y="0" stroke="black" stroke-width="2" fill="none" />
+      </svg>`)}) ${size / 2} ${size / 2}, auto`;
+    } else {
+      return "crosshair";
+    }
+  }, [drawing, config, devicePixelRatio]);

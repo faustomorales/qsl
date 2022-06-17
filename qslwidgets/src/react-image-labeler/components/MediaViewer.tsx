@@ -51,13 +51,13 @@ const MediaViewer: React.FC<
       main: React.ReactNode;
       mini: React.ReactNode;
     };
+    cursor?: string;
     size?: Dimensions;
     controls?: React.ReactNode;
     loadState: MediaLoadState;
-    cursor?: Point;
     onMouseLeave?: () => void;
   } & React.ComponentProps<"div">
-> = ({ children, media, size, controls, loadState, onMouseLeave, cursor }) => {
+> = ({ children, media, size, controls, loadState, cursor, onMouseLeave }) => {
   const { setFocus, maxViewHeight } = React.useContext(GlobalLabelerContext);
   const refs = {
     viewport: React.useRef<HTMLDivElement>(null),
@@ -152,6 +152,8 @@ const MediaViewer: React.FC<
       ctrlKey: boolean;
       preventDefault?: () => void;
       stopPropagation?: () => void;
+      pageX?: number;
+      pageY?: number;
       cursor?: Point;
     }) => {
       if (!contentSizes) return;
@@ -172,7 +174,17 @@ const MediaViewer: React.FC<
           },
         });
       } else {
-        const center = event.cursor || cursor;
+        const center =
+          event.cursor ||
+          (event.pageX && event.pageY
+            ? convertCoordinates(
+                {
+                  x: event.pageX,
+                  y: event.pageY,
+                },
+                refs.media.current
+              )
+            : null);
         const newZoom = Math.max(
           state.zoom - event.deltaY / (2 * 100),
           10 / Math.min(contentSizes.raw.width, contentSizes.raw.height)
@@ -201,7 +213,7 @@ const MediaViewer: React.FC<
       setFocus();
       return false;
     },
-    [state, cursor, contentSizes]
+    [state, contentSizes]
   );
   const bind = useGesture(
     {
@@ -296,6 +308,7 @@ const MediaViewer: React.FC<
                     transformOrigin: "0 0",
                     position: "absolute",
                     touchAction: "none",
+                    cursor: dragging ? "grab" : cursor,
                   } as React.CSSProperties)
                 : { width: 0, height: 0, overflow: "hidden" }
             }

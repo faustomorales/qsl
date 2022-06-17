@@ -2,6 +2,7 @@ import React from "react";
 import { Box, styled } from "@mui/material";
 import Polygon from "./Polygon";
 import AlignedBox from "./AlignedBox";
+import RegionCursor from "./RegionCursor";
 import Mask from "./Mask";
 import { Config, DraftState, CursorData } from "./library/types";
 
@@ -117,6 +118,13 @@ const RegionList: React.FC<RegionListProps> = ({
           {...callbacks}
           bitmap={draft.drawing.active.region.map}
           style={{ pointerEvents: "none" }}
+        />
+      ) : null}
+      {cursor.coords && draft.drawing.mode === "masks" ? (
+        <RegionCursor
+          x={cursor.coords.x}
+          y={cursor.coords.y}
+          radius={draft.drawing.radius}
         />
       ) : null}
     </StyledBox>

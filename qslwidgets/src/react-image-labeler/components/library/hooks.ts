@@ -511,11 +511,7 @@ export const useCursorStyle = (drawing: DrawingState, config: Config) =>
       return undefined;
     }
     if (drawing.mode === "masks") {
-      const size = (drawing.radius * devicePixelRatio) / 2;
-      return `url(data:image/svg+xml;base64,${btoa(`
-      <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
-        <rect width="${size}" height="${size}" x="0" y="0" stroke="black" stroke-width="2" fill="none" />
-      </svg>`)}) ${size / 2} ${size / 2}, auto`;
+      return "none";
     } else {
       return "crosshair";
     }

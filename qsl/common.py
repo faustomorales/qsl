@@ -467,7 +467,7 @@ class BaseMediaLabeler:
 
     def delete(self):
         for target, item in self.targets_and_items:
-            if target["visible"] and target["selected"] and item.get("labels"):
+            if target["visible"] and target["selected"] and "labels" in item:
                 del item["labels"]
                 jsonpath = item.get("jsonpath")
                 if jsonpath and os.path.isfile(jsonpath):

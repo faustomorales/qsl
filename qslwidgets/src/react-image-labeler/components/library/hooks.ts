@@ -261,8 +261,8 @@ export const useDraftLabelState = (
   const [history, setHistory] = React.useState<DraftState[]>([]);
 
   const setDraft = React.useCallback(
-    (update: DraftState) => {
-      if (historyDeps && historyDeps.length > 0) {
+    (update: DraftState, skipHistory?: boolean) => {
+      if (historyDeps && historyDeps.length > 0 && !skipHistory) {
         setHistory([draft].concat(history).slice(0, MAX_UNDO_HISTORY));
       }
       setDraftInner(update);
@@ -273,14 +273,17 @@ export const useDraftLabelState = (
     coords: undefined,
   });
   const resetDraft = React.useCallback(
-    () =>
-      setDraft({
-        ...draft,
-        labels: labels2draft(labels || {}),
-        dirty: false,
-        canvas: null,
-        drawing: { ...draft.drawing, active: undefined },
-      }),
+    (skipHistory?: boolean) =>
+      setDraft(
+        {
+          ...draft,
+          labels: labels2draft(labels || {}),
+          dirty: false,
+          canvas: null,
+          drawing: { ...draft.drawing, active: undefined },
+        },
+        skipHistory
+      ),
     [labels, draft]
   );
   const resetHistory = React.useCallback(() => setHistory([]), []);
@@ -290,7 +293,7 @@ export const useDraftLabelState = (
       setHistory(history.slice(1));
     }
   }, [history]);
-  React.useEffect(resetDraft, [labels].concat(deps || []));
+  React.useEffect(() => resetDraft(true), [labels].concat(deps || []));
   React.useEffect(resetHistory, historyDeps || []);
   return {
     cursor,

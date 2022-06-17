@@ -35,7 +35,7 @@
     "watch:copy": "nodemon -e css,svelte --watch src --exec 'yarn copy'",
     "watch:tscw": "tsc -w",
     "watch:pack": "parallel-webpack --watch",
-    "clean": "rimraf ../qsl/ui/eelapp && rimraf ../qsl/ui/nbextension/index.js* ../qsl/ui/labextension",
+    "clean": "rimraf ../qsl/ui/eelapp ../qsl/ui/nbextension/index.js* ../qsl/ui/labextension dist lib",
     "format": "prettier --write src",
     "test": "jest",
     "storybook": "start-storybook -p 6006"

@@ -65,33 +65,35 @@ def target2repr(target, ttype):
     )
 
 
-def merge_items(initial, insert):
+def merge_items(exists, insert):
     """Merge two lists of items if there is an
     unambiguous way to do so."""
     try:
-        initialh, inserth = [
-            [
-                (entry.get("target"), tuple(entry.get("metadata", {}).items()))
+        exists_map, insert_map = [
+            {
+                (entry.get("target") or tuple(entry.get("metadata", {}).items())): entry
                 for entry in items
-            ]
-            for items in [initial, insert]
+            }
+            for items in [exists, insert]
         ]
-        add = [entry for entry, hval in zip(insert, inserth) if hval not in initialh]
-        bad = [
-            entry
-            for entry, hval in zip(insert, inserth)
-            if hval in initialh and entry.get("labels")
-        ]
+        combined = []
+        for key in list(set(exists_map.keys() + insert_map.keys())):
+            entry_exists = exists_map.get(key)
+            entry_insert = insert_map.get(key)
+            if entry_exists and not entry_insert:
+                combined.append(entry_exists)
+            elif not entry_exists and entry_insert:
+                combined.append(entry_insert)
+            elif entry_exists and entry_insert:
+                if entry_insert.get("metadata"):
+                    entry_exists["metadata"] = entry_insert["metadata"]
+                combined.append(entry_exists)
     except TypeError as exception:
         if "unhashable type" in exception.args[0]:
             raise ValueError(
                 "Metadata dictionaries must be string-string maps. Targets must be strings."
             ) from exception
-    if bad:
-        raise ValueError(
-            "Could not merge items because one of the targets have conflicting labels."
-        )
-    return initial + add
+    return combined
 
 
 class BaseMediaLabeler:

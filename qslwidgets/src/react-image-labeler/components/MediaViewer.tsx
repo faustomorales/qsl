@@ -19,7 +19,7 @@ const MediaViewerBox = styled(Box)`
     display: none;
   }
 
-  & .minimap .box-text {
+  & .minimap .region text {
     visibility: hidden;
   }
 

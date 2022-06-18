@@ -4,6 +4,7 @@ import {
   DraftLabels,
   TimestampedLabel,
   LabelConfig,
+  Point,
 } from "./types";
 import { counts2values, values2counts } from "./flooding";
 
@@ -127,4 +128,16 @@ export const shortcutify = (initial: LabelConfig[]): LabelConfig[] => {
         : undefined,
     };
   });
+};
+
+export const interpretPolygonPoints = (raw: Point[], cursor?: Point) => {
+  const points = cursor ? raw.concat([cursor]) : raw;
+  const [xmin, ymin, xmax, ymax] = [Math.min, Math.max]
+    .map((agg) =>
+      ["x", "y"].map((k) =>
+        agg.apply(Math, points.map((p) => p[k as "x" | "y"]) as number[])
+      )
+    )
+    .flat() as number[];
+  return { points, xmin, ymin, xmax, ymax };
 };

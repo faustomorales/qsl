@@ -2,7 +2,6 @@ const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const version = require("./package.json").version;
 const builder = require("@jupyterlab/builder/lib/extensionConfig").default;
-const merge = require("webpack-merge");
 
 module.exports = (env) => {
   const mode = env.production ? "production" : "development";
@@ -37,7 +36,10 @@ module.exports = (env) => {
         },
       ],
     },
-    ignoreWarnings: [/Failed to parse source map/, /No required version specified/],
+    ignoreWarnings: [
+      /Failed to parse source map/,
+      /No required version specified/,
+    ],
     devtool: mode === "development" ? "source-map" : false,
     externals: ["@jupyter-widgets/base"],
     resolve: {
@@ -122,6 +124,9 @@ module.exports = (env) => {
       },
     },
   };
+  targets.labwidget.module.rules = targets.labwidget.module.rules.concat(
+    defaults.module.rules
+  );
   return [
     targets.labwidget,
     targets.eelwidget,

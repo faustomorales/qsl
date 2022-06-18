@@ -2,9 +2,12 @@ import React from "react";
 import { Box, styled } from "@mui/material";
 import Polygon from "./Polygon";
 import AlignedBox from "./AlignedBox";
-import RegionCursor from "./RegionCursor";
 import Mask from "./Mask";
 import { Config, DraftState, CursorData } from "./library/types";
+import toReact from "svelte-adapter/react";
+import RegionCursorSvelte from "./RegionCursor.svelte";
+
+const RegionCursor = toReact(RegionCursorSvelte, {}, "div");
 
 interface RegionListProps {
   config: Config;

@@ -1,48 +1,31 @@
 import React from "react";
-import { Stack, Slider, Typography } from "@mui/material";
+import { RangeSliderMark } from "./library/types";
+import RangeSliderSvelte from "./RangeSlider.svelte";
+import toReact from "./library/adapter";
 
-const RangeSlider: React.FC<
-  {
-    name: string;
-    value: number;
-    min: number;
-    max: number;
-    width?: number | string;
-    disabled?: boolean;
-    onValueChange: (value: number) => void;
-  } & React.ComponentProps<typeof Slider>
-> = ({
-  name,
-  value,
-  onValueChange,
-  min,
-  max,
-  width,
-  disabled,
-  valueLabelDisplay = "on",
-  ...other
-}) => (
-  <Stack
-    direction="row"
-    alignItems="center"
-    spacing={2}
-    style={width ? { width: width } : {}}
-  >
-    <Typography fontSize="small">{name}</Typography>
-    <Slider
-      {...other}
-      size="small"
-      value={value}
-      style={width ? { width: width } : {}}
-      min={min}
-      classes={{ thumb: "slider-thumb" }}
-      max={max}
-      disabled={disabled}
-      valueLabelDisplay={valueLabelDisplay}
-      valueLabelFormat={(value) => value}
-      onChange={(event, value) => onValueChange(value as number)}
-    />
-  </Stack>
+const RangeSliderAdapted = toReact(RangeSliderSvelte);
+
+const RangeSlider: React.FC<{
+  name: string;
+  value: number;
+  min: number;
+  max: number;
+  width?: number | string;
+  disabled?: boolean;
+  onValueChange: (value: number) => void;
+  step?: number;
+  marks?: RangeSliderMark[];
+}> = ({ name, value, onValueChange, min, max, step, disabled, marks }) => (
+  <RangeSliderAdapted
+    name={name}
+    value={value}
+    min={min}
+    max={max}
+    disabled={disabled}
+    step={step}
+    marks={marks}
+    onChange={(event: any) => onValueChange(event.detail.value)}
+  />
 );
 
 export default RangeSlider;

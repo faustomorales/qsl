@@ -66,6 +66,7 @@ const MediaViewer: React.FC<
   };
   const [state, setState] = React.useState({
     zoom: 1.0,
+    initialZoom: 1.0,
     pos: { x: 0, y: 0 } as Point,
     minimapSize: { width: MAP_SIZE, height: MAP_SIZE },
     zoomInitialized: false,
@@ -82,10 +83,15 @@ const MediaViewer: React.FC<
       maxViewWidth > 0
     ) {
       const minimapScale = MAP_SIZE / Math.max(size.width, size.height);
+      const initialZoom = Math.min(
+        maxViewWidth / size.width,
+        maxViewHeight / size.height
+      );
       setState({
         ...state,
         zoomInitialized: true,
-        zoom: Math.min(maxViewWidth / size.width, maxViewHeight / size.height),
+        initialZoom,
+        zoom: initialZoom,
         minimapSize: {
           width: minimapScale * size.width,
           height: minimapScale * size.height,
@@ -265,6 +271,17 @@ const MediaViewer: React.FC<
       refs.media.current.removeEventListener("wheel", onImageScroll);
     };
   }, [refs.media, onImageScroll]);
+  const zoomProps = React.useMemo(() => {
+    return {
+      marks: [
+        { value: 100, label: "Full Size" },
+        { value: state.initialZoom * 100, label: "Fit" },
+      ],
+      min: Math.min(1, Math.round(100 * state.zoom)),
+      max: Math.max(500, Math.round(100 * state.zoom)),
+      value: Math.round(100 * state.zoom),
+    };
+  }, [state.zoom, state.initialZoom]);
   return (
     <MediaViewerBox className="media-viewer">
       <Box sx={{ mb: 2 }}>
@@ -389,12 +406,7 @@ const MediaViewer: React.FC<
           {controls || null}
           <RangeSlider
             name="Zoom"
-            className={"zoom"}
-            min={Math.min(1, Math.round(100 * state.zoom))}
-            max={Math.max(500, Math.round(100 * state.zoom))}
-            width={"100%"}
-            valueLabelDisplay="auto"
-            value={Math.round(100 * state.zoom)}
+            {...zoomProps}
             onValueChange={(zoom) =>
               setState({
                 ...state,

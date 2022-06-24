@@ -7,7 +7,7 @@ import {
   ButtonGroup,
   Button,
 } from "@mui/material";
-import LabelPanelEntry from "./LabelPanelEntry";
+import LabelPanel from "./LabelPanel";
 import { LabelConfig } from "./library/types";
 
 interface ConfigEditorProps {
@@ -100,32 +100,27 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
             ? "Edit Label Configuration"
             : "Add New Label Configuration"}
         </Typography>
-        <Box ml={-3} mr={-3}>
-          <LabelPanelEntry
-            setSelected={(_, [name]) => setState({ ...state, name })}
-            selected={[state.name]}
-            disabled={!!existing}
-            config={{ multiple: false, freeform: true, name: "Name" }}
-          />
-          <LabelPanelEntry
-            setSelected={(_, [displayName]) =>
-              setState({ ...state, displayName })
-            }
-            selected={[state.displayName]}
-            disabled={!!existing}
-            config={{ multiple: false, freeform: true, name: "Display Name" }}
-          />
-          <Divider sx={{ mb: 2 }} />
-          <LabelPanelEntry
-            disabled={!!existing}
-            setSelected={(_, [level]) =>
-              setState({
-                ...state,
-                level: (level as "image" | "regions") || state.level,
-              })
-            }
-            selected={[state.level]}
-            config={{
+        <LabelPanel
+          config={[
+            {
+              multiple: false,
+              freeform: true,
+              name: "name",
+              displayName: "Name",
+              disabled: !!existing,
+              freeformtag: "input",
+              panelrow: 0,
+            },
+            {
+              multiple: false,
+              freeform: true,
+              displayName: "Display Name",
+              name: "displayName",
+              disabled: !!existing,
+              freeformtag: "input",
+              panelrow: 0,
+            },
+            {
               options: allowRegion
                 ? [
                     { name: "image", displayName: "Image" },
@@ -134,13 +129,13 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
                 : [{ name: "image", displayName: "Image" }],
               multiple: false,
               freeform: false,
-              name: "Level",
-            }}
-          />
-          <LabelPanelEntry
-            setSelected={(_, properties) => setState({ ...state, properties })}
-            selected={state.properties}
-            config={{
+              name: "level",
+              displayName: "Level",
+              disabled: !!existing,
+              required: true,
+              panelrow: 1,
+            },
+            {
               options: [
                 { name: "freeform", displayName: "Freeform" },
                 { name: "multiple", displayName: "Multiple" },
@@ -148,20 +143,38 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
               ],
               multiple: true,
               freeform: false,
-              name: "Type",
-            }}
-          />
-          <LabelPanelEntry
-            setSelected={(_, options) => setState({ ...state, options })}
-            selected={state.options}
-            config={{
+              name: "properties",
+              displayName: "Type",
+              panelrow: 1,
+            },
+            {
               options: [],
               multiple: true,
               freeform: true,
-              name: "Options",
-            }}
-          />
-        </Box>
+              displayName: "Options",
+              name: "options",
+              panelrow: 1,
+            },
+          ]}
+          labels={{
+            name: [state.name],
+            displayName: [state.displayName],
+            level: [state.level],
+            properties: state.properties,
+            options: state.options,
+          }}
+          setLabels={(labels) =>
+            setState({
+              ...state,
+              name: labels.name[0],
+              displayName: labels.displayName[0],
+              level: labels.level[0] as "image" | "regions",
+              properties: labels.properties,
+              options: labels.options,
+            })
+          }
+          disabled={false}
+        />
         <ButtonGroup size="small" aria-label="label editing control menu">
           <Button
             disabled={!valid}
@@ -197,22 +210,23 @@ const ConfigEditor: React.FC<ConfigEditorProps> = ({
             <Typography>
               Your new label configuration will look like the following.
             </Typography>
-            <Box sx={{ ml: -3, mr: -3, mt: 1, mb: -3 }}>
-              <LabelPanelEntry
-                selected={state.mockSelected}
-                setSelected={(_, selected) =>
-                  setState({ ...state, mockSelected: selected })
-                }
-                config={{
+            <LabelPanel
+              disabled={false}
+              config={[
+                {
                   name: state.name,
                   displayName: state.displayName,
                   options,
                   multiple: state.properties.indexOf("multiple") > -1,
                   freeform: state.properties.indexOf("freeform") > -1,
                   required: state.properties.indexOf("required") > -1,
-                }}
-              />
-            </Box>
+                },
+              ]}
+              labels={{ [state.name]: state.mockSelected }}
+              setLabels={(labels) =>
+                setState({ ...state, mockSelected: labels[state.name] })
+              }
+            />
           </Box>
         ) : null}
       </Box>

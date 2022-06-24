@@ -13,7 +13,7 @@ const EnhancementControls: React.FC<{
     <Box
       sx={{
         display: "grid",
-        gridTemplateColumns: large ? `1fr 1fr 1fr 100px` : `1fr`,
+        gridTemplateColumns: large ? `1fr 1fr 1fr` : `1fr`,
         columnGap: 2,
       }}
     >
@@ -28,12 +28,11 @@ const EnhancementControls: React.FC<{
           step={0.1}
           name={e.name}
           key={e.key}
-          marks={[{ value: 1.0 }]}
-          valueLabelDisplay="auto"
           value={enhancements[e.key as keyof ImageEnhancements]}
           onValueChange={(value) =>
             setEnhancements({ ...enhancements, [e.key]: value })
           }
+          marks={[{ value: 1 }]}
         />
       ))}
     </Box>

@@ -1,7 +1,6 @@
 import React from "react";
 import FileSaver from "file-saver";
 import MediaViewer from "./components/MediaViewer";
-import TimeSeries from "./components/TimeSeries";
 import ControlMenu from "./components/ControlMenu";
 import LabelerLayout from "./components/LabelerLayout";
 import { Box, styled } from "@mui/material";
@@ -9,9 +8,13 @@ import { draft2labels } from "./components/library/utils";
 import { useDraftLabelState } from "./components/library/hooks";
 import { processSelectionChange } from "./components/library/handlers";
 import { TimeSeriesLabelerProps } from "./components/library/types";
+import TimeSeriesSvelte from "./components/TimeSeries.svelte";
 import html2canvas from "html2canvas";
 import Metadata from "./components/Metadata";
 import GlobalLabelerContext from "./components/GlobalLabelerContext";
+import toReact from "./components/library/adapter";
+
+const TimeSeries = toReact(TimeSeriesSvelte);
 
 const DownloadContainer = styled(Box)`
   & .metadata table {
@@ -137,14 +140,22 @@ const TimeSeriesLabeler: React.FC<TimeSeriesLabelerProps> = ({
               main: target ? (
                 <Box ref={refs.container}>
                   <TimeSeries
-                    target={target}
                     labels={draft.labels}
-                    toggle={toggle}
+                    target={target}
+                    onToggle={(event: any) =>
+                      toggle(event.detail.label, event.detail.value)
+                    }
                   />
                 </Box>
               ) : undefined,
               mini: target ? (
-                <TimeSeries target={target} labels={draft.labels} />
+                <TimeSeries
+                  labels={draft.labels}
+                  target={target}
+                  onToggle={(event: any) =>
+                    toggle(event.detail.label, event.detail.value)
+                  }
+                />
               ) : undefined,
             }}
             size={size}
@@ -158,7 +169,13 @@ const TimeSeriesLabeler: React.FC<TimeSeriesLabelerProps> = ({
             ref={refs.downloadable}
             style={{ display: "inline-block", padding: 20 }}
           >
-            <TimeSeries target={target} labels={draft.labels} />
+            <TimeSeries
+              labels={draft.labels}
+              target={target}
+              onToggle={(event: any) =>
+                toggle(event.detail.label, event.detail.value)
+              }
+            />
             {metadata ? <Metadata data={metadata} /> : null}
           </DownloadContainer>
         </Box>

@@ -1,7 +1,9 @@
 import React from "react";
-import { Box } from "@mui/material";
-import LabelPanelEntry from "./LabelPanelEntry";
+import LabelPanelSvelteRaw from "./LabelPanel.svelte";
+import toReact from "./library/adapter";
 import { LabelData, LabelConfig } from "./library/types";
+
+const LabelPanelSvelte = toReact(LabelPanelSvelteRaw);
 
 type LabelPanelProps = {
   config: LabelConfig[];
@@ -9,6 +11,7 @@ type LabelPanelProps = {
   disabled: boolean;
   setLabels: (labels: LabelData) => void;
   editConfig?: (name: string) => void;
+  
 };
 
 const LabelPanel: React.FC<LabelPanelProps> = ({
@@ -17,26 +20,15 @@ const LabelPanel: React.FC<LabelPanelProps> = ({
   setLabels,
   disabled,
   editConfig,
-}) => {
-  const setSelected = React.useCallback(
-    (name: string, selected: string[]) =>
-      setLabels({ ...labels, [name]: selected }),
-    [labels]
-  );
-  return (
-    <Box ml={-3} mr={-3}>
-      {config.map((c, i) => (
-        <LabelPanelEntry
-          key={c.name}
-          config={c}
-          disabled={disabled}
-          editConfig={editConfig}
-          selected={labels[c.name]}
-          setSelected={setSelected}
-        />
-      ))}
-    </Box>
-  );
-};
+}) => (
+  <LabelPanelSvelte
+    config={config}
+    labels={labels}
+    disabled={disabled}
+    editableConfig={!!editConfig}
+    onChange={(event: any) => setLabels(event.detail.labels)}
+    onEditConfig={(event: any) => editConfig!(event.detail.name)}
+  />
+);
 
 export default LabelPanel;

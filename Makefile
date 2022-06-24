@@ -33,6 +33,7 @@ build:  # Build the frontend and integrate into the package
 	yarn --cwd qslwidgets clean
 	@$(PYTHON_EXEC) yarn --cwd qslwidgets build
 package: build ## Make a local build of the Python package, source dist and wheel
+	rm -rf dist
 	@$(PYTHON_EXEC) pyproject-build .
 publish-docs:
 	cd docs && git init && git remote add origin git@github.com:faustomorales/qsl.git; git branch -m gh-pages && git add . && git commit --amend --no-edit && git push --force --set-upstream origin gh-pages

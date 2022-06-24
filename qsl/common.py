@@ -65,19 +65,32 @@ def target2repr(target, ttype):
     )
 
 
+def entry2hash(entry):
+    if "target" in entry:
+        target = entry["target"]
+        if isinstance(target, str):
+            return target
+        if isinstance(target, dict):
+            return hash(tuple(sorted(target.items())))
+        raise ValueError("Unsupported target type for hashing.")
+    if "metadata" in entry:
+        return hash(tuple(sorted(entry["metadata"].items())))
+    raise ValueError(f"Could not hash {entry}.")
+
+
 def merge_items(exists, insert):
     """Merge two lists of items if there is an
     unambiguous way to do so."""
     try:
+        exists_key, insert_key = [
+            [entry2hash(entry) for entry in items] for items in [exists, insert]
+        ]
         exists_map, insert_map = [
-            {
-                (entry.get("target") or tuple(entry.get("metadata", {}).items())): entry
-                for entry in items
-            }
-            for items in [exists, insert]
+            {key: entry for entry, key in zip(items, keys)}
+            for items, keys in [(exists, exists_key), (insert, insert_key)]
         ]
         combined = []
-        for key in list(set(exists_map.keys() + insert_map.keys())):
+        for key in exists_key + list(set(insert_key).difference(exists_key)):
             entry_exists = exists_map.get(key)
             entry_insert = insert_map.get(key)
             if entry_exists and not entry_insert:
@@ -88,11 +101,14 @@ def merge_items(exists, insert):
                 if entry_insert.get("metadata"):
                     entry_exists["metadata"] = entry_insert["metadata"]
                 combined.append(entry_exists)
+            else:
+                raise ValueError("An error occurred merging lists.")
     except TypeError as exception:
         if "unhashable type" in exception.args[0]:
             raise ValueError(
                 "Metadata dictionaries must be string-string maps. Targets must be strings."
             ) from exception
+        raise exception
     return combined
 
 
@@ -147,7 +163,7 @@ class BaseMediaLabeler:
             ), "Using a jsonpath is incompatible with raw array targets. Please remove the jsonpath argument. You can access labels by looking at `labeler.items`."
             jsondata = files.json_or_none(jsonpath)
             if jsondata is not None:
-                items = merge_items(initial=jsondata["items"], insert=items)
+                items = merge_items(exists=jsondata["items"], insert=items)
                 config = jsondata["config"]
                 mode = jsondata.get("mode", mode)
                 maxCanvasSize = jsondata.get("maxCanvasSize", maxCanvasSize)
@@ -338,10 +354,7 @@ class BaseMediaLabeler:
     def set_buttons(self):
         self.buttons = {
             "prev": self.idx != self.sortedIdxs[0],
-            "next": (
-                all(t["labeled"] or t["ignored"] for t in self.targets)
-                and self.targets[-1]["idx"] != self.sortedIdxs[-1]
-            ),
+            "next": self.targets[-1]["idx"] != self.sortedIdxs[-1],
             "save": any(t["selected"] for t in self.states),
             "config": self._allowConfigChange,
             "delete": any(

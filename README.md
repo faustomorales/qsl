@@ -209,8 +209,6 @@ qsl.MediaLabeler(**params)
         - `areas` [optional]: A list of clickable areas to draw onto the plot, each of which should have the following properties:
           - `x1` [required]: The starting x-coordinate for the area.
           - `x2` [required]: The ending x-coordinate for the area.
-          - `y1`: The starting y-coordinate for the area, defaults to the bottom.
-          - `y2`: The ending y-coordinate for the area, defaults to the top.
           - `labelKey` [required]: The label entry to which this area will write when the user clicks on it.
           - `labelVal` [required]: The value to which the label entry will be assigned when the user clicks on it.
           - `label` [required]: The text label that will appear on the area.

@@ -72,7 +72,6 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
   const imageCallbacks = useMediaMouseCallbacks(
     draft,
     setDraft,
-    cursor,
     setCursor,
     refs,
     config.regions && config.regions.length > 0 ? true : false,
@@ -143,7 +142,7 @@ const ImageLabeler: React.FC<ImageLabelerProps> = ({
                 ) : null,
               }}
               loadState={loader.loadState}
-              onMouseLeave={() => setCursor({ ...cursor, coords: undefined })}
+              onMouseLeave={() => setCursor(undefined)}
             >
               <RegionList
                 cursor={cursor}

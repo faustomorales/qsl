@@ -1,15 +1,11 @@
 import React from "react";
-import debounce from "lodash.debounce";
 import {
   Point,
   Labels,
   DraftState,
-  PolygonLabel,
-  AlignedBoxLabel,
   TimestampedLabel,
   MediaRefs,
   MediaLoadState,
-  CursorData,
   ImageEnhancements,
   Config,
   DrawingState,
@@ -22,6 +18,7 @@ import GlobalLabelerContext from "../GlobalLabelerContext";
 
 const MAX_UNDO_HISTORY = 10;
 
+export { simulateClick } from "./utils";
 export const convertCoordinates = (
   point: Point,
   image: HTMLElement | null
@@ -42,13 +39,11 @@ export const useMediaLarge = () =>
 export const useMediaEvent = <T>(
   func: (point: Point, event: React.MouseEvent, ...args: any[]) => void,
   elem: React.MutableRefObject<HTMLElement | null>,
-  deps?: React.DependencyList,
-  time?: number
+  deps?: React.DependencyList
 ) => {
-  return React.useMemo(() => {
-    const debounced = time && time !== 0 ? debounce(func, time) : func;
-    return (event: React.MouseEvent, ...args: T[]) =>
-      debounced(
+  return React.useCallback(
+    (event: React.MouseEvent, ...args: T[]) =>
+      func(
         convertCoordinates(
           {
             x: event.nativeEvent.pageX,
@@ -58,8 +53,9 @@ export const useMediaEvent = <T>(
         ),
         event,
         ...args
-      );
-  }, [...(deps || []), elem]);
+      ),
+    [...(deps || []), elem, func]
+  );
 };
 
 export const useKeyboardEvent = (
@@ -96,35 +92,6 @@ export const useKeyboardEvent = (
     };
   }, [wrapped]);
 };
-
-export const delay = (amount: number) =>
-  new Promise((resolve) => setTimeout(resolve, amount));
-
-export const simulateClick = (target: HTMLElement | null, offset?: Point) =>
-  new Promise<void>((resolve) => {
-    if (!target) return;
-    target.focus({ preventScroll: true });
-    target.classList.add("active");
-    const { x, y } = target.getBoundingClientRect();
-    const args = {
-      bubbles: true,
-      cancelable: true,
-      ...(offset
-        ? {
-            clientX: x + offset.x,
-            clientY: y + offset.y,
-          }
-        : {}),
-    };
-    target.dispatchEvent(new MouseEvent("mousedown", args));
-    target.dispatchEvent(new MouseEvent("mouseup", args));
-    delay(100).then(() => {
-      target.dispatchEvent(new MouseEvent("click", args));
-      target.classList.remove("active");
-      target.blur();
-      resolve();
-    });
-  });
 
 export const simulateScroll = async (
   target: HTMLElement | null,
@@ -269,9 +236,7 @@ export const useDraftLabelState = (
     },
     [history, draft]
   );
-  const [cursor, setCursor] = React.useState<CursorData>({
-    coords: undefined,
-  });
+  const [cursor, setCursor] = React.useState<Point | undefined>(undefined);
   const resetDraft = React.useCallback(
     (skipHistory?: boolean) =>
       setDraft(
@@ -308,21 +273,15 @@ export const useDraftLabelState = (
 export const useMediaMouseCallbacks = (
   draft: DraftState,
   setDraft: (draft: DraftState) => void,
-  cursor: CursorData,
-  setCursor: (cursor: CursorData) => void,
+  setCursor: (cursor?: Point) => void,
   refs: MediaRefs,
   showCursor: boolean,
   maxCanvasSize?: number
 ) => {
   const { setFocus, setToast } = React.useContext(GlobalLabelerContext);
   return {
-    onClick: useMediaEvent(
-      (
-        point,
-        event,
-        selected: PolygonLabel | AlignedBoxLabel,
-        idx?: number
-      ) => {
+    onClick: React.useCallback(
+      (event, idx?: number) => {
         setFocus();
         if (
           !showCursor ||
@@ -334,10 +293,15 @@ export const useMediaMouseCallbacks = (
           setDraft(
             handleMediaClick(
               draft,
-              point,
+              convertCoordinates(
+                {
+                  x: event.nativeEvent.pageX,
+                  y: event.nativeEvent.pageY,
+                },
+                refs.source.current
+              ),
               refs,
               event.altKey,
-              selected,
               maxCanvasSize,
               idx
             )
@@ -346,27 +310,29 @@ export const useMediaMouseCallbacks = (
           setToast(e as string);
         }
       },
-      refs.source,
-      [draft, cursor]
+      [refs.source, draft, setDraft]
     ),
     onMouseMove: useMediaEvent(
       (coords) => {
         if (!showCursor || !refs.source.current) return;
-        const mediaViewerScale = parseFloat(
-          getComputedStyle(refs.source.current).getPropertyValue(
-            "--media-viewer-scale"
-          ) || "1"
-        );
-        setCursor(
-          snapPolygonCoords({ ...cursor, coords }, draft.drawing, {
-            width: refs.source.current.clientWidth * mediaViewerScale,
-            height: refs.source.current.clientHeight * mediaViewerScale,
-          })
-        );
+        if (draft.drawing.mode === "polygons") {
+          const mediaViewerScale = parseFloat(
+            getComputedStyle(refs.source.current).getPropertyValue(
+              "--media-viewer-scale"
+            ) || "1"
+          );
+          setCursor(
+            snapPolygonCoords(coords, draft.drawing, {
+              width: refs.source.current.clientWidth * mediaViewerScale,
+              height: refs.source.current.clientHeight * mediaViewerScale,
+            })
+          );
+        } else {
+          setCursor(coords);
+        }
       },
       refs.source,
-      [draft, cursor],
-      0
+      [draft]
     ),
   };
 };

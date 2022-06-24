@@ -11,7 +11,9 @@ const ClickTarget: React.FC = () => {
         height: "100%",
         position: "absolute",
         top: 0,
+        zIndex: 0,
       }}
+      className="click-target"
       onClick={context.setFocus}
     />
   );

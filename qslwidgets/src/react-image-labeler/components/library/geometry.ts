@@ -1,4 +1,4 @@
-import { CursorData, DrawingState, Point, Dimensions } from "./types";
+import { DrawingState, Point, Dimensions } from "./types";
 
 export const computeDistance = (
   pt1: Point,
@@ -15,10 +15,10 @@ export const isPolygonClosed = (candidate: Point, points?: Point[]) => {
 };
 
 export const snapPolygonCoords = (
-  cursor: CursorData,
+  cursor: Point,
   drawing: DrawingState,
   dimensions: Dimensions
-): CursorData => {
+): Point => {
   if (
     !drawing.active ||
     drawing.mode !== "polygons" ||
@@ -26,12 +26,7 @@ export const snapPolygonCoords = (
   )
     return cursor;
   const start: Point = drawing.active.region.points[0];
-  const distance = Math.sqrt(
-    computeDistance(start, cursor.coords!, dimensions)
-  );
+  const distance = Math.sqrt(computeDistance(start, cursor, dimensions));
   if (distance > 10) return cursor;
-  return {
-    ...cursor,
-    coords: start,
-  };
+  return start;
 };

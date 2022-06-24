@@ -1,16 +1,12 @@
 import React from "react";
 import {
   Box,
-  Radio,
-  FormControl,
   Button,
-  FormLabel,
   Stack,
   Divider,
   ButtonGroup,
   FormControlLabel,
   Checkbox,
-  RadioGroup,
   Tooltip,
   useTheme,
   styled,
@@ -28,12 +24,9 @@ import ConfigEditor from "./ConfigEditor";
 import ClickTarget from "./ClickTarget";
 import GlobalLabelerContext from "./GlobalLabelerContext";
 import Metadata from "./Metadata";
-import { insertOrAppend, shortcutify } from "./library/utils";
-import {
-  useKeyboardEvent,
-  useMediaLarge,
-  simulateClick,
-} from "./library/hooks";
+import { shortcutify } from "./library/utils";
+import { useKeyboardEvent, useMediaLarge } from "./library/hooks";
+import { simulateClick } from "./library/utils";
 import { DraftState, Config } from "./library/types";
 
 interface Callbacks {
@@ -173,14 +166,10 @@ const ControlMenu: React.FC<{
         dirty: true,
         labels: {
           ...draft.labels,
-          [draft.drawing.mode]: !draft.drawing.active
-            ? draft.labels[draft.drawing.mode]
-            : insertOrAppend(
-                draft.labels[draft.drawing.mode],
-                draft.drawing.active.region,
-                draft.drawing.active.idx,
-                save
-              ),
+          [draft.drawing.mode]: (save
+            ? [draft.drawing.active.region]
+            : []
+          ).concat(draft.labels[draft.drawing.mode]),
         },
         drawing: {
           ...draft.drawing,
@@ -188,7 +177,7 @@ const ControlMenu: React.FC<{
         },
       });
     },
-    [draft, computedState, setToast]
+    [draft, computedState, setToast, setDraft]
   );
   useKeyboardEvent(
     (event: KeyboardEvent) => {
@@ -316,59 +305,45 @@ const ControlMenu: React.FC<{
       ) : null}
       {computedState.allowRegionSelection ? (
         <Box>
-          <Stack
-            alignContent="center"
-            direction={computedState.direction}
-            spacing={2}
-          >
+          <Stack alignContent="center" direction={computedState.direction}>
             <Box
               sx={{
+                paddingRight: 2,
                 borderRight:
                   draft.drawing.mode === "masks"
                     ? `solid 1px ${theme.palette.divider}`
                     : undefined,
               }}
             >
-              <FormControl>
-                <FormLabel>Drawing Mode</FormLabel>
-                <RadioGroup
-                  row
-                  className="drawing-mode-select"
-                  onChange={(event) =>
-                    setDraft({
-                      ...draft,
-                      drawing: {
-                        ...draft.drawing,
-                        mode: event.target.value as
-                          | "polygons"
-                          | "masks"
-                          | "boxes",
-                        active: undefined,
-                      },
-                    })
-                  }
-                  value={draft.drawing.mode}
-                >
-                  {[
-                    ["boxes", "Box"],
-                    ["polygons", "Polygon"],
-                    ["masks", "Mask"],
-                  ].map(([name, displayName], i) => (
-                    <FormControlLabel
-                      key={i}
-                      value={name}
-                      control={
-                        <Radio
-                          className="drawing-mode-option react-image-labeler-input-target"
-                          size="small"
-                        />
-                      }
-                      label={displayName}
-                      disabled={!!draft.drawing.active || disabled}
-                    />
-                  ))}
-                </RadioGroup>
-              </FormControl>
+              <LabelPanel
+                setLabels={(labels) =>
+                  setDraft({
+                    ...draft,
+                    drawing: {
+                      ...draft.drawing,
+                      mode: labels.drawingMode[0] as any,
+                    },
+                  })
+                }
+                disabled={!!draft.drawing.active || disabled}
+                labels={{ drawingMode: [draft.drawing.mode] }}
+                config={[
+                  {
+                    hiderequired: true,
+                    required: true,
+                    name: "drawingMode",
+                    displayName: "Drawing Mode",
+                    options: [
+                      { name: "boxes", displayName: "Boxes" },
+                      { name: "polygons", displayName: "Polygon" },
+                      { name: "masks", displayName: "Mask" },
+                    ],
+                    multiple: false,
+                    freeform: false,
+                    layout: "row",
+                  },
+                ]}
+              />
             </Box>
             {draft.drawing.mode === "masks" ? (
               <Box

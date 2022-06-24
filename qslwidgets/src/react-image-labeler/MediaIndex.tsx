@@ -4,7 +4,8 @@ import { DataGrid } from "@mui/x-data-grid";
 import { ArrowBack } from "@mui/icons-material";
 import GlobalLabelerContext from "./components/GlobalLabelerContext";
 import { IndexState } from "./components/library/types";
-import { simulateClick, useKeyboardEvent } from "./components/library/hooks";
+import { useKeyboardEvent } from "./components/library/hooks";
+import { simulateClick } from "./components/library/utils"
 
 interface MediaIndexProps<T extends string> {
   idx: number;

@@ -4,6 +4,7 @@ type GlobalLabelerContextProps = {
   setFocus: () => void;
   setToast: (message: string) => void;
   hasFocus: boolean;
+  useSvelte: boolean;
   maxViewHeight: number;
   container: React.MutableRefObject<HTMLElement | null>;
 };

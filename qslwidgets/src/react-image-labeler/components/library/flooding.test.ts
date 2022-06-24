@@ -1,4 +1,4 @@
-import { fillHsv, counts2values, values2counts } from "./library/flooding";
+import { fillHsv, counts2values, values2counts } from "./flooding";
 
 describe("Test map conversion", () => {
   it("should correctly convert rle to bmp", () => {

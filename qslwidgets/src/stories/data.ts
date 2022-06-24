@@ -9,10 +9,13 @@ export const images: {
   metadata?: { [key: string]: string };
 }[] = [
   {
-    url: "image1.jpg",
+    url: "image2.jpg",
     metadata: { foo: "bar" },
     labels: {
-      image: { Category: ["outdoor"] },
+      image: {
+        Category: ["outdoor"],
+        Description: ["This is an initial description."],
+      },
       boxes: [
         {
           pt1: { x: 0.25, y: 0.25 },
@@ -24,10 +27,15 @@ export const images: {
           pt2: { x: 0.6, y: 0.6 },
           labels: { Type: ["place"] },
         },
+        {
+          pt1: { x: 0.8, y: 0.1 },
+          pt2: { x: 0.9, y: 0.2 },
+          labels: { Type: ["place"] },
+        },
       ],
     },
   },
-  { url: "image2.jpg", labels: {} },
+  { url: "image1.jpg", labels: {} },
   { url: "image3.jpg", labels: {} },
   { url: "image4.jpg", labels: {} },
   { url: "image5.jpg", labels: {} },
@@ -47,7 +55,7 @@ export const config: Config = {
         { name: "indoor", displayName: "Indoor", shortcut: "i" },
       ],
       multiple: true,
-      freeform: true,
+      freeform: false,
     },
     {
       name: "Quality",

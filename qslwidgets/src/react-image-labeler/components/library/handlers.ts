@@ -1,14 +1,6 @@
 import { unfill, img2hsv, fillHsv, findMaskByPoint } from "./flooding";
 import { computeDistance, snapPolygonCoords } from "./geometry";
-import { insertOrAppend } from "./utils";
-import {
-  DraftState,
-  DrawingState,
-  PolygonLabel,
-  AlignedBoxLabel,
-  Point,
-  MediaRefs,
-} from "./types";
+import { DraftState, DrawingState, Point, MediaRefs } from "./types";
 import cloneDeep from "lodash.clonedeep";
 
 const DEFAULT_MAX_CANVAS_SIZE = 512;
@@ -18,11 +10,11 @@ export const handleMediaClick = (
   point: Point,
   refs: MediaRefs,
   altKey: boolean,
-  selected: PolygonLabel | AlignedBoxLabel,
   maxCanvasSize?: number,
   idx?: number
 ): DraftState => {
   let drawing: DrawingState = cloneDeep(draft.drawing);
+  let removeIdx: number | undefined = idx;
   if (!refs.source.current) {
     throw "Did not find relevant media elements.";
   }
@@ -39,7 +31,7 @@ export const handleMediaClick = (
   if (mediaViewerDragging == 1) {
     return draft;
   }
-  if (drawing.active && drawing.active.idx > -1) {
+  if (drawing.active && !drawing.active.editable) {
     // We have selected a pre-existing label and the user has
     // re-clicked. This results in de-selection.
     return {
@@ -47,12 +39,7 @@ export const handleMediaClick = (
       drawing: { ...drawing, active: undefined },
       labels: {
         ...draft.labels,
-        [drawing.mode]: insertOrAppend(
-          draft.labels[drawing.mode],
-          drawing.active.region,
-          drawing.active.idx,
-          true
-        ),
+        [drawing.mode]: [drawing.active.region, ...draft.labels[drawing.mode]],
       },
     };
   }
@@ -104,13 +91,14 @@ export const handleMediaClick = (
       if (maskIdx !== -1 && !altKey) {
         // We are selecting an existing one.
         drawing.active = {
-          idx: maskIdx,
+          editable: false,
           region: draft.labels.masks[maskIdx],
         };
+        removeIdx = maskIdx;
       } else {
         // We are creating a new one.
         drawing.active = {
-          idx: -1,
+          editable: true,
           region: {
             map: {
               dimensions: {
@@ -124,7 +112,17 @@ export const handleMediaClick = (
         };
       }
     }
-    return { ...draft, canvas, drawing };
+    return {
+      ...draft,
+      canvas,
+      drawing,
+      labels: {
+        ...draft.labels,
+        [drawing.mode]: draft.labels[drawing.mode].filter(
+          (_, i) => i !== removeIdx
+        ),
+      },
+    };
   } else if (drawing.mode === "polygons") {
     if (drawing.active) {
       // We're adding a point to an existing polygon.
@@ -133,27 +131,36 @@ export const handleMediaClick = (
         region: {
           ...drawing.active.region,
           points: drawing.active.region.points.concat([
-            snapPolygonCoords({ coords: point }, drawing, {
+            snapPolygonCoords(point, drawing, {
               width: refs.source.current.clientWidth * mediaViewerScale,
               height: refs.source.current.clientHeight * mediaViewerScale,
-            }).coords!,
+            }),
           ]),
         },
       };
-    } else if (selected && !altKey && idx !== undefined) {
+    } else if (!altKey && idx !== undefined) {
       // We just selected a polygon.
       drawing.active = {
-        region: selected as PolygonLabel,
-        idx,
+        region: draft.labels.polygons[idx],
+        editable: false,
       };
     } else {
       // We are creating a brand new polygon.
       drawing.active = {
         region: { points: [point], labels: {} },
-        idx: -1,
+        editable: true,
       };
     }
-    return { ...draft, drawing };
+    return {
+      ...draft,
+      drawing,
+      labels: {
+        ...draft.labels,
+        [drawing.mode]: draft.labels[drawing.mode].filter(
+          (_, i) => i !== removeIdx
+        ),
+      },
+    };
   } else if (drawing.mode === "boxes") {
     if (drawing.active) {
       // We're changing an existing box.
@@ -183,20 +190,29 @@ export const handleMediaClick = (
           pt2,
         },
       };
-    } else if (selected && !altKey && idx !== undefined) {
-      // We just selected a polygon.
+    } else if (!drawing.active && !altKey && idx !== undefined) {
+      // We just selected a box.
       drawing.active = {
-        region: selected as AlignedBoxLabel,
-        idx,
+        region: draft.labels.boxes[idx],
+        editable: false,
       };
     } else {
       // We are creating a brand new polygon.
       drawing.active = {
         region: { pt1: point, labels: {} },
-        idx: -1,
+        editable: true,
       };
     }
-    return { ...draft, drawing };
+    return {
+      ...draft,
+      drawing,
+      labels: {
+        ...draft.labels,
+        [drawing.mode]: draft.labels[drawing.mode].filter(
+          (_, i) => i !== removeIdx
+        ),
+      },
+    };
   }
   throw "Failed to handle media click operation.";
 };
@@ -211,11 +227,14 @@ export const handleMediaClick = (
 export const processSelectionChange = (
   value: string,
   selected: string[] | undefined,
-  multiple: boolean
+  multiple: boolean,
+  required?: boolean
 ) =>
   selected && selected.indexOf(value) > -1
     ? multiple
       ? selected.filter((v) => v != value)
+      : required
+      ? selected
       : []
     : multiple
     ? (selected || []).concat([value])

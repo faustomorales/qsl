@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
   import {
     pct2css,
     labels2string,
@@ -7,8 +6,9 @@
     interpretPolygonPoints,
   } from "./library/utils";
   import type { Point, PolygonLabel } from "./library/types";
-  export let polygon: PolygonLabel, color: string, candidate: Point | undefined;
-  const dispatch = createEventDispatcher();
+  export let polygon: PolygonLabel,
+    color: string,
+    candidate: Point | undefined = undefined;
   $: ({ points, xmin, ymin, xmax, ymax } = interpretPolygonPoints(
     polygon.points,
     candidate
@@ -36,12 +36,12 @@
   class="region polygon"
   width={html.width}
   height={html.height}
-  on:click={(nativeEvent) => dispatch("click", { nativeEvent })}
-  on:mousemove={(nativeEvent) => dispatch("mouseMove", { nativeEvent })}
   style="
     left: {html.left};
     top: {html.top};
   "
+  on:click
+  on:mousemove
 >
   <text fill={color} alignment-baseline="hanging">
     {html.labels}
@@ -50,14 +50,3 @@
     <line stroke={color} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} />
   {/each}
 </svg>
-
-<style>
-  .region {
-    position: absolute;
-    overflow: visible;
-  }
-
-  .region line {
-    stroke-width: calc(2px / var(--media-viewer-scale, 1));
-  }
-</style>

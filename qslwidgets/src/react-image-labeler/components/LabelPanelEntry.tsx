@@ -34,6 +34,10 @@ const StyledBox = styled(Box)`
     margin-bottom: 0;
     border-bottom: none;
   }
+
+  & .hide-required .MuiFormLabel-asterisk {
+    display: none;
+  }
 `;
 
 const buildOptionsList = (selected: string[] | undefined, options: Option[]) =>
@@ -129,7 +133,9 @@ const LabelPanelEntry: React.FC<LabelPanelEntryProps> = ({
       >
         <FormLabel
           component="legend"
-          className="label-panel-entry-label"
+          className={`label-panel-entry-label ${
+            config.hiderequired ? "hide-required" : ""
+          }`}
           required={config.required}
         >
           {config.displayName || config.name}{" "}
@@ -143,7 +149,7 @@ const LabelPanelEntry: React.FC<LabelPanelEntryProps> = ({
             </IconButton>
           ) : null}
         </FormLabel>
-        <FormGroup ref={ref}>
+        <FormGroup ref={ref} row={config.layout == "row"}>
           {(availableOptions || []).map((o, i) => {
             const controlProps = {
               checked: !!(selected && selected.indexOf(o.name) > -1),

@@ -7,9 +7,9 @@ import {
   useMediaMouseCallbacks,
   useKeyboardEvent,
   useImageEnhancements,
-  simulateClick,
   useCursorStyle,
 } from "./components/library/hooks";
+import { simulateClick } from "./components/library/utils"
 import MediaViewer from "./components/MediaViewer";
 import LabelerLayout from "./components/LabelerLayout";
 import ControlMenu from "./components/ControlMenu";
@@ -117,7 +117,6 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
   const mediaCallbacks = useMediaMouseCallbacks(
     draft,
     setDraft,
-    cursor,
     setCursor,
     { source: refs.main, canvas: refs.canvas },
     config.regions && config.regions.length > 0 ? true : false,
@@ -209,7 +208,7 @@ const VideoLabeler: React.FC<VideoLabelerProps> = ({
             size={loader.mediaState?.size}
             loadState={loader.loadState}
             cursor={playbackState.paused ? cursorStyle : undefined}
-            onMouseLeave={() => setCursor({ ...cursor, coords: undefined })}
+            onMouseLeave={() => setCursor(undefined)}
             media={{
               main: (
                 <video

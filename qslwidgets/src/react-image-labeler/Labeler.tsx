@@ -6,8 +6,11 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useInterval } from "./components/library/hooks";
 
 const Labeler: React.FC<
-  { maxViewHeight?: number } & React.HTMLAttributes<HTMLDivElement>
-> = ({ maxViewHeight = 512, children, ...other }) => {
+  {
+    maxViewHeight?: number;
+    useSvelte?: boolean;
+  } & React.HTMLAttributes<HTMLDivElement>
+> = ({ maxViewHeight = 512, useSvelte = false, children, ...other }) => {
   const refs = {
     hidden: React.useRef<HTMLInputElement>(null),
     container: React.useRef<HTMLElement>(null),
@@ -40,6 +43,7 @@ const Labeler: React.FC<
     <GlobalLabelerContext.Provider
       value={{
         container: refs.container,
+        useSvelte,
         setToast,
         setFocus,
         hasFocus,

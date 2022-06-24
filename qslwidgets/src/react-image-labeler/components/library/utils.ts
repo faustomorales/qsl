@@ -5,6 +5,7 @@ import {
   TimestampedLabel,
   LabelConfig,
   Point,
+  Bitmap,
 } from "./types";
 import { counts2values, values2counts } from "./flooding";
 
@@ -140,4 +141,138 @@ export const interpretPolygonPoints = (raw: Point[], cursor?: Point) => {
     )
     .flat() as number[];
   return { points, xmin, ymin, xmax, ymax };
+};
+
+export const renderBitmapToCanvas = (
+  bitmap: Bitmap,
+  canvas: HTMLCanvasElement,
+  color: "red" | "blue" | "yellow"
+) => {
+  if (!canvas) {
+    return false;
+  }
+  let context = canvas.getContext("2d");
+  if (context && bitmap) {
+    canvas.width = bitmap.dimensions.width;
+    canvas.height = bitmap.dimensions.height;
+    const pixels = context.createImageData(
+      bitmap.dimensions.width,
+      bitmap.dimensions.height
+    );
+    const colorValues =
+      color === "red"
+        ? [255, 0, 0, 127]
+        : color === "blue"
+        ? [0, 0, 255, 127]
+        : [255, 255, 0, 127];
+    Uint8ClampedArray.from(
+      Array.from(bitmap.values)
+        .map((v) => (v === 255 ? colorValues : [0, 0, 0, 0]))
+        .flat()
+    ).forEach((v, i) => (pixels.data[i] = v));
+    context.putImageData(pixels, 0, 0);
+    return true;
+  }
+  return false;
+};
+
+export const buildOptions = (
+  selected: string[] | undefined,
+  config: LabelConfig
+) =>
+  config.options || config.multiple
+    ? (config.options || [])
+        .concat(
+          selected
+            ? selected
+                .filter(
+                  (s) =>
+                    (config.options || []).findIndex((o) => o.name === s) == -1
+                )
+                .map((s) => {
+                  return { name: s, shortcut: "" };
+                })
+            : []
+        )
+        .map((o) => {
+          return {
+            ...o,
+            selected: selected && selected.indexOf(o.name) > -1,
+            label: `${o.displayName || o.name} ${
+              o.shortcut ? `(${o.shortcut})` : ""
+            }`,
+          };
+        })
+    : undefined;
+
+export const delay = (amount: number) =>
+  new Promise((resolve) => setTimeout(resolve, amount));
+
+export const simulateClick = (target: HTMLElement | null, offset?: Point) =>
+  new Promise<void>((resolve) => {
+    if (!target) return;
+    target.focus({ preventScroll: true });
+    target.classList.add("active");
+    const { x, y } = target.getBoundingClientRect();
+    const args = {
+      bubbles: true,
+      cancelable: true,
+      ...(offset
+        ? {
+            clientX: x + offset.x,
+            clientY: y + offset.y,
+          }
+        : {}),
+    };
+    target.dispatchEvent(new MouseEvent("mousedown", args));
+    target.dispatchEvent(new MouseEvent("mouseup", args));
+    delay(100).then(() => {
+      target.dispatchEvent(new MouseEvent("click", args));
+      target.classList.remove("active");
+      target.blur();
+      resolve();
+    });
+  });
+
+export const elementIsFocused = (
+  element: HTMLElement,
+  target?: EventTarget | null
+) => {
+  const active = document.activeElement;
+  if (!active) {
+    return false;
+  }
+  const parent1 = active.closest(".react-image-labeler");
+  const parent2 = element.closest(".react-image-labeler");
+  if (!parent1 || !parent2) {
+    return false;
+  }
+
+  if (
+    target &&
+    target instanceof HTMLElement &&
+    (target.nodeName === "TEXTAREA" ||
+      (target.nodeName === "INPUT" &&
+        (target as HTMLInputElement).type == "text"))
+  ) {
+    // We're typing into a form field and this field is *not* a checkbox
+    // or radio element.
+    return false;
+  }
+  return parent1.isSameNode(parent2);
+};
+
+export const focus = (element: HTMLElement) => {
+  const parent = element.closest(".react-image-labeler");
+  if (!parent) {
+    return false;
+  }
+  const target = parent.querySelector(
+    ".react-image-labeler-input-target.hidden"
+  ) as HTMLElement;
+  if (!target) {
+    return false;
+  }
+  target.focus({ preventScroll: true });
+  return true;
 };

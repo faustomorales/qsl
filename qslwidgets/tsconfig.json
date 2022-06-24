@@ -18,6 +18,6 @@
     "target": "es2015",
     "types": ["jest", "svelte"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "src/react-image-labeler/components/library/adapter.js"],
   "exclude": ["src/**/__tests__"]
 }

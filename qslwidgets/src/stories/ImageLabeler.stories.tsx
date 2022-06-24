@@ -14,7 +14,7 @@ export const BasicUsage: React.FC = () => {
     config: config,
   });
   return (
-    <Labeler>
+    <Labeler useSvelte={true}>
       <ImageLabeler
         callbacks={{
           onSaveConfig: (config) => setState({ ...state, config }),

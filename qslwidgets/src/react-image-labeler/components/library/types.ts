@@ -63,25 +63,21 @@ export type DrawingState = {
 } & (
   | {
       mode: "polygons";
-      active?: { idx: number; region: PolygonLabel };
+      active?: { editable: boolean; region: PolygonLabel };
     }
   | {
       mode: "masks";
-      active?: { idx: number; region: MaskLabel<Bitmap> };
+      active?: { editable: boolean; region: MaskLabel<Bitmap> };
     }
   | {
       mode: "boxes";
-      active?: { idx: number; region: AlignedBoxLabel };
+      active?: { editable: boolean; region: AlignedBoxLabel };
     }
 );
 export interface CanvasData {
   hsv?: Uint8ClampedArray;
   width: number;
   height: number;
-}
-
-export interface CursorData {
-  coords: { x: number; y: number } | undefined;
 }
 
 export interface Option {
@@ -97,6 +93,11 @@ export interface LabelConfig {
   multiple: boolean;
   freeform: boolean;
   required?: boolean;
+  disabled?: boolean;
+  panelrow?: number;
+  hiderequired?: boolean;
+  freeformtag?: "input" | "textarea";
+  layout?: "column" | "row";
 }
 
 export interface Config {
@@ -182,7 +183,17 @@ export type MediaRefs = {
   canvas: React.MutableRefObject<HTMLCanvasElement | null>;
 };
 
-type AxisDomainDefinition = ["dataMin" | number, "dataMax" | number];
+export type AxisDomainDefinition = ["dataMin" | number, "dataMax" | number];
+export type Line = {
+  name: string;
+  color?: string;
+  type?: string;
+  axis?: "left" | "right";
+  values: number[];
+  dot?: {
+    labelKey?: string;
+  };
+};
 
 export interface TimeSeriesTarget {
   filename?: string;
@@ -191,9 +202,6 @@ export interface TimeSeriesTarget {
       name: string;
       height?: number;
       values: number[];
-      type?: "number" | "category";
-      tickCount?: number;
-      click?: string;
     };
     y: {
       animation?: number;
@@ -205,31 +213,16 @@ export interface TimeSeriesTarget {
         left?: number;
         right?: number;
       };
-      types?: {
-        left?: "number" | "category";
-        right?: "number" | "category";
-      };
       labels?: {
         left?: string;
         right?: string;
       };
-      lines: {
-        name: string;
-        color?: string;
-        type?: string;
-        axis?: "left" | "right";
-        values: number[];
-        dot?: {
-          labelKey?: string;
-        };
-      }[];
+      lines: Line[];
     };
     size?: Dimensions;
     areas?: {
       x1: number;
       x2: number;
-      y1?: number;
-      y2?: number;
       stroke?: string;
       strokeDashArray?: string;
       label: string;
@@ -262,4 +255,9 @@ export interface ImageEnhancements {
   brightness: number;
   contrast: number;
   saturation: number;
+}
+
+export interface RangeSliderMark {
+  value: number;
+  label?: string;
 }

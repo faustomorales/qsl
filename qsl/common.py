@@ -425,6 +425,7 @@ class BaseMediaLabeler:
     def apply_action(self, value):
         if not value:
             return
+        LOGGER.info("Handling %s action", value)
         if value == "next":
             self.next()
         if value == "prev":

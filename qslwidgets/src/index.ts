@@ -3,4 +3,3 @@
 
 export * from "./version";
 export * from "./JupyterWidget";
-export * from "./CommonWidget";

@@ -16,8 +16,8 @@
     "strict": true,
     "strictPropertyInitialization": false,
     "target": "es2015",
-    "types": ["jest", "svelte"]
+    "types": ["jest", "svelte", "node"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "src/react-image-labeler/components/library/adapter.js"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "src/components/library/adapter.js"],
   "exclude": ["src/**/__tests__"]
 }

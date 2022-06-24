@@ -9,7 +9,6 @@ module.exports = (env) => {
   const defaults = {
     entry: "./lib/index.js",
     mode,
-    watch,
     module: {
       rules: [
         {
@@ -125,13 +124,13 @@ module.exports = (env) => {
     },
   };
   targets.labwidget.module.rules = targets.labwidget.module.rules.concat(
-    defaults.module.rules
+    defaults.module.rules.slice(0, 2) // Only add the svelte bits.
   );
   return [
     targets.labwidget,
-    targets.eelwidget,
     targets.nbwidget,
-    targets.documentation,
-    targets.public,
+    //targets.eelwidget,
+    //targets.documentation,
+    //targets.public,
   ];
 };

@@ -6,11 +6,9 @@
     Point,
     WidgetActions,
     ArbitraryMetadata,
-  } from "./library/types";
-  import {
-    createContentLoader,
-    createDraftStore,
-  } from "./library/common";
+  } from "../library/types";
+  import { enhancements } from "../library/stores";
+  import { createContentLoader, createDraftStore } from "../library/common";
   import ControlMenu from "./ControlMenu.svelte";
   import MediaViewer from "./MediaViewer.svelte";
   import RegionList from "./RegionList.svelte";
@@ -23,11 +21,19 @@
     editableConfig: boolean = false,
     maxCanvasSize: number = 512,
     transitioning: boolean = false,
+    viewHeight: number = 384,
     actions: WidgetActions = {};
   const dispatcher = createEventDispatcher();
   let image: HTMLImageElement;
   let cursor: Point | undefined = undefined;
   let { draft, history } = createDraftStore();
+  const invalidateImage = () => {
+    if ($draft.image) {
+      draft.set({ ...$draft, image: null });
+    }
+  };
+  // If our enhancements change.
+  $: $enhancements, invalidateImage();
   $: target, labels, draft.reset(labels);
   $: ({ callbacks: loadCallbacks, state: loadState } = createContentLoader({
     target,
@@ -45,6 +51,7 @@
 
 <MediaViewer
   size={$loadState.mediaState?.size}
+  {viewHeight}
   loadState={transitioning ? "loading" : $loadState.loadState}
 >
   <img
@@ -80,7 +87,7 @@
   on:showIndex
   on:undo={() => history.undo()}
   on:save={() => {
-    labels = draft.export();
+    labels = draft.export($loadState.mediaState?.size);
     dispatcher("save");
   }}
   on:reset={() => draft.reset(labels)}

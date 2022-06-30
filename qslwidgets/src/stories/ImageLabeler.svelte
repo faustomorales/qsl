@@ -1,6 +1,6 @@
 <script lang="ts">
   import { writable, Writable } from "svelte/store";
-  import { Labels, Config } from "../components/library/types";
+  import { Labels, Config } from "../library/types";
   import * as data from "./data";
   import Labeler from "../components/Labeler.svelte";
   import ImageLabeler from "../components/ImageLabeler.svelte";
@@ -9,11 +9,12 @@
   let metadata = data.images[$index].metadata;
   let config: Writable<Config> = writable(data.config);
   let labels: Writable<Labels> = writable(data.images[$index].labels);
-  index.subscribe((index) => {
-    labels.set(data.images[index].labels);
-    target = data.images[index].url;
-    metadata = data.images[index].metadata
-  });
+  const sync = () => {
+    labels.set(data.images[$index].labels);
+    target = data.images[$index].url;
+    metadata = data.images[$index].metadata;
+  };
+  $: $index, sync();
 </script>
 
 <Labeler progress={35} mode="light">

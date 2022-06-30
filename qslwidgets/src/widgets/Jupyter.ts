@@ -1,50 +1,31 @@
-import { WidgetModel } from "@jupyter-widgets/base";
+import type { WidgetModel, ISerializers } from "@jupyter-widgets/base";
 import { PageConfig } from "@jupyterlab/coreutils";
-import {
-  DOMWidgetModel,
-  DOMWidgetView,
-  ISerializers,
-} from "@jupyter-widgets/base";
-import { Writable, writable, get } from "svelte/store";
-import { WidgetState, defaultWidgetState } from "./types";
-import { MODULE_NAME, MODULE_VERSION } from "./version";
-import CommonWidget from "./CommonWidget.svelte";
+import { DOMWidgetModel, DOMWidgetView } from "@jupyter-widgets/base";
+import { MODULE_NAME, MODULE_VERSION } from "../version";
+import Widget, {
+  defaultWidgetState,
+  buildAttributeStoreFactory,
+} from "./common";
 
-const buildAttributeStore = <
-  WidgetModelState extends { [key: string]: any },
-  T extends keyof WidgetModelState & string
->(
-  name: T,
-  model: WidgetModel
-): Writable<WidgetModelState[T]> => {
-  const store: Writable<WidgetModelState[T]> = writable(model.get(name));
-  let unsubscribe: () => void;
-  const subscribe = () => {
-    unsubscribe = store.subscribe((value) => {
-      model.set(name, value);
-      model.save_changes();
-    });
-  };
-  subscribe();
-  model.on("change:" + name, () => {
-    const value = model.get(name);
-    if (value != get(store)) {
-      if (unsubscribe) unsubscribe();
-      store.set(value);
-      subscribe();
-    }
+const buildModelStateExtractor = (model: WidgetModel) => {
+  return buildAttributeStoreFactory((name, set) => {
+    const callback = () => set(model.get(name));
+    const key = "change:" + name;
+    model.on(key, callback);
+    let enabled = true;
+    return {
+      set: (value) => {
+        if (enabled) {
+          model.set(name, value);
+          model.save_changes();
+        }
+      },
+      default: model.get(name),
+      destroy: () => model.off(key, callback),
+      enable: () => (enabled = true),
+      disable: () => (enabled = false),
+    };
   });
-  return store;
-};
-
-const buildModelStateExtractor = <
-  WidgetModelState extends { [key: string]: any }
->(
-  model: WidgetModel
-) => {
-  return <T extends keyof WidgetModelState & string>(name: T) => {
-    return buildAttributeStore<WidgetModelState, T>(name, model);
-  };
 };
 
 class MediaLabelerModel extends DOMWidgetModel {
@@ -76,7 +57,7 @@ class MediaLabelerModel extends DOMWidgetModel {
 
 class MediaLabelerView extends DOMWidgetView {
   render() {
-    const extract = buildModelStateExtractor<WidgetState>(this.model);
+    const extract = buildModelStateExtractor(this.model);
     const base = extract("base");
     const baseIntervalId = setInterval(() => {
       const serverRoot = PageConfig.getOption("serverRoot");
@@ -89,7 +70,7 @@ class MediaLabelerView extends DOMWidgetView {
         clearInterval(baseIntervalId);
       }
     }, 100);
-    new CommonWidget({
+    new Widget({
       target: this.el,
       props: { extract },
     });

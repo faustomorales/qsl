@@ -1,13 +1,13 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import type { LabelConfig } from "./library/types";
+  import type { LabelConfig } from "../library/types";
   import {
     buildOptions,
     elementIsFocused,
     simulateClick,
     processSelectionChange,
     focus,
-  } from "./library/common";
+  } from "../library/common";
   import Edit from "./icons/Edit.svelte";
   import IconButton from "./IconButton.svelte";
   export let config: LabelConfig,

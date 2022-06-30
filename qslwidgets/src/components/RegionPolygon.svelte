@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { Point, PolygonLabel } from "./library/types";
-  import { pct2css, labels2string, epsilon } from "./library/common";
-  import { simplify } from "./library/geometry";
+  import type { Point, PolygonLabel } from "../library/types";
+  import { pct2css, labels2string, epsilon } from "../library/common";
+  import { simplify } from "../library/geometry";
   export let polygon: PolygonLabel,
     color: string,
     candidate: Point | undefined = undefined;

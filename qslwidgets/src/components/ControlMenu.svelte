@@ -6,8 +6,8 @@
     LabelConfig,
     LabelData,
     ControlMenuActions,
-  } from "./library/types";
-  import { shortcutify } from "./library/common";
+  } from "../library/types";
+  import { shortcutify } from "../library/common";
   import LabelPanel from "./LabelPanel.svelte";
   import ButtonGroup from "./ButtonGroup.svelte";
   import ConfigEditor from "./ConfigEditor.svelte";
@@ -163,7 +163,11 @@
         bind:value={draft.drawing.threshold}
         min={-1}
         step={1}
-        marks={[{ value: -1, label: "Off" }, { value: 0 }]}
+        marks={[{ value: -1, label: "Off" }].concat(
+          new Array(11)
+            .fill(undefined)
+            .map((v, i) => ({ value: i, label: i.toString() }))
+        )}
         disabled={false}
         max={10}
         aria-label="segmentation mask flood threshold"
@@ -242,7 +246,7 @@
           },
           {
             text: actions.ignore ? "Ignore" : "Unignore",
-            event: actions.ignore ? "onIgnore" : "onUnignore",
+            event: actions.ignore ? "ignore" : "unignore",
             disabled,
             hidden: !actions.ignore && !actions.unignore,
             shortcuts: [],

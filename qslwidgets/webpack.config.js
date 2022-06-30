@@ -86,7 +86,7 @@ module.exports = (env) => {
     },
     eelwidget: {
       ...defaults,
-      entry: "./lib/EelWidget.js",
+      entry: "./lib/widgets/Eel.js",
       output: {
         filename: "index.js",
         path: path.resolve(__dirname, "..", "qsl", "ui", "eelapp"),
@@ -129,8 +129,8 @@ module.exports = (env) => {
   return [
     targets.labwidget,
     targets.nbwidget,
-    //targets.eelwidget,
+    targets.eelwidget,
     //targets.documentation,
-    //targets.public,
+    targets.public,
   ];
 };

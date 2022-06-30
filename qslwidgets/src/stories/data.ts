@@ -1,10 +1,10 @@
-import {
+import type {
   Config,
   Labels,
   TimestampedLabel,
   IndexState,
   TimeSeriesTarget,
-} from "../components/library/types";
+} from "../library/types";
 
 export const images: {
   url: string | undefined;

@@ -1,18 +1,19 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import {
+  import type {
     TimestampedLabel,
     Config,
     ArbitraryMetadata,
     WidgetActions,
     Point,
-  } from "./library/types";
+  } from "../library/types";
   import {
     insertOrAppendByTimestamp,
     createContentLoader,
     createDraftStore,
     labels4timestamp,
-  } from "./library/common";
+  } from "../library/common";
+  import { enhancements } from "../library/stores";
   import MediaViewer from "./MediaViewer.svelte";
   import RegionList from "./RegionList.svelte";
   import Metadata from "./Metadata.svelte";
@@ -26,6 +27,7 @@
     editableConfig: boolean = false,
     maxCanvasSize: number = 512,
     transitioning: boolean = false,
+    viewHeight: number = 384,
     actions: WidgetActions = {};
   const dispatcher = createEventDispatcher();
   let main: HTMLVideoElement;
@@ -44,6 +46,13 @@
     playback = { ...playback, t2: frame.end };
     draft.reset(frame.labels);
   };
+  const invalidateImage = () => {
+    if ($draft.image) {
+      draft.set({ ...$draft, image: null });
+    }
+  };
+  // If our enhancements change.
+  $: $enhancements, invalidateImage();
   // If the external inputs change ...
   $: target, labels, synchronize();
   // If our current timestamp changes.
@@ -66,6 +75,7 @@
 <!-- svelte-ignore a11y-media-has-caption -->
 
 <MediaViewer
+  {viewHeight}
   size={$loadState.mediaState?.size}
   loadState={transitioning ? "loading" : $loadState.loadState}
 >
@@ -119,7 +129,7 @@
   on:save={() => {
     labels = insertOrAppendByTimestamp(
       {
-        labels: draft.export(),
+        labels: draft.export($loadState.mediaState?.size),
         timestamp: playback.t1,
         end: playback.t2,
       },

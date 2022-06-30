@@ -1,6 +1,6 @@
 <script lang="ts">
   import RangeSlider from "./RangeSlider.svelte";
-  import { enhancements } from "./library/stores";
+  import { enhancements } from "../library/stores";
 </script>
 
 <div class="controls-container">

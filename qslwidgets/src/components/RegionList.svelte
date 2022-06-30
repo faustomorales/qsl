@@ -4,11 +4,11 @@
     DrawingState,
     DraftLabels,
     ImageData,
-  } from "./library/types";
+  } from "../library/types";
   import { createEventDispatcher } from "svelte";
-  import { getDistance, convertCoordinates, snap } from "./library/geometry";
-  import { focus } from "./library/common";
-  import { fill, img2hsv, findMaskByPoint } from "./library/masking";
+  import { getDistance, convertCoordinates, snap } from "../library/geometry";
+  import { focus } from "../library/common";
+  import { fill, img2hsv, findMaskByPoint } from "../library/masking";
   import RegionBox from "./RegionBox.svelte";
   import RegionMask from "./RegionMask.svelte";
   import RegionPolygon from "./RegionPolygon.svelte";
@@ -167,7 +167,7 @@
     } else if (drawing.mode === "masks") {
       // Creating a new mask.
       dispatcher("change");
-      const index = findMaskByPoint(point, labels.masks);
+      const index = event.altKey ? -1 : findMaskByPoint(point, labels.masks);
       if (index > -1) {
         return createOnRegionClick(index)(event);
       }

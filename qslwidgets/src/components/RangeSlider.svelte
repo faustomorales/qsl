@@ -1,9 +1,10 @@
 <script lang="ts">
   import "nouislider/dist/nouislider.css";
   import { onMount } from "svelte";
-  import { API, create, target } from "nouislider";
-  import { RangeSliderMark } from "./library/types";
-  import { focus } from "./library/common";
+  import { create } from "nouislider";
+  import type { API, target } from "nouislider";
+  import type { RangeSliderMark } from "../library/types";
+  import { focus } from "../library/common";
   export let name: string,
     value: number,
     min: number,
@@ -116,6 +117,8 @@
   }
   .range-slider :global(.noUi-value) {
     font-size: 8pt;
+    padding-left: 5px;
+    padding-right: 5px;
   }
   .range-slider:not([disabled="true"]) :global(.noUi-value) {
     cursor: pointer;

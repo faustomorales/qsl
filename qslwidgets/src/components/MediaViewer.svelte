@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import type { Dimensions, Point, MediaLoadState } from "./library/types";
-  import { convertCoordinates } from "./library/geometry";
-  import { focus } from "./library/common";
+  import type { Dimensions, Point, MediaLoadState } from "../library/types";
+  import { convertCoordinates } from "../library/geometry";
+  import { focus } from "../library/common";
   import RangeSlider from "./RangeSlider.svelte";
   import ClickTarget from "./ClickTarget.svelte";
   import EnhancementControls from "./EnhancementControls.svelte";
@@ -342,7 +342,7 @@
     height: calc(var(--media-viewer-minimap-height) * 1px);
     position: relative;
     box-shadow: 4px 4px 8px rgb(0, 0, 0, 0.5);
-    background-color: lightgrey;
+    background-color: var(--background-color);
   }
   .minimap .image {
     transform: scale(var(--media-viewer-minimap-scale));

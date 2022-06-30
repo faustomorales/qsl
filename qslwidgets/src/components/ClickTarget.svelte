@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { focus } from "./library/common";
+  import { focus } from "../library/common";
 
   let element: HTMLDivElement;
 </script>

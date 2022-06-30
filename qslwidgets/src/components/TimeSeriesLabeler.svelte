@@ -7,11 +7,11 @@
     Dimensions,
     ArbitraryMetadata,
     TimeSeriesTarget,
-  } from "./library/types";
+  } from "../library/types";
   import html2canvas from "html2canvas";
   import FileSaver from "file-saver";
-  import { createDraftStore } from "./library/common";
-  import { toast } from "./library/stores";
+  import { createDraftStore } from "../library/common";
+  import { toast } from "../library/stores";
   import ControlMenu from "./ControlMenu.svelte";
   import MediaViewer from "./MediaViewer.svelte";
   import TimeSeries from "./TimeSeries.svelte";
@@ -23,6 +23,7 @@
     navigation: boolean = false,
     editableConfig: boolean = false,
     transitioning: boolean = false,
+    viewHeight: number = 384,
     actions: WidgetActions = {};
   const dispatcher = createEventDispatcher();
   let { draft, history } = createDraftStore();
@@ -52,6 +53,7 @@
 </script>
 
 <MediaViewer
+  {viewHeight}
   size={chartSize}
   loadState={transitioning ? "loading" : "loaded"}
   enhancementControls={false}

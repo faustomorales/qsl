@@ -1,7 +1,7 @@
 <script lang="ts">
   import Toast from "./Toast.svelte";
   import ProgressBar from "./ProgressBar.svelte";
-  import { enhancements } from "./library/stores";
+  import { enhancements } from "../library/stores";
   export let progress: number | undefined = undefined,
     mode: "dark" | "light" = "dark";
 </script>

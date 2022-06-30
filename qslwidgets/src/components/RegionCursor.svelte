@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { pct2css } from "./library/common";
+  import { pct2css } from "../library/common";
   const borderThickness = 2;
   export let x: number, y: number, radius: number;
 </script>

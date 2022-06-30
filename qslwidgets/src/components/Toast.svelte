@@ -1,7 +1,7 @@
 <script lang="ts">
   import { fade, fly } from "svelte/transition";
   import { flip } from "svelte/animate";
-  import { toast } from "./library/stores";
+  import { toast } from "../library/stores";
   import ToastItem from "./ToastItem.svelte";
   const getCss = (theme: { [key: string]: string }) =>
     Object.keys(theme).reduce((a, c) => `${a}${c}:${theme[c]};`, "");

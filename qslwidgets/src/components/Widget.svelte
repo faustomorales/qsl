@@ -1,12 +1,13 @@
 <script lang="ts">
-  import { Extractor, ActionType } from "./types";
-  import { toast } from "./components/library/stores";
-  import ImageLabeler from "./components/ImageLabeler.svelte";
-  import BatchImageLabeler from "./components/BatchImageLabeler.svelte";
-  import MediaIndex from "./components/MediaIndex.svelte";
-  import VideoLabeler from "./components/VideoLabeler.svelte";
-  import TimeSeriesLabeler from "./components/TimeSeriesLabeler.svelte";
-  import Labeler from "./components/Labeler.svelte";
+  import type { Extractor, ActionType } from "../library/types";
+  import { toast } from "../library/stores";
+  import ImageLabeler from "./ImageLabeler.svelte";
+  import BatchImageLabeler from "./BatchImageLabeler.svelte";
+  import MediaIndex from "./MediaIndex.svelte";
+  import VideoLabeler from "./VideoLabeler.svelte";
+  import TimeSeriesLabeler from "./TimeSeriesLabeler.svelte";
+  import ImagePreloader from "./ImagePreloader.svelte";
+  import Labeler from "./Labeler.svelte";
   export let extract: Extractor;
   const viewState = extract("viewState");
   const urls = extract("urls");
@@ -23,12 +24,16 @@
   const indexState = extract("indexState");
   const createAction = (name: ActionType) => () => action.set(name);
   const message = extract("message");
-  message.subscribe((update: string) => {
+  const viewHeight = extract("maxViewHeight");
+  const preload = extract("preload");
+  const message2toast = () => {
+    const update = $message;
     if (update) {
       toast.push(update);
       message.set("");
     }
-  });
+  };
+  $: $message, message2toast();
   $: urlStrings = ($urls as any[]).filter((u) => typeof u === "string");
   $: urlObjects = ($urls as any[]).filter((u) => typeof u === "object");
 </script>
@@ -40,6 +45,7 @@
         <ImageLabeler
           transitioning={$viewState === "transitioning"}
           target={urlStrings[0]}
+          viewHeight={$viewHeight}
           bind:config={$config}
           bind:labels={$labels}
           maxCanvasSize={$maxCanvasSize}
@@ -58,6 +64,7 @@
         <VideoLabeler
           transitioning={$viewState === "transitioning"}
           target={urlStrings[0]}
+          viewHeight={$viewHeight}
           bind:config={$config}
           bind:labels={$labels}
           maxCanvasSize={$maxCanvasSize}
@@ -76,6 +83,7 @@
         <TimeSeriesLabeler
           transitioning={$viewState === "transitioning"}
           target={urlObjects[0]}
+          viewHeight={$viewHeight}
           bind:config={$config}
           bind:labels={$labels}
           editableConfig={$buttons.config}
@@ -119,5 +127,6 @@
   {:else}
     <p>Unexpected view state requested.</p>
     >
-  {/if}</Labeler
->
+  {/if}
+  <ImagePreloader images={$preload} />
+</Labeler>

@@ -178,7 +178,7 @@ class BaseMediaLabeler:
         self.advanceOnSave = advanceOnSave
         self._targets: typing.List[Target] = []
         self._allowConfigChange = allowConfigChange
-        self.config = config
+        self.config = config or {"image": [], "regions": []}
         self.items = items
         self.idx = 0
         self._sortedIdxs = list(range(len(items)))
@@ -550,7 +550,7 @@ class BaseMediaLabeler:
             preload = []
             for iIdx in self.sortedIdxs[sIdx + 1 :]:
                 preloadCandidate = self.items[iIdx]
-                if preloadCandidate.get("type") == "time-series":
+                if preloadCandidate.get("type", "image") != "image":
                     continue
                 preloadUrl = files.build_url(
                     preloadCandidate.get("target"),

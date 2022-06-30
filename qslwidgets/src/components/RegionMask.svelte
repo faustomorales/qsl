@@ -1,8 +1,8 @@
 <svelte:options immutable={true} />
 
 <script lang="ts">
-  import type { Bitmap } from "./library/types";
-  import { renderBitmapToCanvas } from "./library/common";
+  import type { Bitmap } from "../library/types";
+  import { renderBitmapToCanvas } from "../library/common";
   export let bitmap: Bitmap, color: "red" | "blue" | "yellow";
   let canvas: HTMLCanvasElement;
   $: renderBitmapToCanvas(bitmap, canvas, color);

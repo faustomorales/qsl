@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import LabelPanelEntry from "./LabelPanelEntry.svelte";
-  import type { LabelConfig, LabelData } from "./library/types";
+  import type { LabelConfig, LabelData } from "../library/types";
   export let config: LabelConfig[],
     labels: LabelData,
     disabled: boolean,

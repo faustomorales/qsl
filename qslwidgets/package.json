@@ -1,6 +1,6 @@
 {
   "name": "qslwidgets",
-  "version": "0.0.43-dev.0",
+  "version": "0.0.43-dev.1",
   "description": "Widgets for the QSL image labeling package.",
   "keywords": [
     "jupyter",
@@ -10,6 +10,7 @@
   ],
   "files": [
     "lib/**/*.js",
+    "lib/**/*.svelte",
     "dist/*.js",
     "css/*.css"
   ],
@@ -30,7 +31,7 @@
   },
   "scripts": {
     "build": "tsc && yarn copy && webpack --env production",
-    "watch": "npm-run-all -p watch:*",
+    "watch": "tsc && npm-run-all -p watch:*",
     "copy": "copyfiles --up 1 src/**/**/*.{css,svelte} src/**/*.{css,svelte} src/*.{css,svelte} lib",
     "watch:copy": "nodemon -e css,svelte --watch src --exec 'yarn copy'",
     "watch:tscw": "tsc -w",
@@ -58,6 +59,7 @@
     "@storybook/manager-webpack5": "^6.5.9",
     "@storybook/svelte": "^6.5.9",
     "@storybook/testing-library": "^0.0.13",
+    "@tsconfig/svelte": "^3.0.0",
     "@types/file-saver": "^2.0.5",
     "@types/jest": "^26.0.0",
     "@types/node": "^18.0.0",

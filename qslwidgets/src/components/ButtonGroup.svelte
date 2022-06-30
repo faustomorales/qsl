@@ -1,13 +1,13 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import type { ButtonConfig } from "./library/types";
+  import type { ButtonConfig } from "../library/types";
   import {
     simulateClick,
     elementIsFocused,
     findFocusTarget,
     focus,
     pct2css,
-  } from "./library/common";
+  } from "../library/common";
   export let configs: ButtonConfig[];
   const dispatcher = createEventDispatcher();
   const click = (name: string) => dispatcher("click", { name });

@@ -1,6 +1,6 @@
 import { readable, get } from "svelte/store";
 import { toast } from "./stores";
-import {
+import type {
   AlignedBoxLabel,
   Labels,
   DraftLabels,
@@ -10,6 +10,7 @@ import {
   Bitmap,
   MediaLoadState,
   DraftState,
+  Dimensions,
 } from "./types";
 import { counts2values, values2counts } from "./masking";
 
@@ -399,6 +400,7 @@ export const createDraftStore = () => {
     inner.state.reset({
       ...get(inner.state),
       dirty: false,
+      image: null,
       labels: labels2draft(labels),
     });
   return {
@@ -406,7 +408,10 @@ export const createDraftStore = () => {
     draft: {
       ...inner.state,
       reset,
-      export: () => draft2labels(get(inner.state).labels),
+      export: (dimensions?: Dimensions) => ({
+        ...draft2labels(get(inner.state).labels),
+        dimensions,
+      }),
     },
   };
 };

@@ -4,9 +4,9 @@
     Labels,
     Config,
     WidgetActions,
-  } from "./library/types";
+  } from "../library/types";
   import { createEventDispatcher } from "svelte";
-  import { createDraftStore } from "./library/common";
+  import { createDraftStore } from "../library/common";
   import { MasonryGrid } from "@egjs/svelte-grid";
   import Metadata from "./Metadata.svelte";
   import EnhancementControls from "./EnhancementControls.svelte";

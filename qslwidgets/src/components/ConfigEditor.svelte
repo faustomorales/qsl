@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import type { LabelConfig } from "./library/types";
+  import type { LabelConfig } from "../library/types";
   import LabelPanel from "./LabelPanel.svelte";
   import ButtonGroup from "./ButtonGroup.svelte";
   export let open: boolean,

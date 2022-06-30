@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import type { IndexState } from "./library/types";
+  import type { IndexState } from "../library/types";
   import ButtonGroup from "./ButtonGroup.svelte";
   import Sort from "./icons/Sort.svelte";
   import SortUp from "./icons/SortUp.svelte";

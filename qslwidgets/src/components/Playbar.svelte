@@ -1,9 +1,10 @@
 <script lang="ts">
   import "nouislider/dist/nouislider.css";
   import { onMount, onDestroy } from "svelte";
-  import { API, create, target } from "nouislider";
-  import { RangeSliderMark } from "./library/types";
-  import { focus } from "./library/common";
+  import { create } from "nouislider";
+  import type { API, target } from "nouislider";
+  import type { RangeSliderMark } from "../library/types";
+  import { focus } from "../library/common";
   import IconButton from "./IconButton.svelte";
   import Muted from "./icons/Muted.svelte";
   import Unmuted from "./icons/Unmuted.svelte";

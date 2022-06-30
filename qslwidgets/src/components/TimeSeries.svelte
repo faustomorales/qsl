@@ -6,8 +6,8 @@
     DraftLabels,
     Config,
     AxisDomainDefinition,
-  } from "./library/types";
-  import { processSelectionChange } from "./library/common";
+  } from "../library/types";
+  import { processSelectionChange } from "../library/common";
   export let target: TimeSeriesTarget | undefined,
     config: Config,
     labels: DraftLabels,

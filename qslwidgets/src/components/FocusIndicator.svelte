@@ -1,16 +1,19 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import { focus } from "./library/common";
+  import { focus } from "../library/common";
   import Keyboard from "./icons/Keyboard.svelte";
   import KeyboardDisabled from "./icons/KeyboardDisabled.svelte";
 
-  import { elementIsFocused } from "./library/common";
+  import { elementIsFocused } from "../library/common";
   let element: HTMLElement;
   let destroy: number;
   let focused: boolean = false;
   onMount(
     () =>
-      (destroy = setInterval(() => (focused = elementIsFocused(element)), 100))
+      (destroy = setInterval(
+        () => (focused = elementIsFocused(element)),
+        100
+      ) as unknown as number)
   );
   onDestroy(() => clearInterval(destroy));
   const click = () => focus(element);

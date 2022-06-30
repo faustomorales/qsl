@@ -1,3 +1,5 @@
+import type { Writable } from "svelte/store";
+
 export type ArbitraryMetadata = { [key: string]: string };
 export type Point = { x: number; y: number };
 export type Vec = { dx: number; dy: number };
@@ -255,3 +257,65 @@ export interface ToastEntry {
   classes: string[];
   theme: { [key: string]: string };
 }
+
+export type ActionType =
+  | "next"
+  | "prev"
+  | "delete"
+  | "ignore"
+  | "unignore"
+  | "save"
+  | "label"
+  | "index"
+  | "";
+
+interface BaseWidgetState<T, U, V> {
+  states: {
+    metadata?: { [key: string]: string };
+    selected: boolean;
+    visible: boolean;
+    ignored: boolean;
+    labeled: boolean;
+    labels: Labels;
+  }[];
+  urls: V;
+  message: string;
+  type: T;
+  config: Config;
+  labels: U;
+  action: ActionType;
+  preload: string[];
+  maxCanvasSize: number;
+  maxViewHeight: number;
+  idx: number;
+  viewState: "transitioning" | "labeling" | "index";
+  indexState: IndexState;
+  buttons: {
+    next: boolean;
+    prev: boolean;
+    save: boolean;
+    config: boolean;
+    delete: boolean;
+    ignore: boolean;
+    unignore: boolean;
+  };
+  base: {
+    serverRoot: string;
+    url: string;
+  };
+  progress: number;
+  mode: "light" | "dark";
+}
+
+type ImageWidgetState = BaseWidgetState<"image", Labels, string[]>;
+type VideoWidgetState = BaseWidgetState<"video", TimestampedLabel[], string[]>;
+type TimeVideoState = BaseWidgetState<
+  "time-series",
+  Labels,
+  TimeSeriesTarget[]
+>;
+export type WidgetState = VideoWidgetState | ImageWidgetState | TimeVideoState;
+
+export type Extractor = <V extends keyof WidgetState & string>(
+  name: V
+) => Writable<WidgetState[V]>;

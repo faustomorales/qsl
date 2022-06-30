@@ -1,5 +1,5 @@
 import { writable } from "svelte/store";
-import { ImageEnhancements, ToastEntry } from "./types";
+import type { ImageEnhancements, ToastEntry } from "./types";
 
 export const enhancements = writable<ImageEnhancements>({
   brightness: 1,

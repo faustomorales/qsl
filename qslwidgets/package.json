@@ -1,6 +1,6 @@
 {
   "name": "qslwidgets",
-  "version": "0.0.43-dev.0",
+  "version": "0.0.43-dev.1",
   "description": "Widgets for the QSL image labeling package.",
   "keywords": [
     "jupyter",
@@ -10,6 +10,7 @@
   ],
   "files": [
     "lib/**/*.js",
+    "lib/**/*.svelte",
     "dist/*.js",
     "css/*.css"
   ],

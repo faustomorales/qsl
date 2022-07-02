@@ -10,7 +10,6 @@
     "noUnusedLocals": true,
     "outDir": "lib",
     "resolveJsonModule": true,
-    "rootDir": "src",
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
@@ -18,6 +17,7 @@
     "target": "es2015",
     "types": ["jest", "svelte", "node"]
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "src/library/adapter.js"],
-  "exclude": ["src/**/__tests__"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts"],
+  "exclude": ["src/**/__tests__"],
+  "extends": "@tsconfig/svelte/tsconfig.json"
 }

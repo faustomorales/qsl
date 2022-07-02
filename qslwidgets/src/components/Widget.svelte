@@ -34,8 +34,8 @@
     }
   };
   $: $message, message2toast();
-  $: urlStrings = ($urls as any[]).filter((u) => typeof u === "string");
-  $: urlObjects = ($urls as any[]).filter((u) => typeof u === "object");
+  $: urlStrings = (($urls || []) as any[]).filter((u) => typeof u === "string");
+  $: urlObjects = (($urls || []) as any[]).filter((u) => typeof u === "object");
 </script>
 
 <Labeler progress={$progress} mode={$mode}

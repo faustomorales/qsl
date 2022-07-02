@@ -25,9 +25,12 @@ const buildAttributeStoreFactory = <
     let subscribe: () => void;
     let external = initializer(name, (value) => {
       if (value != get(store)) {
+        console.log("common py->js", name, value);
         if (unsubscribe) unsubscribe();
         if (store) store.set(value);
         if (subscribe) subscribe();
+      } else {
+        console.log("Skipping py->js", name, value);
       }
     });
     store = writable(external.default);

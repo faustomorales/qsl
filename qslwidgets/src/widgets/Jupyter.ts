@@ -9,15 +9,23 @@ import Widget, {
 
 const buildModelStateExtractor = (model: WidgetModel) => {
   return buildAttributeStoreFactory((name, set) => {
-    const callback = () => set(model.get(name));
+    const callback = () => {
+      const value = model.get(name);
+      console.log("py->js", name, value);
+      set(value);
+    };
     const key = "change:" + name;
+    console.log("Listening for", key);
     model.on(key, callback);
     let enabled = true;
     return {
       set: (value) => {
         if (enabled) {
+          console.log("js->py", name, value);
           model.set(name, value);
           model.save_changes();
+        } else {
+          console.log("Skipping js->py due to disabled", name, value);
         }
       },
       default: model.get(name),

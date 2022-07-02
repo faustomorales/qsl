@@ -535,7 +535,6 @@ class BaseMediaLabeler:
         ]
         if reset:
             self.set_urls_and_type()
-            self.viewState = "labeling"
         base_item = next(i for t, i in self.targets_and_items if t["visible"])
         self.labels: typing.Union[dict, list] = typing.cast(
             typing.Union[dict, list],
@@ -568,6 +567,7 @@ class BaseMediaLabeler:
         if progress_after == 100 and progress_before < 100:
             self.message = "All items have been labeled."
         self.progress = progress_after
+        self.viewState = "labeling"
 
     def get_progress(self):
         return (

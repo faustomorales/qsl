@@ -3,53 +3,6 @@ import type { Config, Labels, WidgetState } from "../library/types";
 import { writable, get } from "svelte/store";
 import Widget from "../components/Widget.svelte";
 
-const buildAttributeStoreFactory = <
-  WidgetModelState extends { [key: string]: any },
-  T extends keyof WidgetModelState & string
->(
-  initializer: (
-    name: T,
-    set: (value: WidgetModelState[T]) => void
-  ) => {
-    default: WidgetModelState[T];
-    set: (value: WidgetModelState[T]) => void;
-    destroy: () => void;
-    enable: () => void;
-    disable: () => void;
-  }
-): ((name: T) => Writable<WidgetModelState[T]>) => {
-  const stores: { [key: string]: Writable<WidgetModelState[T]> } = {};
-  const inner = (name: T) => {
-    let store: Writable<WidgetModelState[T]>;
-    let unsubscribe: () => void;
-    let subscribe: () => void;
-    let external = initializer(name, (value) => {
-      if (value != get(store)) {
-        console.log("common py->js", name, value);
-        if (unsubscribe) unsubscribe();
-        if (store) store.set(value);
-        if (subscribe) subscribe();
-      } else {
-        console.log("Skipping py->js", name, value);
-      }
-    });
-    store = writable(external.default);
-    subscribe = () => {
-      external.disable();
-      unsubscribe = store.subscribe(external.set);
-      external.enable();
-    };
-    subscribe();
-    return store;
-  };
-  return (name) => {
-    if (!stores[name]) {
-      stores[name] = inner(name);
-    }
-    return stores[name];
-  };
-};
-
 const defaultWidgetState: WidgetState = {
   states: [],
   urls: [],
@@ -86,6 +39,60 @@ const defaultWidgetState: WidgetState = {
   },
   progress: -1,
   mode: "light" as "light" | "dark",
+};
+
+const buildAttributeStoreFactory = <
+  WidgetModelState extends { [key: string]: any },
+  T extends keyof WidgetModelState & string
+>(
+  initializer: (
+    name: T,
+    set: (value: WidgetModelState[T] | null) => void
+  ) => {
+    set: (value: WidgetModelState[T] | null) => void;
+    destroy: () => void;
+  }
+): {
+  extract: (name: T) => Writable<WidgetModelState[T] | null> & {
+    set: (value: WidgetModelState[T] | null, force: boolean) => void;
+  };
+  destroy: () => void;
+} => {
+  const stores: { [key: string]: Writable<WidgetModelState[T] | null> } = {};
+  const destructors: { [key: string]: () => void } = {};
+  let pystamp: number | null = null;
+  const inner = (name: T) => {
+    let store: Writable<WidgetModelState[T] | null> = writable(null);
+    let external = initializer(name, (value) => {
+      pystamp = Date.now();
+      store.set(value);
+    });
+    const set = (value: WidgetModelState[T] | null, force?: boolean) => {
+      if (force || (pystamp && Date.now() - pystamp > 500)) {
+        store.set(value);
+        external.set(value);
+      }
+    };
+    destructors[name] = external.destroy;
+    return {
+      set,
+      update: (
+        updater: (value: WidgetModelState[T] | null) => WidgetModelState[T]
+      ) => set(updater(get(store))),
+      subscribe: store.subscribe,
+    };
+  };
+  return {
+    extract: (name) => {
+      if (!stores[name]) {
+        stores[name] = inner(name);
+      }
+      return stores[name];
+    },
+    destroy: () => {
+      Object.values(destructors).map((d) => d());
+    },
+  };
 };
 
 export default Widget;

@@ -17,31 +17,14 @@ interface SyncEvent {
 
 const buildModelStateExtractor = () => {
   return buildAttributeStoreFactory((name, set) => {
-    let initialized = false;
-    let enabled = true;
     const syncKey = `sync:${name}`;
-    const sync = (event: CustomEvent<SyncEvent>) => {
-      initialized = true;
-      set(event.detail.value);
-    };
-    window.eel.init(name)((value: any) => {
-      if (!initialized) {
-        set(value);
-        initialized = true;
-      }
-    });
+    const sync = (event: CustomEvent<SyncEvent>) => set(event.detail.value);
+    window.eel.init(name)(set);
     document.addEventListener(syncKey, sync as EventListener, false);
     return {
-      default: (defaultWidgetState as any)[name],
-      set: (value) => {
-        if (initialized && enabled) {
-          window.eel.sync(name, value)();
-        }
-      },
+      set: (value) => window.eel.sync(name, value)(),
       destroy: () =>
         document.removeEventListener(syncKey, sync as EventListener, false),
-      enable: () => (enabled = true),
-      disable: () => (enabled = false),
     };
   });
 };
@@ -57,5 +40,5 @@ window.eel.expose(pysync, "sync");
 
 new Widget({
   target: document.getElementById("root") as Element,
-  props: { extract: buildModelStateExtractor() },
+  props: { extract: buildModelStateExtractor().extract },
 });

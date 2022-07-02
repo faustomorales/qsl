@@ -9,29 +9,16 @@ import Widget, {
 
 const buildModelStateExtractor = (model: WidgetModel) => {
   return buildAttributeStoreFactory((name, set) => {
-    const callback = () => {
-      const value = model.get(name);
-      console.log("py->js", name, value);
-      set(value);
-    };
+    const sync = () => set(model.get(name));
     const key = "change:" + name;
-    console.log("Listening for", key);
-    model.on(key, callback);
-    let enabled = true;
+    model.on(key, sync);
+    sync();
     return {
       set: (value) => {
-        if (enabled) {
-          console.log("js->py", name, value);
-          model.set(name, value);
-          model.save_changes();
-        } else {
-          console.log("Skipping js->py due to disabled", name, value);
-        }
+        model.set(name, value);
+        model.save_changes();
       },
-      default: model.get(name),
-      destroy: () => model.off(key, callback),
-      enable: () => (enabled = true),
-      disable: () => (enabled = false),
+      destroy: () => model.off(key, sync),
     };
   });
 };
@@ -64,24 +51,27 @@ class MediaLabelerModel extends DOMWidgetModel {
 }
 
 class MediaLabelerView extends DOMWidgetView {
+  protected destroyExtractors: () => void;
+
   render() {
-    const extract = buildModelStateExtractor(this.model);
-    const base = extract("base");
-    const baseIntervalId = setInterval(() => {
-      const serverRoot = PageConfig.getOption("serverRoot");
-      const url = PageConfig.getBaseUrl();
-      if (serverRoot && url) {
-        base.set({
-          serverRoot,
-          url,
-        });
-        clearInterval(baseIntervalId);
-      }
-    }, 100);
+    const { extract, destroy } = buildModelStateExtractor(this.model);
+    this.destroyExtractors = destroy;
+    extract("base").set(
+      {
+        serverRoot: PageConfig.getOption("serverRoot"),
+        url: PageConfig.getBaseUrl(),
+      },
+      true
+    );
     new Widget({
       target: this.el,
       props: { extract },
     });
+  }
+
+  remove(): void {
+    super.remove();
+    this.destroyExtractors();
   }
 }
 

@@ -40,7 +40,7 @@
     api.on("slide", (values) => (value = parseFloat(values[0] as any)));
     slider.querySelectorAll(".noUi-value").forEach((p) =>
       p.addEventListener("click", () => {
-        value = (p as any).dataset.value;
+        value = parseFloat((p as any).dataset.value);
         focus(slider);
       })
     );

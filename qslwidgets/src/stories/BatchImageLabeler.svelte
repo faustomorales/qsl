@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { Writable, writable } from "svelte/store";
-  import { Config, Labels, BatchEntry } from "../library/types";
+  import { writable } from "svelte/store";
+  import type { Writable } from "svelte/store";
+  import type { Config, Labels, BatchEntry } from "../library/types";
   import BatchImageLabeler from "../components/BatchImageLabeler.svelte";
   import Labeler from "../components/Labeler.svelte";
   import * as data from "./data";

@@ -93,288 +93,292 @@
   };
 </script>
 
-<ClickTarget />
-<LabelPanel
-  config={state.config}
-  labels={state.labels}
-  {editableConfig}
-  {disabled}
-  on:change={save}
-  on:editConfig={(event) => {
-    const config = state.config.find((c) => c.name == event.detail.name);
-    if (config) {
-      configEditorOptions = {
-        ...configEditorOptions,
-        open: true,
-        existing: {
-          config,
-          level,
-        },
-      };
-    }
-  }}
-/>
-{#if regions && config.regions && config.regions.length > 0}
-  <div class="drawing-configuration">
-    <div class="drawing-mode">
-      <LabelPanel
-        editableConfig={false}
-        on:change={(event) =>
-          (draft = {
-            ...draft,
-            drawing: {
-              ...draft.drawing,
-              mode: event.detail.labels.drawingMode[0],
-            },
-          })}
-        disabled={!!draft.drawing.active || disabled}
-        labels={{ drawingMode: [draft.drawing.mode] }}
-        config={[
-          {
-            hiderequired: true,
-            required: true,
-            name: "drawingMode",
-            displayName: "Drawing Mode",
-            options: [
-              { name: "boxes", displayName: "Boxes" },
-              { name: "polygons", displayName: "Polygon" },
-              { name: "masks", displayName: "Mask" },
-            ],
-            multiple: false,
-            freeform: false,
-            layout: "row",
+<div class="control-menu">
+  <ClickTarget />
+  <LabelPanel
+    config={state.config}
+    labels={state.labels}
+    {editableConfig}
+    {disabled}
+    on:change={save}
+    on:editConfig={(event) => {
+      const config = state.config.find((c) => c.name == event.detail.name);
+      if (config) {
+        configEditorOptions = {
+          ...configEditorOptions,
+          open: true,
+          existing: {
+            config,
+            level,
           },
-        ]}
-      />
-    </div>
-    <div class="size-threshold">
-      <RangeSlider
-        name="Cursor Size"
-        bind:value={draft.drawing.radius}
-        min={1}
-        max={50}
-        disabled={false}
-        aria-label="segmentation mask labeling radius"
-      />
-    </div>
-    <div class="flood-threshold">
-      <RangeSlider
-        name="Flood Fill"
-        bind:value={draft.drawing.threshold}
-        min={-1}
-        step={1}
-        marks={[{ value: -1, label: "Off" }].concat(
-          new Array(11)
-            .fill(undefined)
-            .map((v, i) => ({ value: i, label: i.toString() }))
-        )}
-        disabled={false}
-        max={10}
-        aria-label="segmentation mask flood threshold"
-      />
-    </div>
-  </div>
-{/if}
-<div class="controls">
-  <div class="control-group">
-    <FocusIndicator />
-    {#if draft.drawing.active}
-      <ButtonGroup
-        on:click={({ detail: { name } }) => {
-          if (name !== "save-region" && name !== "delete-region") {
-            dispatcher(name);
-            return;
-          }
-          dispatcher("change");
-          draft = {
-            ...draft,
-            dirty: true,
-            labels: {
-              ...draft.labels,
-              [draft.drawing.mode]: (name === "save-region" &&
-              draft.drawing.active
-                ? [draft.drawing.active.region]
-                : []
-              ).concat(draft.labels[draft.drawing.mode]),
-            },
-            drawing: {
-              ...draft.drawing,
-              active: undefined,
-            },
-          };
-        }}
-        configs={[
-          {
-            text: draft.drawing.active.region.readonly ? "Deselect" : "Finish",
-            event: "save-region",
-            disabled: !valid,
-            tooltip: valid
-              ? "Finish labeling region"
-              : "Please fill all required fields.",
-            class: "finish-region",
-            shortcuts: [{ key: "Enter" }],
-          },
-          {
-            text: "Delete",
-            shortcuts: [{ key: "Delete" }, { key: "Backspace" }],
-            event: "delete-region",
-            tooltip: "Delete this region.",
-            disabled: disabled,
-          },
-          {
-            text: "Undo",
-            event: "undo",
-            tooltip: "Undo last operation",
-            hidden: !actions.undo,
-            disabled,
-            shortcuts: [{ key: "z", ctrlKey: true }],
-          },
-        ]}
-      />
-    {:else}
-      <ButtonGroup
-        on:click={action}
-        configs={[
-          {
-            text: "Save",
-            event: "save",
-            shortcuts: [{ key: "Enter" }],
-            tooltip: valid
-              ? "Save current labels."
-              : "Please fill all required fields.",
-            disabled: !actions.save || disabled || !valid,
-          },
-          {
-            text: actions.ignore ? "Ignore" : "Unignore",
-            event: actions.ignore ? "ignore" : "unignore",
-            disabled,
-            hidden: !actions.ignore && !actions.unignore,
-            shortcuts: [],
-            tooltip: "Ignore this item.",
-          },
-          {
-            text: "Delete",
-            event: "delete",
-            shortcuts: [{ key: "Backspace" }, { key: "Delete" }],
-            tooltip: "Delete labels",
-            disabled,
-            hidden: !actions.delete,
-          },
-          {
-            text: "Reset",
-            event: "reset",
-            hidden: !draft.dirty,
-            disabled,
-            shortcuts: [],
-            tooltip: "Reset labels to current saved version.",
-          },
-          {
-            text: "Undo",
-            event: "undo",
-            hidden: !actions.undo,
-            shortcuts: [{ key: "z", ctrlKey: true }],
-            tooltip: "Undo the last action",
-            disabled,
-          },
-          {
-            text: "Download",
-            event: "download",
-            hidden: !actions.download,
-            shortcuts: [],
-            tooltip: "Download this item.",
-            disabled,
-          },
-        ]}
-      />
-    {/if}
-  </div>
-  {#if !draft.drawing.active}
-    {#if actions.selectAll || actions.selectNone}
-      <div class="control-group">
-        <ButtonGroup
-          on:click={({ detail: { name } }) => dispatcher(name)}
-          configs={[
+        };
+      }
+    }}
+  />
+  {#if regions && config.regions && config.regions.length > 0}
+    <div class="drawing-configuration">
+      <div class="drawing-mode">
+        <LabelPanel
+          editableConfig={false}
+          on:change={(event) =>
+            (draft = {
+              ...draft,
+              drawing: {
+                ...draft.drawing,
+                mode: event.detail.labels.drawingMode[0],
+              },
+            })}
+          disabled={!!draft.drawing.active || disabled}
+          labels={{ drawingMode: [draft.drawing.mode] }}
+          config={[
             {
-              text: "Select All",
-              event: "selectAll",
-              disabled: !actions.selectAll || disabled,
-              class: "select-all",
-              shortcuts: [{ ctrlKey: true, key: "a" }],
-              tooltip: "Select All",
-              hidden: !actions.selectAll,
-            },
-            {
-              text: "Select None",
-              event: "selectNone",
-              disabled: !actions.selectNone || disabled,
-              hidden: !actions.selectNone,
-              shortcuts: [{ ctrlKey: true, shiftKey: true, key: "a" }],
-              tooltip: "Select None",
-              class: "select-none",
+              hiderequired: true,
+              required: true,
+              name: "drawingMode",
+              displayName: "Drawing Mode",
+              options: [
+                { name: "boxes", displayName: "Boxes" },
+                { name: "polygons", displayName: "Polygon" },
+                { name: "masks", displayName: "Mask" },
+              ],
+              multiple: false,
+              freeform: false,
+              layout: "row",
             },
           ]}
         />
       </div>
-    {/if}
-    {#if actions.prev || actions.next || navigation}
-      <div class="control-group">
+      <div class="size-threshold">
+        <RangeSlider
+          name="Cursor Size"
+          bind:value={draft.drawing.radius}
+          min={1}
+          max={50}
+          disabled={false}
+          aria-label="segmentation mask labeling radius"
+        />
+      </div>
+      <div class="flood-threshold">
+        <RangeSlider
+          name="Flood Fill"
+          bind:value={draft.drawing.threshold}
+          min={-1}
+          step={1}
+          marks={[{ value: -1, label: "Off" }].concat(
+            new Array(11)
+              .fill(undefined)
+              .map((v, i) => ({ value: i, label: i.toString() }))
+          )}
+          disabled={false}
+          max={10}
+          aria-label="segmentation mask flood threshold"
+        />
+      </div>
+    </div>
+  {/if}
+  <div class="controls">
+    <div class="control-group">
+      <FocusIndicator />
+      {#if draft.drawing.active}
+        <ButtonGroup
+          on:click={({ detail: { name } }) => {
+            if (name !== "save-region" && name !== "delete-region") {
+              dispatcher(name);
+              return;
+            }
+            dispatcher("change");
+            draft = {
+              ...draft,
+              dirty: true,
+              labels: {
+                ...draft.labels,
+                [draft.drawing.mode]: (name === "save-region" &&
+                draft.drawing.active
+                  ? [draft.drawing.active.region]
+                  : []
+                ).concat(draft.labels[draft.drawing.mode]),
+              },
+              drawing: {
+                ...draft.drawing,
+                active: undefined,
+              },
+            };
+          }}
+          configs={[
+            {
+              text: draft.drawing.active.region.readonly
+                ? "Deselect"
+                : "Finish",
+              event: "save-region",
+              disabled: !valid,
+              tooltip: valid
+                ? "Finish labeling region"
+                : "Please fill all required fields.",
+              class: "finish-region",
+              shortcuts: [{ key: "Enter" }],
+            },
+            {
+              text: "Delete",
+              shortcuts: [{ key: "Delete" }, { key: "Backspace" }],
+              event: "delete-region",
+              tooltip: "Delete this region.",
+              disabled: disabled,
+            },
+            {
+              text: "Undo",
+              event: "undo",
+              tooltip: "Undo last operation",
+              hidden: !actions.undo,
+              disabled,
+              shortcuts: [{ key: "z", ctrlKey: true }],
+            },
+          ]}
+        />
+      {:else}
         <ButtonGroup
           on:click={action}
           configs={[
             {
-              text: "Previous",
-              event: "prev",
-              disabled: disabled || !actions.prev || draft.dirty,
-              shortcuts: [{ key: "ArrowLeft" }],
-              tooltip: "Go to previous item.",
+              text: "Save",
+              event: "save",
+              shortcuts: [{ key: "Enter" }],
+              tooltip: valid
+                ? "Save current labels."
+                : "Please fill all required fields.",
+              disabled: !actions.save || disabled || !valid,
             },
             {
-              text: "Next",
-              event: "next",
-              disabled: disabled || !actions.next || draft.dirty,
-              shortcuts: [{ key: "ArrowRight" }],
-              tooltip: "Got to next item.",
-            },
-          ]}
-        />
-      </div>
-    {/if}
-    {#if editableConfig || actions.showIndex}
-      <div class="control-group">
-        <ButtonGroup
-          on:click={(event) => {
-            if (event.detail.name == "showIndex") {
-              action(event);
-            } else {
-              configEditorOptions = {
-                ...configEditorOptions,
-                open: true,
-                existing: undefined,
-              };
-            }
-          }}
-          configs={[
-            {
-              text: "Add Type",
-              event: "addType",
-              tooltip: "Add new label configuration",
-              hidden: !editableConfig,
+              text: actions.ignore ? "Ignore" : "Unignore",
+              event: actions.ignore ? "ignore" : "unignore",
+              disabled,
+              hidden: !actions.ignore && !actions.unignore,
               shortcuts: [],
+              tooltip: "Ignore this item.",
+            },
+            {
+              text: "Delete",
+              event: "delete",
+              shortcuts: [{ key: "Backspace" }, { key: "Delete" }],
+              tooltip: "Delete labels",
+              disabled,
+              hidden: !actions.delete,
+            },
+            {
+              text: "Reset",
+              event: "reset",
+              hidden: !draft.dirty,
+              disabled,
+              shortcuts: [],
+              tooltip: "Reset labels to current saved version.",
+            },
+            {
+              text: "Undo",
+              event: "undo",
+              hidden: !actions.undo,
+              shortcuts: [{ key: "z", ctrlKey: true }],
+              tooltip: "Undo the last action",
               disabled,
             },
             {
-              text: "View Index",
-              event: "showIndex",
-              disabled,
-              tooltip: "View media index",
-              hidden: !actions.showIndex,
+              text: "Download",
+              event: "download",
+              hidden: !actions.download,
               shortcuts: [],
+              tooltip: "Download this item.",
+              disabled,
             },
           ]}
         />
-      </div>
+      {/if}
+    </div>
+    {#if !draft.drawing.active}
+      {#if actions.selectAll || actions.selectNone}
+        <div class="control-group">
+          <ButtonGroup
+            on:click={({ detail: { name } }) => dispatcher(name)}
+            configs={[
+              {
+                text: "Select All",
+                event: "selectAll",
+                disabled: !actions.selectAll || disabled,
+                class: "select-all",
+                shortcuts: [{ ctrlKey: true, key: "a" }],
+                tooltip: "Select All",
+                hidden: !actions.selectAll,
+              },
+              {
+                text: "Select None",
+                event: "selectNone",
+                disabled: !actions.selectNone || disabled,
+                hidden: !actions.selectNone,
+                shortcuts: [{ ctrlKey: true, shiftKey: true, key: "a" }],
+                tooltip: "Select None",
+                class: "select-none",
+              },
+            ]}
+          />
+        </div>
+      {/if}
+      {#if actions.prev || actions.next || navigation}
+        <div class="control-group">
+          <ButtonGroup
+            on:click={action}
+            configs={[
+              {
+                text: "Previous",
+                event: "prev",
+                disabled: disabled || !actions.prev || draft.dirty,
+                shortcuts: [{ key: "ArrowLeft" }],
+                tooltip: "Go to previous item.",
+              },
+              {
+                text: "Next",
+                event: "next",
+                disabled: disabled || !actions.next || draft.dirty,
+                shortcuts: [{ key: "ArrowRight" }],
+                tooltip: "Got to next item.",
+              },
+            ]}
+          />
+        </div>
+      {/if}
+      {#if editableConfig || actions.showIndex}
+        <div class="control-group">
+          <ButtonGroup
+            on:click={(event) => {
+              if (event.detail.name == "showIndex") {
+                action(event);
+              } else {
+                configEditorOptions = {
+                  ...configEditorOptions,
+                  open: true,
+                  existing: undefined,
+                };
+              }
+            }}
+            configs={[
+              {
+                text: "Add Type",
+                event: "addType",
+                tooltip: "Add new label configuration",
+                hidden: !editableConfig,
+                shortcuts: [],
+                disabled,
+              },
+              {
+                text: "View Index",
+                event: "showIndex",
+                disabled,
+                tooltip: "View media index",
+                hidden: !actions.showIndex,
+                shortcuts: [],
+              },
+            ]}
+          />
+        </div>
+      {/if}
     {/if}
-  {/if}
+  </div>
 </div>
 
 <ConfigEditor
@@ -386,6 +390,9 @@
 />
 
 <style>
+  .control-menu {
+    position: relative;
+  }
   .controls {
     display: flex;
     flex-direction: row;

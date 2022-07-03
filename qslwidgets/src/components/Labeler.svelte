@@ -1,6 +1,7 @@
 <script lang="ts">
   import Toast from "./Toast.svelte";
   import ProgressBar from "./ProgressBar.svelte";
+  import ClickTarget from "./ClickTarget.svelte";
   import { enhancements } from "../library/stores";
   export let progress: number | undefined = undefined,
     mode: "dark" | "light" = "dark";
@@ -16,6 +17,7 @@
   --image-enhancements-filter: contrast({$enhancements.contrast}) brightness({$enhancements.brightness}) saturate({$enhancements.saturation});
 "
 >
+  <ClickTarget />
   <Toast />
   {#if progress !== undefined}
     <ProgressBar {progress} />

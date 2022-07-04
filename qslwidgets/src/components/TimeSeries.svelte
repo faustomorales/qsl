@@ -20,6 +20,7 @@
     fontSize: 20,
     axisSize: 80,
     dotRadius: 3,
+    legendSize: 25,
     lineColor: "var(--text-color)",
   };
   const computeAxes = (lines: Line[], userSetting?: AxisDomainDefinition) => {
@@ -56,107 +57,109 @@
     };
   };
 
-  $: axes = !target ? [] : target.plots.map((p) => {
-    const limits = {
-      x: {
-        min: Math.min(...p.x.values),
-        max: Math.max(...p.x.values),
-      },
-      y: {
-        left: computeAxes(
-          p.y.lines.filter((line) => (line.axis || "left") == "left"),
-          p.y.limits?.left
-        ),
-        right: computeAxes(
-          p.y.lines.filter((line) => (line.axis || "left") == "right"),
-          p.y.limits?.right
-        ),
-      } as { [key: string]: { min: number; max: number } },
-    };
-    const size = {
-      width: p.size?.width || defaults.width,
-      height: p.size?.height || defaults.height,
-    };
-    const yMargin = 8;
+  $: axes = !target
+    ? []
+    : target.plots.map((p) => {
+        const limits = {
+          x: {
+            min: Math.min(...p.x.values),
+            max: Math.max(...p.x.values),
+          },
+          y: {
+            left: computeAxes(
+              p.y.lines.filter((line) => (line.axis || "left") == "left"),
+              p.y.limits?.left
+            ),
+            right: computeAxes(
+              p.y.lines.filter((line) => (line.axis || "left") == "right"),
+              p.y.limits?.right
+            ),
+          } as { [key: string]: { min: number; max: number } },
+        };
+        const size = {
+          width: p.size?.width || defaults.width,
+          height: p.size?.height || defaults.height,
+        };
+        const yMargin = 8;
 
-    const axisSizes = {
-      x: p.x.height || defaults.axisSize,
-      y: {
-        left: p.y.widths?.left || defaults.axisSize,
-        right: p.y.widths?.right || defaults.axisSize,
-      },
-    };
-    const extents = {
-      x: {
-        min: axisSizes.y.left,
-        max: size.width - axisSizes.y.right,
-        span: size.width - (axisSizes.y.left + axisSizes.y.right),
-      },
-      y: {
-        min: axisSizes.x,
-        max: size.height - yMargin,
-        span: size.height - axisSizes.x - yMargin,
-      },
-    };
-    const tickCount = {
-      x: Math.floor(extents.x.span / defaults.tickSpan),
-      y: Math.floor(extents.y.span / defaults.tickSpan),
-    };
-    const tickConfig = {
-      step: {
-        y: {
-          left: (limits.y.left.max - limits.y.left.min) / tickCount.y,
-          right: (limits.y.right.max - limits.y.right.min) / tickCount.y,
-        },
-        x: (limits.x.max - limits.x.min) / tickCount.x,
-      },
-    };
-    const ticks = {
-      y: {
-        left: Array.from(Array(tickCount.y).keys())
-          .map((t) => {
-            return {
-              pos: extents.y.min + t * defaults.tickSpan,
-              val: t * tickConfig.step.y.left + limits.y.left.min,
-            };
-          })
-          .concat([{ pos: extents.y.max, val: limits.y.left.max }]),
-        right: Array.from(Array(tickCount.y).keys())
-          .map((t) => {
-            return {
-              pos: extents.y.min + t * defaults.tickSpan,
-              val: limits.y.right.min + t * tickConfig.step.y.right,
-            };
-          })
-          .concat([{ pos: extents.y.max, val: limits.y.right.max }]),
-      },
-      x: Array.from(Array(tickCount.x).keys())
-        .map((t) => {
-          return {
-            pos: extents.x.min + t * defaults.tickSpan,
-            val: t * tickConfig.step.x + limits.x.min,
-          };
-        })
-        .concat([{ pos: extents.x.max, val: limits.x.max }]),
-    };
-    return {
-      size,
-      extents,
-      x: {
-        limits: limits.x,
-        ticks: ticks.x,
-        label: p.x.name,
-      },
-      y: {
-        limits: limits.y,
-        labels: {
-          left: p.y.labels?.left || "",
-          right: p.y.labels?.right || "",
-        } as { [key: string]: string },
-        ticks: ticks.y as { [key: string]: { pos: number; val: number }[] },
-      },
-    };
-  });
+        const axisSizes = {
+          x: p.x.height || defaults.axisSize,
+          y: {
+            left: p.y.widths?.left || defaults.axisSize,
+            right: p.y.widths?.right || defaults.axisSize,
+          },
+        };
+        const extents = {
+          x: {
+            min: axisSizes.y.left,
+            max: size.width - axisSizes.y.right,
+            span: size.width - (axisSizes.y.left + axisSizes.y.right),
+          },
+          y: {
+            min: axisSizes.x + defaults.legendSize,
+            max: size.height - yMargin,
+            span: size.height - (axisSizes.x + yMargin + defaults.legendSize),
+          },
+        };
+        const tickCount = {
+          x: Math.floor(extents.x.span / defaults.tickSpan),
+          y: Math.floor(extents.y.span / defaults.tickSpan),
+        };
+        const tickConfig = {
+          step: {
+            y: {
+              left: (limits.y.left.max - limits.y.left.min) / tickCount.y,
+              right: (limits.y.right.max - limits.y.right.min) / tickCount.y,
+            },
+            x: (limits.x.max - limits.x.min) / tickCount.x,
+          },
+        };
+        const ticks = {
+          y: {
+            left: Array.from(Array(tickCount.y).keys())
+              .map((t) => {
+                return {
+                  pos: extents.y.min + t * defaults.tickSpan,
+                  val: t * tickConfig.step.y.left + limits.y.left.min,
+                };
+              })
+              .concat([{ pos: extents.y.max, val: limits.y.left.max }]),
+            right: Array.from(Array(tickCount.y).keys())
+              .map((t) => {
+                return {
+                  pos: extents.y.min + t * defaults.tickSpan,
+                  val: limits.y.right.min + t * tickConfig.step.y.right,
+                };
+              })
+              .concat([{ pos: extents.y.max, val: limits.y.right.max }]),
+          },
+          x: Array.from(Array(tickCount.x).keys())
+            .map((t) => {
+              return {
+                pos: extents.x.min + t * defaults.tickSpan,
+                val: t * tickConfig.step.x + limits.x.min,
+              };
+            })
+            .concat([{ pos: extents.x.max, val: limits.x.max }]),
+        };
+        return {
+          size,
+          extents,
+          x: {
+            limits: limits.x,
+            ticks: ticks.x,
+            label: p.x.name,
+          },
+          y: {
+            limits: limits.y,
+            labels: {
+              left: p.y.labels?.left || "",
+              right: p.y.labels?.right || "",
+            } as { [key: string]: string },
+            ticks: ticks.y as { [key: string]: { pos: number; val: number }[] },
+          },
+        };
+      });
   $: chartSize = axes.reduce(
     (memo, axis) => {
       return {
@@ -183,87 +186,92 @@
       };
     }
   };
-  $: lineGroups = !target ? [] : target.plots
-    .map((p, pi) => {
-      return { p, a: axes[pi] };
-    })
-    .map(({ p, a }) =>
-      p.y.lines.map((l) => {
-        const lims = {
-          x: a.x.limits,
-          y: a.y.limits[l.axis || "left"],
-        };
-        const dataSpan = {
-          x: lims.x.max - lims.x.min,
-          y: lims.y.max - lims.y.min,
-        };
-        const points = l.values.map((v, vi) => {
-          const value = { x: p.x.values[vi], y: v };
-          return {
-            x:
-              ((value.x - lims.x.min) / dataSpan.x) * a.extents.x.span +
-              a.extents.x.min,
-            y:
-              a.size.height -
-              (a.extents.y.min +
-                ((value.y - lims.y.min) / dataSpan.y) * a.extents.y.span),
-            data: value,
-          };
+  $: lineGroups = !target
+    ? []
+    : target.plots
+        .map((p, pi) => {
+          return { p, a: axes[pi] };
+        })
+        .map(({ p, a }) =>
+          p.y.lines.map((l) => {
+            const lims = {
+              x: a.x.limits,
+              y: a.y.limits[l.axis || "left"],
+            };
+            const dataSpan = {
+              x: lims.x.max - lims.x.min,
+              y: lims.y.max - lims.y.min,
+            };
+            const points = l.values.map((v, vi) => {
+              const value = { x: p.x.values[vi], y: v };
+              return {
+                x:
+                  ((value.x - lims.x.min) / dataSpan.x) * a.extents.x.span +
+                  a.extents.x.min,
+                y:
+                  a.size.height -
+                  (a.extents.y.min +
+                    ((value.y - lims.y.min) / dataSpan.y) * a.extents.y.span),
+                data: value,
+              };
+            });
+            const interactive = !!l.dot?.labelKey;
+            const selected = interactive
+              ? labels.image[l.dot!.labelKey!] || []
+              : undefined;
+            return {
+              color: l.color || defaults.lineColor,
+              points,
+              name: l.name,
+              interactive,
+              dots: l.dot
+                ? points.map((point) => {
+                    const xString = point.data.x.toString();
+                    return {
+                      ...point,
+                      active: selected ? selected.indexOf(xString) > -1 : false,
+                      onClick: interactive
+                        ? () => toggle(l.dot!.labelKey, xString)
+                        : undefined,
+                    };
+                  })
+                : [],
+            };
+          })
+        );
+  $: areaGroups = !target
+    ? []
+    : target.plots
+        .map((p, pi) => {
+          return { p, a: axes[pi] };
+        })
+        .map(({ a, p }) => {
+          const limitSpan = a.x.limits.max - a.x.limits.min;
+          return (
+            p.areas?.map((area) => {
+              const selected = labels.image[area.labelKey] || [];
+              return {
+                x1:
+                  a.extents.x.min +
+                  ((area.x1 - a.x.limits.min) / limitSpan) * a.extents.x.span,
+                x2:
+                  a.extents.x.min +
+                  ((area.x2 - a.x.limits.min) / limitSpan) * a.extents.x.span,
+                y1: a.extents.y.min,
+                y2: a.extents.y.max,
+                strokeDashArray: area.strokeDashArray || "4",
+                stroke: area.stroke || "black",
+                active: selected.indexOf(area.labelVal) > -1,
+                label: area.label,
+                onClick: () => toggle(area.labelKey, area.labelVal),
+              };
+            }) || []
+          );
         });
-        const interactive = !!l.dot?.labelKey;
-        const selected = interactive
-          ? labels.image[l.dot!.labelKey!] || []
-          : undefined;
-        return {
-          color: l.color || defaults.lineColor,
-          points,
-          interactive,
-          dots: l.dot
-            ? points.map((point) => {
-                const xString = point.data.x.toString();
-                return {
-                  ...point,
-                  active: selected ? selected.indexOf(xString) > -1 : false,
-                  onClick: interactive
-                    ? () => toggle(l.dot!.labelKey, xString)
-                    : undefined,
-                };
-              })
-            : [],
-        };
-      })
-    );
-  $: areaGroups = !target ? [] : target.plots
-    .map((p, pi) => {
-      return { p, a: axes[pi] };
-    })
-    .map(({ a, p }) => {
-      const limitSpan = a.x.limits.max - a.x.limits.min;
-      return (
-        p.areas?.map((area) => {
-          const selected = labels.image[area.labelKey] || [];
-          return {
-            x1:
-              a.extents.x.min +
-              ((area.x1 - a.x.limits.min) / limitSpan) * a.extents.x.span,
-            x2:
-              a.extents.x.min +
-              ((area.x2 - a.x.limits.min) / limitSpan) * a.extents.x.span,
-            y1: a.extents.y.min,
-            y2: a.extents.y.max,
-            strokeDashArray: area.strokeDashArray || "4",
-            stroke: area.stroke || "black",
-            active: selected.indexOf(area.labelVal) > -1,
-            label: area.label,
-            onClick: () => toggle(area.labelKey, area.labelVal),
-          };
-        }) || []
-      );
-    });
 </script>
 
 <svg width={chartSize?.width} height={chartSize?.height} class="chart">
-  {#each (target || { plots: []}).plots.map((p, pi) => {
+  {#each (target || { plots: [] }).plots.map((p, pi) => {
     return { p, a: axes[pi], lines: lineGroups[pi], areas: areaGroups[pi] };
   }) as { a, lines, areas }, pi}
     <svg class="plot">
@@ -417,6 +425,26 @@
           </g>
         {/each}
       </svg>
+      <svg
+        class="legend"
+        width={a.size.width}
+        height={defaults.legendSize}
+        x={0}
+        y={a.size.height -
+          a.extents.y.min +
+          defaults.tickSize +
+          defaults.fontSize * 2}
+        viewBox="0 0 {a.size.width} {defaults.legendSize}"
+      >
+        {#each lines as line, linei}
+          <text
+            style="fill: {line.color}"
+            x={(linei + 0.5) * (a.size.width / lines.length)}
+            y={defaults.legendSize - 10}
+            >{line.name}
+          </text>
+        {/each}
+      </svg>
     </svg>
   {/each}
 </svg>
@@ -479,5 +507,11 @@
   }
   .label text {
     font-size: 12pt;
+  }
+  .legend {
+    background-color: green;
+  }
+  .legend {
+    text-anchor: middle;
   }
 </style>

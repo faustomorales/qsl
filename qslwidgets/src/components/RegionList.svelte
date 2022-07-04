@@ -159,7 +159,6 @@
           editable: true,
           region: {
             points: [point],
-            editable: true,
             labels: {},
           } as any,
         },

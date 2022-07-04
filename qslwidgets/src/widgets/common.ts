@@ -64,8 +64,10 @@ const buildAttributeStoreFactory = <
   const inner = (name: T) => {
     let store: Writable<WidgetModelState[T] | null> = writable(null);
     let external = initializer(name, (value) => {
-      pystamp = Date.now();
-      store.set(value);
+      if (value != get(store)) {
+        pystamp = Date.now();
+        store.set(value);
+      }
     });
     const set = (value: WidgetModelState[T] | null, force?: boolean) => {
       if (force || (pystamp && Date.now() - pystamp > 500)) {

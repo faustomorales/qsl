@@ -138,7 +138,7 @@
     dispatcher("save");
   }}
   on:reset={() => draft.reset(frame.labels)}
-  disabled={transitioning || !playback.paused}
+  disabled={transitioning || !playback.paused || $loadState.loadState === "loading"}
   {editableConfig}
   {navigation}
   actions={{ ...actions, undo: $history > 0 }}

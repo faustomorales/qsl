@@ -91,7 +91,7 @@
     dispatcher("save");
   }}
   on:reset={() => draft.reset(labels)}
-  disabled={transitioning}
+  disabled={transitioning || $loadState.loadState === "loading"}
   {editableConfig}
   {navigation}
   actions={{ ...actions, undo: $history > 0 }}

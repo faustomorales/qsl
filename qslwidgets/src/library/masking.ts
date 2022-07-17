@@ -396,12 +396,14 @@ const fill = (
   };
   const maskPt = cxcyFloat2x1y1Int(point, options.radius, mask.dimensions);
   const imagePt = cxcyFloat2x1y1Int(point, options.radius, image);
+  const start = Date.now();
   blockFill(mask, maskPt.point, maskPt.kernel, matchedValue);
   flood<Uint8ClampedArray>(
     computeEdgePoints(imagePt.point, imagePt.kernel),
     operations,
     options.threshold > -1 && image.hsv ? maxSegmentationIters : 0
   );
+  console.log("Flood Fill Time", Date.now() - start);
   // Set mask to be matched if either the memo or the mask are matched.
   if (options.previous) {
     options.previous.values.forEach((v, i) => {

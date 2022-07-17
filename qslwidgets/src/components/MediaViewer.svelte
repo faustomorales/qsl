@@ -278,10 +278,12 @@
             min={0.1}
             max={10}
             bind:value={state.zoom}
-            marks={[
-              { value: 1, label: "1" },
-              { value: state.fit, label: "Fit" },
-            ]}
+            marks={Math.abs(state.fit - 1) > 0.5
+              ? [
+                  { value: 1, label: "1" },
+                  { value: state.fit, label: "Fit" },
+                ]
+              : [{ value: state.fit, label: "Fit" }]}
           />
         </EnhancementControls>
       {:else}
@@ -322,7 +324,8 @@
     position: absolute;
     touch-action: none;
   }
-  .main .loading {
+  .main .loading,
+  .main .error {
     visibility: hidden;
   }
   .footer {

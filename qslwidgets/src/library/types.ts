@@ -1,17 +1,16 @@
 import type { Writable } from "svelte/store";
+import type { Image, Mask } from "./wasmtools";
 
 export type ArbitraryMetadata = { [key: string]: string };
 export type Point = { x: number; y: number };
 export type Vec = { dx: number; dy: number };
-export interface MaskCandidatePoint extends Point {
-  origin: Point;
-  direction: number;
-}
 export type Scale = { sx: number; sy: number };
 export type Dimensions = {
   width: number;
   height: number;
 };
+
+export type ImageData = Image;
 
 export interface LabelData {
   [key: string]: string[];
@@ -37,10 +36,7 @@ export interface RLEMap {
   counts: number[];
 }
 
-export interface Bitmap {
-  dimensions: Dimensions;
-  values: Uint8ClampedArray;
-}
+export type Bitmap = Mask;
 
 type Map = RLEMap | Bitmap;
 
@@ -73,11 +69,6 @@ export type DrawingState = {
       active?: { editable: boolean; region: AlignedBoxLabel };
     }
 );
-export interface ImageData {
-  hsv?: Uint8ClampedArray;
-  width: number;
-  height: number;
-}
 
 export interface Option {
   name: string;

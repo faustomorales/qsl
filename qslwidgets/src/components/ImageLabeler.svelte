@@ -9,6 +9,7 @@
   } from "../library/types";
   import { enhancements } from "../library/stores";
   import { createContentLoader, createDraftStore } from "../library/common";
+  import LabelerLayout from "./LabelerLayout.svelte";
   import ControlMenu from "./ControlMenu.svelte";
   import MediaViewer from "./MediaViewer.svelte";
   import RegionList from "./RegionList.svelte";
@@ -29,6 +30,7 @@
   let { draft, history } = createDraftStore();
   const invalidateImage = () => {
     if ($draft.image) {
+      $draft.image.free();
       draft.set({ ...$draft, image: null });
     }
   };
@@ -47,52 +49,65 @@
       };
     },
   }));
+  let layout: "horizontal" | "vertical" = "vertical";
+  $: if ($loadState.mediaState)
+    layout =
+      $loadState.mediaState.size.width > $loadState.mediaState.size.height
+        ? "vertical"
+        : "horizontal";
 </script>
 
-<MediaViewer
-  size={$loadState.mediaState?.size}
-  {viewHeight}
-  loadState={transitioning ? "loading" : $loadState.loadState}
->
-  <img
-    slot="main"
-    src={target}
-    alt="labeling target image: {target}"
-    on:load={loadCallbacks.load}
-    on:error={loadCallbacks.error}
-    bind:this={image}
-  />
-  <img slot="mini" src={target} alt="minimap for {target}" />
-  <RegionList
-    slot="regions"
-    target={image}
-    on:change={draft.snapshot}
-    {maxCanvasSize}
-    bind:image={$draft.image}
-    bind:drawing={$draft.drawing}
-    bind:labels={$draft.labels}
-    bind:cursor
-  />
-</MediaViewer>
-<Metadata {metadata} />
-<ControlMenu
-  bind:config
-  bind:draft={$draft}
-  on:change={draft.snapshot}
-  on:next
-  on:prev
-  on:delete
-  on:ignore
-  on:unignore
-  on:showIndex
-  on:undo={() => history.undo()}
-  on:save={() => {
-    labels = draft.export($loadState.mediaState?.size);
-    dispatcher("save");
-  }}
-  on:reset={() => draft.reset(labels)}
-  disabled={transitioning || $loadState.loadState === "loading"}
-  {editableConfig}
-  {navigation}
-  actions={{ ...actions, undo: $history > 0 }}
-/>
+<LabelerLayout {layout}>
+  <svelte:fragment slot="content">
+    <MediaViewer
+      size={$loadState.mediaState?.size}
+      {viewHeight}
+      loadState={transitioning ? "loading" : $loadState.loadState}
+    >
+      <img
+        slot="main"
+        src={target}
+        alt="labeling target image: {target}"
+        on:load={loadCallbacks.load}
+        on:error={loadCallbacks.error}
+        bind:this={image}
+      />
+      <img slot="mini" src={target} alt="minimap for {target}" />
+      <RegionList
+        slot="regions"
+        target={image}
+        on:change={draft.snapshot}
+        {maxCanvasSize}
+        bind:image={$draft.image}
+        bind:drawing={$draft.drawing}
+        bind:labels={$draft.labels}
+        bind:cursor
+      />
+    </MediaViewer>
+    <Metadata {metadata} />
+  </svelte:fragment>
+  <svelte:fragment slot="control">
+    <ControlMenu
+      bind:config
+      bind:draft={$draft}
+      on:change={draft.snapshot}
+      on:next
+      on:prev
+      on:delete
+      on:ignore
+      on:unignore
+      on:showIndex
+      on:undo={() => history.undo()}
+      {layout}
+      on:save={() => {
+        labels = draft.export($loadState.mediaState?.size);
+        dispatcher("save");
+      }}
+      on:reset={() => draft.reset(labels)}
+      disabled={transitioning || $loadState.loadState === "loading"}
+      {editableConfig}
+      {navigation}
+      actions={{ ...actions, undo: $history > 0 }}
+    />
+  </svelte:fragment>
+</LabelerLayout>

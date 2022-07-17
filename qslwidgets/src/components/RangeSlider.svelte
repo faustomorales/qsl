@@ -1,5 +1,6 @@
 <script lang="ts">
   import "nouislider/dist/nouislider.css";
+  import { createEventDispatcher } from "svelte";
   import { onMount } from "svelte";
   import { create } from "nouislider";
   import type { API, target } from "nouislider";
@@ -12,6 +13,7 @@
     step: number = 0.1,
     disabled: boolean | undefined,
     marks: RangeSliderMark[] = [];
+  const dispatcher = createEventDispatcher();
   let slider: target, api: API;
   $: initializeSlider = () => {
     if (api) api.destroy();
@@ -37,10 +39,14 @@
       },
       start: value,
     } as any);
-    api.on("slide", (values) => (value = parseFloat(values[0] as any)));
+    api.on("slide", (values) => {
+      value = parseFloat(values[0] as any);
+      dispatcher("change");
+    });
     slider.querySelectorAll(".noUi-value").forEach((p) =>
       p.addEventListener("click", () => {
         value = parseFloat((p as any).dataset.value);
+        dispatcher("change");
         focus(slider);
       })
     );

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  import { createEventDispatcher, onMount } from "svelte";
   import type {
     Config,
     DraftState,
@@ -7,7 +7,7 @@
     LabelData,
     ControlMenuActions,
   } from "../library/types";
-  import { shortcutify } from "../library/common";
+  import { shortcutify, focus } from "../library/common";
   import LabelPanel from "./LabelPanel.svelte";
   import ButtonGroup from "./ButtonGroup.svelte";
   import ConfigEditor from "./ConfigEditor.svelte";
@@ -20,11 +20,12 @@
     disabled: boolean,
     navigation: boolean,
     draft: DraftState,
+    layout: "horizontal" | "vertical" = "vertical",
     regions: boolean = true;
   const dispatcher = createEventDispatcher();
   $: action = (event: { detail: { name: string } }) =>
     dispatcher(event.detail.name);
-
+  let container: HTMLDivElement;
   $: level = draft.drawing.active
     ? "regions"
     : ("image" as "image" | "regions");
@@ -91,9 +92,18 @@
       };
     }
   };
+  $: ensureMaskMode = () => {
+    if (!draft.drawing.active && draft.drawing.mode !== "masks") {
+      draft = { ...draft, drawing: { ...draft.drawing, mode: "masks" } } as any;
+    }
+  };
+  // Every time the layout changes, re-focus.
+  //$: layout, focus(container);
+  // On initial menu creation, re-focus.
+  onMount(() => focus(container));
 </script>
 
-<div class="control-menu">
+<div class="control-menu {layout}" bind:this={container}>
   <ClickTarget />
   <LabelPanel
     config={state.config}
@@ -115,6 +125,7 @@
       }
     }}
   />
+  <hr />
   {#if regions && config.regions && config.regions.length > 0}
     <div class="drawing-configuration">
       <div class="drawing-mode">
@@ -152,9 +163,10 @@
         <RangeSlider
           name="Cursor Size"
           bind:value={draft.drawing.radius}
+          on:change={ensureMaskMode}
           min={1}
           max={50}
-          disabled={false}
+          disabled={draft.drawing.active && draft.drawing.mode !== "masks"}
           aria-label="segmentation mask labeling radius"
         />
       </div>
@@ -162,6 +174,7 @@
         <RangeSlider
           name="Flood Fill"
           bind:value={draft.drawing.threshold}
+          on:change={ensureMaskMode}
           min={-1}
           step={1}
           marks={[{ value: -1, label: "Off" }].concat(
@@ -169,7 +182,7 @@
               .fill(undefined)
               .map((v, i) => ({ value: i, label: i.toString() }))
           )}
-          disabled={false}
+          disabled={draft.drawing.active && draft.drawing.mode !== "masks"}
           max={10}
           aria-label="segmentation mask flood threshold"
         />
@@ -178,7 +191,6 @@
   {/if}
   <div class="controls">
     <div class="control-group">
-      <FocusIndicator />
       {#if draft.drawing.active}
         <ButtonGroup
           on:click={({ detail: { name } }) => {
@@ -378,6 +390,7 @@
         </div>
       {/if}
     {/if}
+    <FocusIndicator />
   </div>
 </div>
 
@@ -393,13 +406,25 @@
   .control-menu {
     position: relative;
   }
+  hr {
+    color: var(--label-color);
+    margin: 10px 0 2px 0;
+    border-width: 0.5px;
+  }
   .controls {
     display: flex;
-    flex-direction: row;
-    align-items: center;
     column-gap: 10px;
     row-gap: 10px;
     flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .vertical .controls {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .horizontal .controls {
+    flex-direction: column;
   }
   .control-group {
     display: flex;
@@ -413,11 +438,18 @@
   }
   .drawing-configuration {
     display: flex;
+    flex-wrap: wrap;
+  }
+  .vertical .drawing-configuration {
     flex-direction: row;
     align-items: center;
     column-gap: 15px;
-    flex-wrap: wrap;
   }
+
+  .horizontal .drawing-configuration {
+    flex-direction: column;
+  }
+
   .drawing-configuration .drawing-mode {
     flex: 1 0 0;
   }

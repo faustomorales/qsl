@@ -145,6 +145,7 @@ $RECYCLE.BIN/
 
 **/node_modules/
 qsl/ui/nbextension/index.*
+qsl/ui/nbextension/*.wasm
 qsl/ui/labextension
 qsl/ui/eelapp
 

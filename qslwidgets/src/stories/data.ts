@@ -11,6 +11,7 @@ export const images: {
   labels: Labels;
   metadata?: { [key: string]: string };
 }[] = [
+  { url: "image3.jpg", labels: {} },
   {
     url: "image2.jpg",
     metadata: { foo: "bar" },
@@ -40,7 +41,6 @@ export const images: {
   },
   { url: "not-an-image.jpg", labels: {} },
   { url: "image1.jpg", labels: {} },
-  { url: "image3.jpg", labels: {} },
   { url: "image4.jpg", labels: {} },
   { url: "image5.jpg", labels: {} },
   { url: "image6.jpg", labels: {} },

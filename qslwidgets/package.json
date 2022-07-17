@@ -1,6 +1,6 @@
 {
   "name": "qslwidgets",
-  "version": "0.0.43-dev.8",
+  "version": "0.0.43-dev.9",
   "description": "Widgets for the QSL media labeling package.",
   "keywords": [
     "jupyter",
@@ -30,13 +30,15 @@
     "url": "https://github.com/faustomorales/qsl"
   },
   "scripts": {
-    "build": "tsc && yarn copy && webpack --env production",
+    "build": "yarn wasmp && tsc && yarn copy && webpack --env production",
+    "wasmp": "wasm-pack build --target web --out-dir ../src/library/wasmtools --out-name index wasmtools",
     "watch": "tsc && npm-run-all -p watch:*",
-    "copy": "copyfiles --up 1 src/**/**/*.{css,svelte} src/**/*.{css,svelte} src/*.{css,svelte} lib",
-    "watch:copy": "nodemon -e css,svelte --watch src --exec 'yarn copy'",
+    "copy": "copyfiles --up 1 src/**/**/*.{css,svelte,js,wasm,d.ts} src/**/*.{css,svelte,js,wasm,d.ts} src/*.{css,svelte,js,wasm,d.ts} lib",
+    "watch:copy": "nodemon -e css,svelte,js,wasm --watch src --exec 'yarn copy'",
+    "watch:wasm": "nodemon -e rs --watch wasmtools --exec 'yarn wasmp'",
     "watch:tscw": "tsc -w",
     "watch:pack": "webpack --watch",
-    "clean": "rimraf ../qsl/ui/eelapp ../qsl/ui/nbextension/index.js* ../qsl/ui/labextension dist lib",
+    "clean": "rimraf ../qsl/ui/eelapp ../qsl/ui/nbextension/index.js* ../qsl/ui/labextension dist lib src/library/wasmtools",
     "format": "prettier --write src",
     "test": "jest",
     "storybook": "start-storybook -p 6006",
@@ -66,6 +68,7 @@
     "@typescript-eslint/eslint-plugin": "^3.6.0",
     "@typescript-eslint/parser": "^3.6.0",
     "@use-gesture/vanilla": "^10.2.16",
+    "@wasm-tool/wasm-pack-plugin": "^1.6.0",
     "babel-loader": "^8.2.2",
     "copyfiles": "^2.4.1",
     "crypto": "1.0.1",

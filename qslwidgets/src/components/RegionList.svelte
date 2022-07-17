@@ -8,7 +8,7 @@
   import { createEventDispatcher } from "svelte";
   import { getDistance, convertCoordinates, snap } from "../library/geometry";
   import { focus } from "../library/common";
-  import { fill, img2hsv, findMaskByPoint } from "../library/masking";
+  import { Mask, img2hsv, findMaskByPoint } from "../library/masking";
   import RegionBox from "./RegionBox.svelte";
   import RegionMask from "./RegionMask.svelte";
   import RegionPolygon from "./RegionPolygon.svelte";
@@ -116,21 +116,23 @@
               editable: true,
               region: {
                 ...drawing.active.region,
-                map: {
-                  values: fill(point, image, {
-                    previous: drawing.active.region.map,
-                    inverse: event.altKey,
-                    radius: {
-                      dx: drawing.radius / dimensions.width,
-                      dy: drawing.radius / dimensions.height,
-                    },
-                    threshold: drawing.threshold,
-                  }),
-                  dimensions: {
-                    width: image.width,
-                    height: image.height,
-                  },
-                },
+                map: event.altKey
+                  ? drawing.active.region.map.fill(
+                      point.x,
+                      point.y,
+                      drawing.radius / dimensions.width,
+                      drawing.radius / dimensions.height,
+                      0
+                    )
+                  : drawing.active.region.map.flood(
+                      image,
+                      point.x,
+                      point.y,
+                      drawing.radius / dimensions.width,
+                      drawing.radius / dimensions.height,
+                      drawing.threshold,
+                      1_000_000
+                    ),
               },
             },
           };
@@ -181,21 +183,15 @@
           editable: true,
           region: {
             labels: {},
-            map: {
-              values: fill(point, image, {
-                previous: undefined,
-                inverse: false,
-                radius: {
-                  dx: drawing.radius / dimensions.width,
-                  dy: drawing.radius / dimensions.height,
-                },
-                threshold: drawing.threshold,
-              }),
-              dimensions: {
-                width: image.width,
-                height: image.height,
-              },
-            },
+            map: Mask.from_flood(
+              image,
+              point.x,
+              point.y,
+              drawing.radius / dimensions.width,
+              drawing.radius / dimensions.height,
+              drawing.threshold,
+              1_000_000
+            ),
           },
         },
       };

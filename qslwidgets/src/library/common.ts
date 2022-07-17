@@ -12,7 +12,7 @@ import type {
   DraftState,
   Dimensions,
 } from "./types";
-import { counts2values, values2counts } from "./masking";
+import { bmp2rle, rle2bmp } from "./masking";
 
 export const pct2css = (pct: number): string => `${100 * pct}%`;
 export const insertOrAppend = <T>(
@@ -48,10 +48,7 @@ export const labels2draft = (labels?: Labels): DraftLabels => {
     masks: (labels?.masks || []).map((m) => {
       return {
         ...m,
-        map: {
-          dimensions: m.map.dimensions,
-          values: counts2values(m.map.counts),
-        },
+        map: rle2bmp(m.map),
       };
     }),
     dimensions: labels?.dimensions ? copy(labels.dimensions) : undefined,
@@ -82,10 +79,7 @@ export const draft2labels = (labels: DraftLabels): Labels => {
     masks: labels.masks.map((m) => {
       return {
         ...m,
-        map: {
-          dimensions: m.map.dimensions,
-          counts: values2counts(m.map.values),
-        },
+        map: bmp2rle(m.map),
       };
     }),
   };
@@ -146,23 +140,22 @@ export const renderBitmapToCanvas = (
   }
   let context = canvas.getContext("2d");
   if (context && bitmap) {
-    canvas.width = bitmap.dimensions.width;
-    canvas.height = bitmap.dimensions.height;
-    const pixels = context.createImageData(
-      bitmap.dimensions.width,
-      bitmap.dimensions.height
-    );
+    const dimensions = bitmap.dimensions();
+    canvas.width = dimensions.width;
+    canvas.height = dimensions.height;
+    const pixels = context.createImageData(dimensions.width, dimensions.height);
+    const blankValues = [0, 0, 0, 0];
     const colorValues =
       color === "red"
         ? [255, 0, 0, 127]
         : color === "blue"
         ? [0, 0, 255, 127]
         : [255, 255, 0, 127];
-    Uint8ClampedArray.from(
-      Array.from(bitmap.values)
-        .map((v) => (v === 255 ? colorValues : [0, 0, 0, 0]))
-        .flat()
-    ).forEach((v, i) => (pixels.data[i] = v));
+    bitmap
+      .contents()
+      .forEach((v, i) =>
+        pixels.data.set(v === 255 ? colorValues : blankValues, i * 4)
+      );
     context.putImageData(pixels, 0, 0);
     return true;
   }
@@ -314,6 +307,7 @@ export const createContentLoader = <T>(options: {
     },
     state: readable(state, (set) => {
       promise.then(set, () => {
+        set({ ...state, loadState: "error" });
         toast.push(`An error occurred loading ${options.target}`, {
           theme: {
             "--toastBackground": "var(--color3)",
@@ -325,7 +319,13 @@ export const createContentLoader = <T>(options: {
   };
 };
 
-export const undoable = <T>(initial: T) => {
+export const undoable = <T>(
+  initial: T,
+  serialize?: (current: T) => T,
+  deserialize?: (value: T) => T,
+  destroy?: (remove: T[], keep: T[]) => void,
+  length: number = 10
+) => {
   let count = 0;
   let subscribers: {
     state: { [key: number]: (state: T) => void };
@@ -350,6 +350,9 @@ export const undoable = <T>(initial: T) => {
       undo: () => {
         if (history.length > 0) {
           current = history.pop() as T;
+          if (deserialize) {
+            current = deserialize(current);
+          }
           notify();
         }
       },
@@ -366,9 +369,19 @@ export const undoable = <T>(initial: T) => {
         notify();
       },
       snapshot: () => {
-        history = [...history.slice(-9), structuredClone(current)];
+        const remove = history.slice(0, -(length - 1));
+        history = [
+          ...history.slice(-(length - 1)),
+          (serialize || structuredClone)(current),
+        ];
+        if (destroy) {
+          destroy(remove, history);
+        }
       },
       reset: (update: T) => {
+        if (destroy) {
+          destroy(history, [update]);
+        }
         history = [];
         current = update;
         notify();
@@ -393,16 +406,65 @@ export const emptyDraftState: DraftState = {
   labels: { image: {}, polygons: [], boxes: [], masks: [] },
   image: null,
 };
-
+const deallocateMaps = (remove: DraftState[], keep: DraftState[]) => {
+  const [removeMaps, keepMaps] = [remove, keep].map((stateSet) =>
+    stateSet
+      .map((state) =>
+        state.labels.masks
+          .map((m) => m.map)
+          .concat(
+            state.drawing.active && state.drawing.mode === "masks"
+              ? [state.drawing.active.region.map]
+              : []
+          )
+      )
+      .flat()
+  );
+  const maps = new Set(removeMaps.filter((m) => keepMaps.indexOf(m) == -1));
+  maps.forEach((m) => m.free());
+};
 export const createDraftStore = () => {
-  const inner = undoable<DraftState>(emptyDraftState);
-  const reset = (labels: Labels) =>
+  const inner = undoable<DraftState>(
+    emptyDraftState,
+    (state) => ({
+      dirty: state.dirty,
+      image: state.image,
+      labels: {
+        ...structuredClone(state.labels),
+        masks: state.labels.masks,
+      },
+      drawing: {
+        ...state.drawing,
+        active: state.drawing.active
+          ? state.drawing.mode === "masks"
+            ? {
+                region: {
+                  ...structuredClone({
+                    ...state.drawing.active.region,
+                    map: undefined,
+                  }),
+                  map: state.drawing.active.region.map,
+                },
+              }
+            : structuredClone(state.drawing.active)
+          : undefined,
+      } as any,
+    }),
+    undefined,
+    deallocateMaps
+  );
+  const reset = (labels: Labels) => {
+    const initial = get(inner.state);
+    if (initial.image) {
+      initial.image.free();
+    }
     inner.state.reset({
-      ...get(inner.state),
+      ...initial,
       dirty: false,
       image: null,
       labels: labels2draft(labels),
     });
+  };
   return {
     history: inner.history,
     draft: {

@@ -17,7 +17,7 @@
   const dispatcher = createEventDispatcher();
   let freeform = { value: "", dirty: false };
   let element: HTMLElement;
-  $: change = (value: string) =>
+  $: change = (value: string) => {
     dispatcher("change", {
       selected: processSelectionChange(
         value,
@@ -26,6 +26,7 @@
         config.required
       ),
     });
+  };
   $: options = buildOptions(selected, config);
   $: keyMap = (
     options
@@ -34,12 +35,18 @@
         }, {})
       : {}
   ) as { [key: string]: number };
-  $: if (!options && !freeform.dirty && config.freeform && selected) {
+  const reset = () => {
     // When we're in freeform-only mode (no options),
     // the clean version of the field should contain the
     // current label.
-    freeform = { dirty: false, value: selected[0] || "" };
-  }
+    if (!options && !freeform.dirty && config.freeform) {
+      freeform = {
+        dirty: false,
+        value: selected && selected.length > 0 ? selected[0] : "",
+      };
+    }
+  };
+  $: options, freeform, config, selected, reset();
   $: createOptionCallback = (value: string) => () => change(value);
   $: keydown = (event: KeyboardEvent) => {
     if (

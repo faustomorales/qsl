@@ -596,13 +596,32 @@ class BaseMediaLabeler:
                 if len(self.targets) > 0
                 else self.targets[0].get("type", "image")
             )
-            self.urls = [
-                files.build_url(
-                    target=t.get("target"),
-                    base=self.base,
-                    get_tempdir=self.get_temporary_directory,
-                )
-                if self.type != "time-series"
-                else t["target"]
-                for t in self.targets
-            ]
+            if self.type == "time-series":
+                self.urls = [self.targets[0]["target"]]
+            elif self.type == "compound":
+                target = self.targets[0]["target"]
+                self.urls = [
+                    {
+                        **target,
+                        "images": [
+                            {
+                                **image,
+                                "target": files.build_url(
+                                    image.get("target"),
+                                    base=self.base,
+                                    get_tempdir=self.get_temporary_directory,
+                                ),
+                            }
+                            for image in target.get("images")
+                        ],
+                    }
+                ]
+            else:
+                self.urls = [
+                    files.build_url(
+                        target=t.get("target"),
+                        base=self.base,
+                        get_tempdir=self.get_temporary_directory,
+                    )
+                    for t in self.targets
+                ]

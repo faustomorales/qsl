@@ -21,6 +21,7 @@
     navigation: boolean,
     draft: DraftState,
     layout: "horizontal" | "vertical" = "vertical",
+    disableRegions: boolean = false,
     regions: boolean = true;
   const dispatcher = createEventDispatcher();
   $: action = (event: { detail: { name: string } }) =>
@@ -126,7 +127,7 @@
     }}
   />
   <hr />
-  {#if regions && config.regions && config.regions.length > 0}
+  {#if regions && config.regions && config.regions.length > 0 && !disableRegions}
     <div class="drawing-configuration">
       <div class="drawing-mode">
         <LabelPanel

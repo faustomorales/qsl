@@ -7,6 +7,7 @@
   import VideoLabeler from "./VideoLabeler.svelte";
   import TimeSeriesLabeler from "./TimeSeriesLabeler.svelte";
   import ImagePreloader from "./ImagePreloader.svelte";
+  import CompoundLabeler from "./CompoundLabeler.svelte";
   import Labeler from "./Labeler.svelte";
   export let extract: Extractor;
   const viewState = extract("viewState");
@@ -80,11 +81,29 @@
             on:save={createAction("save")}
             on:showIndex={createAction("index")}
           />
-        {:else if $type == "time-series" && !Array.isArray($labels)}
+        {:else if $type == "time-series" && !Array.isArray($labels) && urlObjects.length == 1 && urlObjects[0].plots}
           <TimeSeriesLabeler
             transitioning={$viewState === "transitioning"}
             target={urlObjects[0]}
             viewHeight={$viewHeight}
+            metadata={$states[0].metadata}
+            bind:config={$config}
+            bind:labels={$labels}
+            editableConfig={$buttons.config}
+            actions={{ ...$buttons, showIndex: true }}
+            on:next={createAction("next")}
+            on:prev={createAction("prev")}
+            on:delete={createAction("delete")}
+            on:ignore={createAction("ignore")}
+            on:unignore={createAction("unignore")}
+            on:save={createAction("save")}
+            on:showIndex={createAction("index")}
+          />
+        {:else if $type == "compound" && urlObjects.length == 1 && !Array.isArray($labels)}
+          <CompoundLabeler
+            transitioning={$viewState === "transitioning"}
+            target={urlObjects[0]}
+            metadata={$states[0].metadata}
             bind:config={$config}
             bind:labels={$labels}
             editableConfig={$buttons.config}

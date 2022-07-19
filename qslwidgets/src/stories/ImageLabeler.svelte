@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { writable, Writable } from "svelte/store";
-  import { Labels, Config } from "../library/types";
+  import type { Labels, Config } from "../library/types";
+  import type { Writable } from "svelte/store";
+  import { writable } from "svelte/store";
   import * as data from "./data";
   import Labeler from "../components/Labeler.svelte";
   import ImageLabeler from "../components/ImageLabeler.svelte";

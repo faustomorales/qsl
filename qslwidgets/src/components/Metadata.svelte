@@ -7,8 +7,8 @@
   <table tabindex="0" class="metadata">
     {#each Object.entries(metadata) as [key, value]}
       <tr>
-        <td>{key}</td>
-        <td>{value}</td>
+        <td class="key">{key}</td>
+        <td class="value">{value}</td>
       </tr>
     {/each}
   </table>
@@ -22,12 +22,15 @@
   }
   td {
     padding: 10px;
+    width: 50%;
   }
-  td:first-of-type {
+  td.key {
     text-align: right;
     font-weight: bold;
+    padding-right: 5px;
   }
-  td:last-of-type {
+  td.value {
     text-align: left;
+    padding-left: 5px;
   }
 </style>

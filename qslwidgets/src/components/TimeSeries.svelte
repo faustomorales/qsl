@@ -20,7 +20,7 @@
     fontSize: 20,
     axisSize: 80,
     dotRadius: 3,
-    legendSize: 25,
+    legendSize: 35,
     lineColor: "var(--text-color)",
   };
   const computeAxes = (lines: Line[], userSetting?: AxisDomainDefinition) => {
@@ -305,7 +305,7 @@
             <line
               y1={a.size.height -
                 a.extents.y.min -
-                (ti == 0 ? 0 : defaults.tickSize)}
+                (ti == 0 || ti == a.x.ticks.length - 1 ? 0 : defaults.tickSize)}
               y2={a.size.height - a.extents.y.min + defaults.tickSize}
               x1={t.pos}
               x2={t.pos}
@@ -344,9 +344,15 @@
               <g class="tick y {side.side}">
                 <line
                   x1={side.x -
-                    (ti == 0 && side.side == "right" ? 0 : defaults.tickSize)}
+                    ((ti == 0 || ti == side.ticks.length - 1) &&
+                    side.side == "right"
+                      ? 0
+                      : defaults.tickSize)}
                   x2={side.x +
-                    (ti == 0 && side.side == "left" ? 0 : defaults.tickSize)}
+                    ((ti == 0 || ti == side.ticks.length - 1) &&
+                    side.side == "left"
+                      ? 0
+                      : defaults.tickSize)}
                   y1={a.size.height - t.pos}
                   y2={a.size.height - t.pos}
                 />
@@ -436,14 +442,17 @@
           defaults.fontSize * 2}
         viewBox="0 0 {a.size.width} {defaults.legendSize}"
       >
-        {#each lines as line, linei}
-          <text
-            style="fill: {line.color}"
-            x={(linei + 0.5) * (a.size.width / lines.length)}
-            y={defaults.legendSize - 10}
-            >{line.name}
-          </text>
-        {/each}
+        {#if lines.length > 1}
+          {#each lines as line, linei}
+            <text
+              style="fill: {line.color}"
+              x={(linei + 0.5) * (a.size.width / lines.length)}
+              y={defaults.legendSize - 10}
+              font-size={defaults.fontSize}
+              >{line.name}
+            </text>
+          {/each}
+        {/if}
       </svg>
     </svg>
   {/each}

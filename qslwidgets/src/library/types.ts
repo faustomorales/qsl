@@ -141,6 +141,10 @@ export type Line = {
   };
 };
 
+export interface CompoundTarget {
+  images: { target?: string; metadata?: ArbitraryMetadata }[];
+}
+
 export interface TimeSeriesTarget {
   filename?: string;
   plots: {
@@ -260,7 +264,7 @@ export type ActionType =
   | "index"
   | "";
 
-interface BaseWidgetState<T, U, V> {
+interface BaseWidgetState<Type, LabelType, UrlType> {
   states: {
     metadata?: { [key: string]: string };
     selected: boolean;
@@ -269,11 +273,11 @@ interface BaseWidgetState<T, U, V> {
     labeled: boolean;
     labels: Labels;
   }[];
-  urls: V;
+  urls: UrlType[];
   message: string;
-  type: T;
+  type: Type;
   config: Config;
-  labels: U;
+  labels: LabelType;
   action: ActionType;
   preload: string[];
   maxCanvasSize: number;
@@ -298,14 +302,15 @@ interface BaseWidgetState<T, U, V> {
   mode: "light" | "dark";
 }
 
-type ImageWidgetState = BaseWidgetState<"image", Labels, string[]>;
-type VideoWidgetState = BaseWidgetState<"video", TimestampedLabel[], string[]>;
-type TimeVideoState = BaseWidgetState<
-  "time-series",
-  Labels,
-  TimeSeriesTarget[]
->;
-export type WidgetState = VideoWidgetState | ImageWidgetState | TimeVideoState;
+type CompoundWidgetState = BaseWidgetState<"compound", Labels, CompoundTarget>;
+type ImageWidgetState = BaseWidgetState<"image", Labels, string>;
+type VideoWidgetState = BaseWidgetState<"video", TimestampedLabel[], string>;
+type TimeVideoState = BaseWidgetState<"time-series", Labels, TimeSeriesTarget>;
+export type WidgetState =
+  | VideoWidgetState
+  | ImageWidgetState
+  | TimeVideoState
+  | CompoundWidgetState;
 
 export type Extractor = <V extends keyof WidgetState & string>(
   name: V

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
   import type { ArbitraryMetadata } from "../library/types";
   import Metadata from "./Metadata.svelte";
   import IconButton from "./IconButton.svelte";
@@ -9,18 +8,17 @@
   import Unchecked from "./icons/Unchecked.svelte";
   export let src: string | undefined,
     size: number,
-    labeled: boolean = false,
+    labeled: boolean | string = false,
     selected: boolean | undefined = undefined,
     ignored: boolean = false,
     metadata: ArbitraryMetadata | undefined = undefined;
-  const dispatcher = createEventDispatcher();
   let failed = false;
   $: showActionMenu = labeled || ignored || selected !== undefined;
 </script>
 
 <div
   class="item {showActionMenu ? 'with-actions' : 'without-actions'}"
-  on:click={() => dispatcher("click")}
+  on:click
   style="--item-size: {size}"
 >
   {#if failed}
@@ -33,6 +31,9 @@
       <div class="item-actions-container">
         {#if labeled || ignored}
           <IconButton>
+            <svelte:fragment slot="label"
+              >{#if typeof labeled === "string"}{labeled}{/if}</svelte:fragment
+            >
             {#if labeled}
               <Labeled />
             {:else}

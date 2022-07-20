@@ -5,6 +5,7 @@
   export let config: LabelConfig[],
     labels: LabelData,
     disabled: boolean,
+    configShortcuts: { [key: string]: string } | undefined = undefined,
     editableConfig: boolean;
   const dispatcher = createEventDispatcher();
   const createChangeCallback =
@@ -23,6 +24,7 @@
     {/if}
     <LabelPanelEntry
       config={entry}
+      shortcut={configShortcuts ? configShortcuts[entry.name] : undefined}
       selected={labels[entry.name]}
       disabled={!!(disabled || entry.disabled)}
       {editableConfig}

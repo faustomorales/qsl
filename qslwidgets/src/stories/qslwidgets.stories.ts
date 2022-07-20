@@ -3,7 +3,7 @@ import BatchImageLabeler from "./BatchImageLabeler.svelte";
 import VideoLabeler from "./VideoLabeler.svelte";
 import TimeSeriesLabeler from "./TimeSeriesLabeler.svelte";
 import MediaIndex from "./MediaIndex.svelte";
-import CompoundLabeler from "./CompoundLabeler.svelte";
+import ImageGroupLabeler from "./ImageGroupLabeler.svelte";
 
 export default {
   title: "qslwidgets",
@@ -22,8 +22,8 @@ export const Video = () => ({
 export const Time = () => ({
   Component: TimeSeriesLabeler,
 });
-export const Compound = () => ({
-  Component: CompoundLabeler,
+export const ImageGroup = () => ({
+  Component: ImageGroupLabeler,
 });
 export const Index = () => ({
   Component: MediaIndex,

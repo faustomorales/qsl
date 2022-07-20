@@ -13,6 +13,7 @@
   export let config: LabelConfig,
     disabled: boolean,
     selected: string[] | undefined,
+    shortcut: string | undefined,
     editableConfig: boolean;
   const dispatcher = createEventDispatcher();
   let freeform = { value: "", dirty: false };
@@ -91,7 +92,10 @@
 <svelte:window on:keydown={keydown} />
 <div bind:this={element} class="label-panel-entry">
   <div class="label-panel-entry-title">
-    <span>{config.displayName || config.name} </span>
+    <span
+      >{config.displayName || config.name}
+      {shortcut ? `(${shortcut})` : ""}</span
+    >
     {#if config.required && !config.hiderequired}
       <span><sup>*</sup></span>
     {/if}

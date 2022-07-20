@@ -36,7 +36,8 @@
   }
   .qslwidgets-labeler,
   .qslwidgets-labeler :global(textarea),
-  .qslwidgets-labeler :global(input) {
+  .qslwidgets-labeler :global(input),
+  .qslwidgets-labeler :global(span) {
     --color1: #676778;
     --color2: #40b3ff;
     --color3: #ff3e00;

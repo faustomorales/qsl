@@ -598,7 +598,7 @@ class BaseMediaLabeler:
             )
             if self.type == "time-series":
                 self.urls = [self.targets[0]["target"]]
-            elif self.type == "compound":
+            elif self.type == "image-group":
                 target = self.targets[0]["target"]
                 self.urls = [
                     {

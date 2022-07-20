@@ -7,7 +7,7 @@
   import VideoLabeler from "./VideoLabeler.svelte";
   import TimeSeriesLabeler from "./TimeSeriesLabeler.svelte";
   import ImagePreloader from "./ImagePreloader.svelte";
-  import CompoundLabeler from "./CompoundLabeler.svelte";
+  import ImageGroupLabeler from "./ImageGroupLabeler.svelte";
   import Labeler from "./Labeler.svelte";
   export let extract: Extractor;
   const viewState = extract("viewState");
@@ -99,8 +99,8 @@
             on:save={createAction("save")}
             on:showIndex={createAction("index")}
           />
-        {:else if $type == "compound" && urlObjects.length == 1 && !Array.isArray($labels)}
-          <CompoundLabeler
+        {:else if $type == "image-group" && urlObjects.length == 1 && !Array.isArray($labels)}
+          <ImageGroupLabeler
             transitioning={$viewState === "transitioning"}
             target={urlObjects[0]}
             metadata={$states[0].metadata}

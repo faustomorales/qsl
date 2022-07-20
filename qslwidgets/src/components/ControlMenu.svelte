@@ -22,6 +22,7 @@
     draft: DraftState,
     layout: "horizontal" | "vertical" = "vertical",
     disableRegions: boolean = false,
+    configShortcuts: { [key: string]: string } | undefined = undefined,
     regions: boolean = true;
   const dispatcher = createEventDispatcher();
   $: action = (event: { detail: { name: string } }) =>
@@ -98,8 +99,6 @@
       draft = { ...draft, drawing: { ...draft.drawing, mode: "masks" } } as any;
     }
   };
-  // Every time the layout changes, re-focus.
-  //$: layout, focus(container);
   // On initial menu creation, re-focus.
   onMount(() => focus(container));
 </script>
@@ -109,6 +108,7 @@
   <LabelPanel
     config={state.config}
     labels={state.labels}
+    {configShortcuts}
     {editableConfig}
     {disabled}
     on:change={save}

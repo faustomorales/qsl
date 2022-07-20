@@ -85,6 +85,7 @@ export interface LabelConfig {
   required?: boolean;
   disabled?: boolean;
   panelrow?: number;
+  shortcut?: string;
   hiderequired?: boolean;
   freeformtag?: "input" | "textarea";
   layout?: "column" | "row";
@@ -141,8 +142,14 @@ export type Line = {
   };
 };
 
-export interface CompoundTarget {
-  images: { target?: string; metadata?: ArbitraryMetadata }[];
+export interface ImageGroupTarget {
+  images: {
+    target?: string;
+    metadata?: ArbitraryMetadata;
+  }[];
+  onClick?: {
+    [key: string]: string;
+  };
 }
 
 export interface TimeSeriesTarget {
@@ -302,7 +309,11 @@ interface BaseWidgetState<Type, LabelType, UrlType> {
   mode: "light" | "dark";
 }
 
-type CompoundWidgetState = BaseWidgetState<"compound", Labels, CompoundTarget>;
+type ImageGroupWidgetState = BaseWidgetState<
+  "image-group",
+  Labels,
+  ImageGroupTarget
+>;
 type ImageWidgetState = BaseWidgetState<"image", Labels, string>;
 type VideoWidgetState = BaseWidgetState<"video", TimestampedLabel[], string>;
 type TimeVideoState = BaseWidgetState<"time-series", Labels, TimeSeriesTarget>;
@@ -310,7 +321,7 @@ export type WidgetState =
   | VideoWidgetState
   | ImageWidgetState
   | TimeVideoState
-  | CompoundWidgetState;
+  | ImageGroupWidgetState;
 
 export type Extractor = <V extends keyof WidgetState & string>(
   name: V

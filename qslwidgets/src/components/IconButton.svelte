@@ -2,7 +2,10 @@
   export let disabled: boolean = false;
 </script>
 
-<button disabled={!!disabled} on:click><slot /></button>
+<button disabled={!!disabled} on:click
+  ><slot />
+  <span class="label"> <slot name="label" /></span>
+</button>
 
 <style>
   button {
@@ -15,6 +18,10 @@
   }
   button:active:not(:disabled) {
     background-color: lightgrey;
+  }
+  button .label {
+    padding-left: 24px;
+    white-space: nowrap;
   }
   button:disabled :global(svg) {
     fill: darkgrey;

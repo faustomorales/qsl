@@ -14,7 +14,7 @@
   };
 </script>
 
-<Labeler mode="light">
+<Labeler>
   <ImageGroupLabeler
     bind:config={$config}
     bind:labels={$labels}

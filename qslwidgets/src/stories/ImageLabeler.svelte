@@ -18,7 +18,7 @@
   $: $index, sync();
 </script>
 
-<Labeler progress={35} mode="light">
+<Labeler progress={35}>
   <ImageLabeler
     {target}
     bind:labels={$labels}

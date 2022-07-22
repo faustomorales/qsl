@@ -4,7 +4,7 @@
   import ClickTarget from "./ClickTarget.svelte";
   import { enhancements } from "../library/stores";
   export let progress: number | undefined = undefined,
-    mode: "dark" | "light" = "light";
+    mode: "dark" | "light" = "dark";
 </script>
 
 <div
@@ -12,7 +12,7 @@
   style="
   --label-color: {mode === 'dark' ? '#fff' : '#666'};
   --border-color: {mode === 'dark' ? '#fff' : '#000'};
-  --background-color:  {mode === 'dark' ? '#222' : '#fff'};
+  --background-color:  {mode === 'dark' ? '#333' : '#fff'};
   --text-color: {mode === 'dark' ? '#fff' : '#000'};
   --image-enhancements-filter: contrast({$enhancements.contrast}) brightness({$enhancements.brightness}) saturate({$enhancements.saturation});
 "

@@ -2,6 +2,8 @@
   import { createEventDispatcher } from "svelte";
   import type { IndexState } from "../library/types";
   import ButtonGroup from "./ButtonGroup.svelte";
+  import Edit from "./icons/Edit.svelte";
+  import IconButton from "./IconButton.svelte";
   import Sort from "./icons/Sort.svelte";
   import SortUp from "./icons/SortUp.svelte";
   import SortDown from "./icons/SortDown.svelte";
@@ -56,14 +58,14 @@
     {#each indexState.rows as row}
       <tr class={row.qslId === idx ? "active" : ""}>
         {#each indexState.columns as column, index}
-          {#if index == 0}
-            <td
-              class="label-action-target"
-              on:click={createLabelCallback(row.qslId)}>{row[column.field]}</td
-            >
-          {:else}
-            <td>{row[column.field]}</td>
-          {/if}
+          <td>
+            {#if index == 0}
+              <IconButton on:click={createLabelCallback(row.qslId)}
+                ><Edit /></IconButton
+              >
+            {/if}
+            {row[column.field]}</td
+          >
         {/each}
       </tr>
     {/each}
@@ -129,9 +131,6 @@
     fill: var(--label-color);
     height: 18px;
   }
-  .label-action-target {
-    cursor: pointer;
-  }
   .heading {
     display: flex;
     flex-direction: row;
@@ -179,5 +178,12 @@
 
   table tr:last-child td:last-child {
     border-bottom-right-radius: 10px;
+  }
+  td:first-child {
+    display:flex;
+    flex-direction: row;
+    white-space: nowrap;
+    align-items: center;
+    column-gap: 5px;
   }
 </style>

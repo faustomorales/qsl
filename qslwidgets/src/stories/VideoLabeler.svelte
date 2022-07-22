@@ -8,7 +8,7 @@
   $: ({ url, labels } = data.videos[index]);
 </script>
 
-<Labeler mode="light">
+<Labeler>
   <VideoLabeler
     target={url}
     bind:labels

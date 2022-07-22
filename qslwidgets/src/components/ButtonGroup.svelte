@@ -68,29 +68,28 @@
     flex-direction: row;
   }
   button {
-    border-width: 0px 1px 0px 0px;
+    border-width: 1px 0px 1px 1px;
+    border-style: solid;
+    border-color: var(--text-color);
     padding: 10px;
-    background-color: var(--color1);
-    color: white;
+    background-color: var(--background-color);
+    color: var(--text-color);
     text-transform: uppercase;
   }
   button:disabled {
     background-color: darkgrey;
   }
-  button:focus-visible, button:active {
-    background-color: darkgrey;
+  button:focus-visible:not(:disabled), button:active:not(:disabled) {
+    background-color: var(--color2);
     outline: none;
-  }
-  button:last-of-type {
-    border-width: 0px 0px 0px 0px;
   }
   button:last-of-type {
     border-top-right-radius: 10px;
     border-bottom-right-radius: 10px;
+    border-width: 1px;
   }
   button:first-of-type {
     border-bottom-left-radius: 10px;
     border-top-left-radius: 10px;
-    border-width: 0px 1px 0px 0px;
   }
 </style>

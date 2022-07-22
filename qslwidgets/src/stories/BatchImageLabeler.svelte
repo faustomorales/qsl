@@ -21,7 +21,7 @@
   );
 </script>
 
-<Labeler mode="light">
+<Labeler>
   <BatchImageLabeler
     bind:config={$config}
     bind:labels={$labels}

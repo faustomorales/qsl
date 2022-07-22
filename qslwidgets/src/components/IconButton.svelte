@@ -1,10 +1,13 @@
 <script lang="ts">
-  export let disabled: boolean = false;
+  export let disabled: boolean = false,
+    label: string | undefined = undefined;
 </script>
 
 <button disabled={!!disabled} on:click
   ><slot />
-  <span class="label"> <slot name="label" /></span>
+  {#if label}
+    <span class="label">{label}</span>
+  {/if}
 </button>
 
 <style>

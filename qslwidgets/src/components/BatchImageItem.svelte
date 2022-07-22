@@ -30,10 +30,7 @@
     <div class="item-actions">
       <div class="item-actions-container">
         {#if labeled || ignored}
-          <IconButton>
-            <svelte:fragment slot="label"
-              >{#if typeof labeled === "string"}{labeled}{/if}</svelte:fragment
-            >
+          <IconButton label={typeof labeled === "string" ? labeled : undefined}>
             {#if labeled}
               <Labeled />
             {:else}

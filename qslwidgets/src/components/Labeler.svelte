@@ -4,7 +4,7 @@
   import ClickTarget from "./ClickTarget.svelte";
   import { enhancements } from "../library/stores";
   export let progress: number | undefined = undefined,
-    mode: "dark" | "light" = "dark";
+    mode: "dark" | "light" = "light";
 </script>
 
 <div

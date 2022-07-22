@@ -18,11 +18,14 @@
     tickSpan: 50,
     tickSize: 8,
     fontSize: 20,
-    axisSize: 80,
+    yAxisSize: 80,
+    xAxisSize: 60,
     dotRadius: 3,
     legendSize: 35,
+    yMargin: 8,
     lineColor: "var(--text-color)",
   };
+  const debug = false;
   const computeAxes = (lines: Line[], userSetting?: AxisDomainDefinition) => {
     const { dataMin, dataMax } = lines.reduce(
       (memo, line) => {
@@ -80,13 +83,11 @@
           width: p.size?.width || defaults.width,
           height: p.size?.height || defaults.height,
         };
-        const yMargin = 8;
-
         const axisSizes = {
-          x: p.x.height || defaults.axisSize,
+          x: p.x.height || defaults.xAxisSize,
           y: {
-            left: p.y.widths?.left || defaults.axisSize,
-            right: p.y.widths?.right || defaults.axisSize,
+            left: p.y.widths?.left || defaults.yAxisSize,
+            right: p.y.widths?.right || defaults.yAxisSize,
           },
         };
         const extents = {
@@ -97,8 +98,10 @@
           },
           y: {
             min: axisSizes.x + defaults.legendSize,
-            max: size.height - yMargin,
-            span: size.height - (axisSizes.x + yMargin + defaults.legendSize),
+            max: size.height - defaults.yMargin,
+            span:
+              size.height -
+              (axisSizes.x + defaults.yMargin + defaults.legendSize),
           },
         };
         const tickCount = {
@@ -145,6 +148,7 @@
         return {
           size,
           extents,
+          axisSizes,
           x: {
             limits: limits.x,
             ticks: ticks.x,
@@ -275,6 +279,43 @@
     return { p, a: axes[pi], lines: lineGroups[pi], areas: areaGroups[pi] };
   }) as { a, lines, areas }, pi}
     <svg class="plot">
+      {#if debug}
+        <rect
+          x={a.extents.x.min}
+          y={a.size.height - a.extents.y.max}
+          width={a.extents.x.span}
+          height={a.extents.y.span}
+          fill="red"
+        />
+        <rect
+          x={a.extents.x.min}
+          y={a.size.height - defaults.legendSize}
+          width={a.extents.x.span}
+          height={defaults.legendSize}
+          fill="green"
+        />
+        <rect
+          x={a.extents.x.min}
+          y={a.size.height - defaults.legendSize - a.axisSizes.x}
+          width={a.extents.x.span}
+          height={a.axisSizes.x}
+          fill="blue"
+        />
+        <rect
+          x={0}
+          y={a.size.height - a.extents.y.max}
+          width={a.axisSizes.y.left}
+          height={a.extents.y.span}
+          fill="blue"
+        />
+        <rect
+          x={a.axisSizes.y.left + a.extents.x.span}
+          y={a.size.height - a.extents.y.max}
+          width={a.axisSizes.y.right}
+          height={a.extents.y.span}
+          fill="blue"
+        />
+      {/if}
       <g class="axis x">
         <line
           class="bottom"
@@ -358,7 +399,7 @@
                 />
                 <text
                   x={side.x + side.sign * (1.25 * defaults.tickSize)}
-                  y={a.size.height - t.pos + defaults.fontSize / 3}
+                  y={a.size.height - t.pos + defaults.fontSize / 4}
                   font-size={defaults.fontSize}
                   >{parseFloat(t.val.toFixed(1)).toString()}</text
                 >
@@ -436,10 +477,7 @@
         width={a.size.width}
         height={defaults.legendSize}
         x={0}
-        y={a.size.height -
-          a.extents.y.min +
-          defaults.tickSize +
-          defaults.fontSize * 2}
+        y={a.size.height - defaults.legendSize}
         viewBox="0 0 {a.size.width} {defaults.legendSize}"
       >
         {#if lines.length > 1}
@@ -449,7 +487,7 @@
               x={(linei + 0.5) * (a.size.width / lines.length)}
               y={defaults.legendSize - 10}
               font-size={defaults.fontSize}
-              >{line.name}
+              >• {line.name}
             </text>
           {/each}
         {/if}

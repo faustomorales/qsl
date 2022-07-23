@@ -8,6 +8,7 @@
     focus,
     pct2css,
   } from "../library/common";
+  import Button from "./Button.svelte";
   export let configs: ButtonConfig[];
   const dispatcher = createEventDispatcher();
   const click = (name: string) => dispatcher("click", { name });
@@ -49,12 +50,13 @@
 <div class="button-group-container" bind:this={container}>
   {#each configs as config, configIndex}
     {#if !config.hidden}
-      <button
-        style="flex: 0 1 {basis};"
+      <Button
+        {basis}
         disabled={config.disabled}
-        data-index={configIndex}
-        on:click={() => click(config.event)}>{config.text}</button
-      >
+        dataIndex={configIndex}
+        text={config.text}
+        on:click={() => click(config.event)}
+      />
     {/if}
   {/each}
 </div>
@@ -66,30 +68,5 @@
     white-space: nowrap;
     display: flex;
     flex-direction: row;
-  }
-  button {
-    border-width: 1px 0px 1px 1px;
-    border-style: solid;
-    border-color: var(--text-color);
-    padding: 10px;
-    background-color: var(--background-color);
-    color: var(--text-color);
-    text-transform: uppercase;
-  }
-  button:disabled {
-    background-color: darkgrey;
-  }
-  button:focus-visible:not(:disabled), button:active:not(:disabled) {
-    background-color: var(--color2);
-    outline: none;
-  }
-  button:last-of-type {
-    border-top-right-radius: 10px;
-    border-bottom-right-radius: 10px;
-    border-width: 1px;
-  }
-  button:first-of-type {
-    border-bottom-left-radius: 10px;
-    border-top-left-radius: 10px;
   }
 </style>

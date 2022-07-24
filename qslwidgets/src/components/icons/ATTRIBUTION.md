@@ -7,3 +7,4 @@ Labeled: Turned In from Material UI Icons
 Unchecked: Circle from Carbon Icons
 Pause, Play, Unmuted, Muted from Carbon Icons
 Sort, SortDown, SortUp from Carbon Icons
+Chart from Carbon Icons

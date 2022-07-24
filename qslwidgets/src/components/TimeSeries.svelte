@@ -8,6 +8,7 @@
     AxisDomainDefinition,
   } from "../library/types";
   import { processSelectionChange } from "../library/common";
+  import Chart from "./icons/Chart.svelte";
   export let target: TimeSeriesTarget | undefined,
     config: Config,
     labels: DraftLabels,
@@ -274,227 +275,224 @@
         });
 </script>
 
-<svg width={chartSize?.width} height={chartSize?.height} class="chart">
+<div
+  style="width: {chartSize?.width}px; height: {chartSize?.height}px;"
+  class="chart"
+>
   {#each (target || { plots: [] }).plots.map((p, pi) => {
     return { p, a: axes[pi], lines: lineGroups[pi], areas: areaGroups[pi] };
-  }) as { a, lines, areas }, pi}
-    <svg class="plot">
-      {#if debug}
-        <rect
-          x={a.extents.x.min}
-          y={a.size.height - a.extents.y.max}
-          width={a.extents.x.span}
-          height={a.extents.y.span}
-          fill="red"
-        />
-        <rect
-          x={a.extents.x.min}
-          y={a.size.height - defaults.legendSize}
-          width={a.extents.x.span}
-          height={defaults.legendSize}
-          fill="green"
-        />
-        <rect
-          x={a.extents.x.min}
-          y={a.size.height - defaults.legendSize - a.axisSizes.x}
-          width={a.extents.x.span}
-          height={a.axisSizes.x}
-          fill="blue"
-        />
-        <rect
-          x={0}
-          y={a.size.height - a.extents.y.max}
-          width={a.axisSizes.y.left}
-          height={a.extents.y.span}
-          fill="blue"
-        />
-        <rect
-          x={a.axisSizes.y.left + a.extents.x.span}
-          y={a.size.height - a.extents.y.max}
-          width={a.axisSizes.y.right}
-          height={a.extents.y.span}
-          fill="blue"
-        />
-      {/if}
-      <g class="axis x">
-        <line
-          class="bottom"
-          x1={a.extents.x.min}
-          x2={a.extents.x.max}
-          y1={a.size.height - a.extents.y.min}
-          y2={a.size.height - a.extents.y.min}
-        />
-        <line
-          class="top"
-          x1={a.extents.x.min}
-          x2={a.extents.x.max}
-          y1={a.size.height - a.extents.y.max}
-          y2={a.size.height - a.extents.y.max}
-        />
-        <g class="label">
-          <text
-            font-size={defaults.fontSize}
-            x={a.extents.x.min + a.extents.x.span / 2}
-            y={a.size.height -
-              a.extents.y.min +
-              defaults.tickSize +
-              defaults.fontSize * 2}>{a.x.label}</text
-          >
-        </g>
-        {#each a.x.ticks as t, ti}
-          <g class="tick x">
-            <line
-              y1={a.size.height -
-                a.extents.y.min -
-                (ti == 0 || ti == a.x.ticks.length - 1 ? 0 : defaults.tickSize)}
-              y2={a.size.height - a.extents.y.min + defaults.tickSize}
-              x1={t.pos}
-              x2={t.pos}
-            />
+  }) as { a, lines, areas }}
+    <div style="width: {a.size.width}px; height: {a.size.height}px;">
+      <svg
+        class="plot"
+        width={a.size.width}
+        height={a.size.height - defaults.legendSize}
+      >
+        {#if debug}
+          <rect
+            x={a.extents.x.min}
+            y={a.size.height - a.extents.y.max}
+            width={a.extents.x.span}
+            height={a.extents.y.span}
+            fill="red"
+          />
+          <rect
+            x={a.extents.x.min}
+            y={a.size.height - defaults.legendSize - a.axisSizes.x}
+            width={a.extents.x.span}
+            height={a.axisSizes.x}
+            fill="blue"
+          />
+          <rect
+            x={0}
+            y={a.size.height - a.extents.y.max}
+            width={a.axisSizes.y.left}
+            height={a.extents.y.span}
+            fill="blue"
+          />
+          <rect
+            x={a.axisSizes.y.left + a.extents.x.span}
+            y={a.size.height - a.extents.y.max}
+            width={a.axisSizes.y.right}
+            height={a.extents.y.span}
+            fill="blue"
+          />
+        {/if}
+        <g class="axis x">
+          <line
+            class="bottom"
+            x1={a.extents.x.min}
+            x2={a.extents.x.max}
+            y1={a.size.height - a.extents.y.min}
+            y2={a.size.height - a.extents.y.min}
+          />
+          <line
+            class="top"
+            x1={a.extents.x.min}
+            x2={a.extents.x.max}
+            y1={a.size.height - a.extents.y.max}
+            y2={a.size.height - a.extents.y.max}
+          />
+          <g class="label">
             <text
-              x={t.pos}
+              font-size={defaults.fontSize}
+              x={a.extents.x.min + a.extents.x.span / 2}
               y={a.size.height -
                 a.extents.y.min +
                 defaults.tickSize +
-                defaults.fontSize}
-              font-size={defaults.fontSize}
-              >{parseFloat(t.val.toFixed(1)).toString()}</text
+                defaults.fontSize * 2}>{a.x.label}</text
             >
           </g>
-        {/each}
-      </g>
-      {#each ["left", "right"].map((side) => {
-        return { limits: a.y.limits[side], sign: side == "left" ? -1 : 1, x: side === "left" ? a.extents.x.min : a.extents.x.max, ticks: a.y.ticks[side], side: side, label: a.y.labels[side] };
-      }) as side}
-        <g class="axis y {side.side}">
-          <line
-            x1={side.x}
-            x2={side.x}
-            y1={a.size.height - a.extents.y.max}
-            y2={a.size.height - a.extents.y.min}
-          />
-          <text
-            class="label"
-            x={side.x +
-              side.sign * (defaults.tickSize + 3.0 * defaults.fontSize)}
-            y={a.size.height - (a.extents.y.min + a.extents.y.span / 2)}
-            font-size={defaults.fontSize}>{side.label}</text
-          >
-          {#if side.limits.max != 0 || side.limits.min != 0}
-            {#each side.ticks as t, ti}
-              <g class="tick y {side.side}">
-                <line
-                  x1={side.x -
-                    ((ti == 0 || ti == side.ticks.length - 1) &&
-                    side.side == "right"
-                      ? 0
-                      : defaults.tickSize)}
-                  x2={side.x +
-                    ((ti == 0 || ti == side.ticks.length - 1) &&
-                    side.side == "left"
-                      ? 0
-                      : defaults.tickSize)}
-                  y1={a.size.height - t.pos}
-                  y2={a.size.height - t.pos}
-                />
-                <text
-                  x={side.x + side.sign * (1.25 * defaults.tickSize)}
-                  y={a.size.height - t.pos + defaults.fontSize / 4}
-                  font-size={defaults.fontSize}
-                  >{parseFloat(t.val.toFixed(1)).toString()}</text
-                >
-              </g>
-            {/each}
-          {/if}
-        </g>
-      {/each}
-      <svg
-        class="chart-area"
-        width={a.extents.x.span}
-        height={a.extents.y.span}
-        x={a.extents.x.min}
-        y={a.size.height - a.extents.y.max}
-        viewBox="{a.extents.x.min} {a.size.height - a.extents.y.max} {a.extents
-          .x.span} {a.extents.y.span}"
-      >
-        {#each areas as area}
-          <g class="reference-area">
-            <rect
-              x={area.x1}
-              y={a.size.height - area.y2}
-              width={area.x2 - area.x1}
-              height={area.y2 - area.y1}
-              on:click={area.onClick}
-              class={area.active ? "active" : ""}
-              style="stroke: {area.stroke}; stroke-dasharray: {area.strokeDashArray}"
-            />
-            {#if area.label}
+          {#each a.x.ticks as t, ti}
+            <g class="tick x">
+              <line
+                y1={a.size.height -
+                  a.extents.y.min -
+                  (ti == 0 || ti == a.x.ticks.length - 1
+                    ? 0
+                    : defaults.tickSize)}
+                y2={a.size.height - a.extents.y.min + defaults.tickSize}
+                x1={t.pos}
+                x2={t.pos}
+              />
               <text
-                x={(area.x1 + area.x2) / 2}
+                x={t.pos}
+                y={a.size.height -
+                  a.extents.y.min +
+                  defaults.tickSize +
+                  defaults.fontSize}
                 font-size={defaults.fontSize}
-                y={a.size.height - (area.y2 + area.y1) / 2}>{area.label}</text
+                >{parseFloat(t.val.toFixed(1)).toString()}</text
               >
+            </g>
+          {/each}
+        </g>
+        {#each ["left", "right"].map((side) => {
+          return { limits: a.y.limits[side], sign: side == "left" ? -1 : 1, x: side === "left" ? a.extents.x.min : a.extents.x.max, ticks: a.y.ticks[side], side: side, label: a.y.labels[side] };
+        }) as side}
+          <g class="axis y {side.side}">
+            <line
+              x1={side.x}
+              x2={side.x}
+              y1={a.size.height - a.extents.y.max}
+              y2={a.size.height - a.extents.y.min}
+            />
+            <text
+              class="label"
+              x={side.x +
+                side.sign * (defaults.tickSize + 3.0 * defaults.fontSize)}
+              y={a.size.height - (a.extents.y.min + a.extents.y.span / 2)}
+              font-size={defaults.fontSize}>{side.label}</text
+            >
+            {#if side.limits.max != 0 || side.limits.min != 0}
+              {#each side.ticks as t, ti}
+                <g class="tick y {side.side}">
+                  <line
+                    x1={side.x -
+                      ((ti == 0 || ti == side.ticks.length - 1) &&
+                      side.side == "right"
+                        ? 0
+                        : defaults.tickSize)}
+                    x2={side.x +
+                      ((ti == 0 || ti == side.ticks.length - 1) &&
+                      side.side == "left"
+                        ? 0
+                        : defaults.tickSize)}
+                    y1={a.size.height - t.pos}
+                    y2={a.size.height - t.pos}
+                  />
+                  <text
+                    x={side.x + side.sign * (1.25 * defaults.tickSize)}
+                    y={a.size.height - t.pos + defaults.fontSize / 4}
+                    font-size={defaults.fontSize}
+                    >{parseFloat(t.val.toFixed(1)).toString()}</text
+                  >
+                </g>
+              {/each}
             {/if}
           </g>
         {/each}
-        {#each lines as line}
-          <g class="line" style="--line-color: {line.color}">
-            <defs>
-              <mask id="dot-mask" class="mask">
-                <rect
-                  x={a.extents.x.min}
-                  y={a.size.height - a.extents.y.max}
-                  width={a.extents.x.span}
-                  height={a.extents.y.span}
-                />
-                {#each line.dots as dot}
-                  <circle cx={dot.x} cy={dot.y} r={defaults.dotRadius} />
-                {/each}
-              </mask>
-            </defs>
-            <g class="dots {line.interactive ? 'interactive' : ''}">
-              {#each line.dots as dot}
-                <circle
-                  cx={dot.x}
-                  cy={dot.y}
-                  class={dot.active ? "active" : ""}
-                  r={defaults.dotRadius}
-                  on:click={dot.onClick}
-                />
-              {/each}
+        <svg
+          class="chart-area"
+          width={a.extents.x.span}
+          height={a.extents.y.span}
+          x={a.extents.x.min}
+          y={a.size.height - a.extents.y.max}
+          viewBox="{a.extents.x.min} {a.size.height - a.extents.y.max} {a
+            .extents.x.span} {a.extents.y.span}"
+        >
+          {#each areas as area}
+            <g class="reference-area">
+              <rect
+                x={area.x1}
+                y={a.size.height - area.y2}
+                width={area.x2 - area.x1}
+                height={area.y2 - area.y1}
+                on:click={area.onClick}
+                class={area.active ? "active" : ""}
+                style="stroke: {area.stroke}; stroke-dasharray: {area.strokeDashArray}"
+              />
+              {#if area.label}
+                <text
+                  x={(area.x1 + area.x2) / 2}
+                  font-size={defaults.fontSize}
+                  y={a.size.height - (area.y2 + area.y1) / 2}>{area.label}</text
+                >
+              {/if}
             </g>
-            <polyline
-              mask="url(#dot-mask)"
-              points={line.points
-                .map((point) => `${point.x} ${point.y}`)
-                .join(" ")}
-            />
-          </g>
-        {/each}
+          {/each}
+          {#each lines as line}
+            <g class="line" style="--line-color: {line.color}">
+              <defs>
+                <mask id="dot-mask" class="mask">
+                  <rect
+                    x={a.extents.x.min}
+                    y={a.size.height - a.extents.y.max}
+                    width={a.extents.x.span}
+                    height={a.extents.y.span}
+                  />
+                  {#each line.dots as dot}
+                    <circle cx={dot.x} cy={dot.y} r={defaults.dotRadius} />
+                  {/each}
+                </mask>
+              </defs>
+              <g class="dots {line.interactive ? 'interactive' : ''}">
+                {#each line.dots as dot}
+                  <circle
+                    cx={dot.x}
+                    cy={dot.y}
+                    class={dot.active ? "active" : ""}
+                    r={defaults.dotRadius}
+                    on:click={dot.onClick}
+                  />
+                {/each}
+              </g>
+              <polyline
+                mask="url(#dot-mask)"
+                points={line.points
+                  .map((point) => `${point.x} ${point.y}`)
+                  .join(" ")}
+              />
+            </g>
+          {/each}
+        </svg>
       </svg>
-      <svg
+      <div
         class="legend"
-        width={a.size.width}
-        height={defaults.legendSize}
-        x={0}
-        y={a.size.height - defaults.legendSize}
-        viewBox="0 0 {a.size.width} {defaults.legendSize}"
+        style="width: {a.size.width}px; height: {defaults.legendSize}px"
       >
         {#if lines.length > 1}
-          {#each lines as line, linei}
-            <text
-              style="fill: {line.color}"
-              x={(linei + 0.5) * (a.size.width / lines.length)}
-              y={defaults.legendSize - 10}
-              font-size={defaults.fontSize}
-              >• {line.name}
-            </text>
+          {#each lines as line}
+            <div class="legend-entry" style="--line-color: {line.color}">
+              <Chart />
+              <span class="label">{line.name}</span>
+            </div>
           {/each}
         {/if}
-      </svg>
-    </svg>
+      </div>
+    </div>
   {/each}
-</svg>
+</div>
 
 <style>
   line,
@@ -556,9 +554,24 @@
     font-size: 12pt;
   }
   .legend {
-    background-color: green;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    column-gap: 10px;
   }
-  .legend {
-    text-anchor: middle;
+  .legend-entry {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    column-gap: 10px;
+  }
+  .legend-entry .label {
+    color: var(--line-color);
+  }
+  .legend-entry :global(svg) {
+    width: 24px;
+    fill: var(--line-color);
   }
 </style>

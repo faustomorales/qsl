@@ -22,14 +22,16 @@
   button {
     border-width: 1px 0px 1px 1px;
     border-style: solid;
-    border-color: var(--text-color);
+    border-color: var(--color2);
     padding: 10px;
     background-color: var(--background-color);
     color: var(--text-color);
     text-transform: uppercase;
+    cursor: pointer;
   }
   button:disabled {
-    background-color: var(--disabled-color);
+    border-color: var(--disabled-color);
+    cursor: auto; 
   }
   button:focus-visible:not(:disabled),
   button:active:not(:disabled) {

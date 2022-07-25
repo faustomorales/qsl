@@ -29,7 +29,7 @@
     editableConfig
     actions={{
       save: true,
-      next: $index < data.images.length,
+      next: $index < data.images.length - 1,
       prev: $index != 0,
       delete: true,
     }}

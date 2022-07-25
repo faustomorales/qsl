@@ -54,15 +54,17 @@ def deprecate(old, new):
 
 def target2repr(target, ttype):
     """Convert any labling target to a string representation."""
-    return (
-        target
-        if isinstance(target, str)
-        else "numpy array"
-        if files.is_array(target)
-        else "time series"
-        if ttype == "time-series"
-        else ""
-    )
+    if isinstance(target, str):
+        if not target.startswith("data:"):
+            return target
+        return "base64-encoded data"
+    if files.is_array(target):
+        return "numpy array"
+    if ttype == "time-series":
+        return "Time Series"
+    if ttype == "image-group":
+        return f"Group of {len(target.get('images', []))} images"
+    return ""
 
 
 def entry2hash(entry):

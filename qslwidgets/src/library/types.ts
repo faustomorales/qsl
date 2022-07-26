@@ -146,6 +146,7 @@ export interface ImageGroupTarget {
   images: {
     target?: string;
     metadata?: ArbitraryMetadata;
+    group?: string;
   }[];
   onClick?: {
     [key: string]: string;

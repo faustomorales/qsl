@@ -9,7 +9,11 @@
   let config: Writable<Config> = writable(data.config);
   let labels: Writable<Labels> = writable({});
   let target: ImageGroupTarget = {
-    images: data.images.map((i) => ({ target: i.url, metadata: i.metadata })),
+    images: data.images.map((img, imgIndex) => ({
+      target: img.url,
+      metadata: img.metadata,
+      group: imgIndex % 3 == 0 ? "Group 1" : undefined,
+    })),
     onClick: { c: "Category", q: "Quality", "": "Description" },
   };
 </script>

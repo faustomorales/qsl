@@ -88,6 +88,13 @@
         Object.entries(target.onClick).map(([key, value]) => [value, key])
       )
     : undefined;
+  $: groups = target?.images.reduce(
+    (groups, entry) =>
+      entry.group && groups.indexOf(entry.group) == -1
+        ? groups.concat([entry.group])
+        : groups,
+    [] as string[]
+  );
 </script>
 
 <svelte:window
@@ -113,16 +120,38 @@
   <ItemGrid itemSize={columnSize} on:click={click}>
     {#if !transitioning && target}
       {#each target.images as entry, entryi}
-        <BatchImageItem
-          on:click={createClickHandler(entryi)}
-          size={columnSize}
-          src={entry.target}
-          metadata={entry.metadata}
-          labeled={summarize(entryi)}
-        />
+        {#if !entry.group}
+          <BatchImageItem
+            on:click={createClickHandler(entryi)}
+            size={columnSize}
+            src={entry.target}
+            metadata={entry.metadata}
+            labeled={summarize(entryi)}
+          />
+        {/if}
       {/each}
     {/if}
   </ItemGrid>
+  {#if groups}
+    {#each groups as group}
+      <h2>{group}</h2>
+      <ItemGrid itemSize={columnSize} on:click={click}>
+        {#if !transitioning && target}
+          {#each target.images as entry, entryi}
+            {#if entry.group == group}
+              <BatchImageItem
+                on:click={createClickHandler(entryi)}
+                size={columnSize}
+                src={entry.target}
+                metadata={entry.metadata}
+                labeled={summarize(entryi)}
+              />
+            {/if}
+          {/each}
+        {/if}
+      </ItemGrid>
+    {/each}
+  {/if}
   <Metadata {metadata} />
   <EnhancementControls>
     <RangeSlider

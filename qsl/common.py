@@ -1,5 +1,6 @@
 import os
 import math
+import json
 import typing
 import logging
 import tempfile
@@ -73,10 +74,10 @@ def entry2hash(entry):
         if isinstance(target, str):
             return target
         if isinstance(target, dict):
-            return hash(tuple(sorted(target.items())))
+            return hash(json.dumps(target))
         raise ValueError("Unsupported target type for hashing.")
     if "metadata" in entry:
-        return hash(tuple(sorted(entry["metadata"].items())))
+        return hash(json.dumps(entry["metadata"]))
     raise ValueError(f"Could not hash {entry}.")
 
 

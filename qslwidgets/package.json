@@ -1,6 +1,6 @@
 {
   "name": "qslwidgets",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Widgets for the QSL media labeling package.",
   "keywords": [
     "jupyter",
@@ -11,7 +11,10 @@
   "files": [
     "lib/**/*.js",
     "lib/**/*.svelte",
+    "lib/**/*.d.ts",
+    "lib/**/*.wasm",
     "dist/*.js",
+    "dist/*.wasm",
     "css/*.css"
   ],
   "homepage": "https://github.com/faustomorales/qsl",

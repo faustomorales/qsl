@@ -53,7 +53,7 @@
   style="--item-size: {itemSize}; --item-gap: {itemGap};"
 >
   {#each Array(columns) as _}
-    <div class="column" on:click>
+    <div class="column {!containerWidth ? 'hidden' : ''}" on:click>
       <slot />
     </div>
   {/each}
@@ -66,6 +66,9 @@
     flex-direction: row;
     flex-wrap: nowrap;
     column-gap: calc(var(--item-gap) * 1px);
+  }
+  .hidden {
+    visibility: hidden;
   }
   .column {
     display: flex;

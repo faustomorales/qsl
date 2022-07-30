@@ -39,24 +39,28 @@
     fit: 1,
     dragging: false,
   };
-  $: if (
-    size &&
-    viewWidth &&
-    (viewWidth !== state.basis.view.width ||
+  let syncRequired = true;
+  const sync = () => {
+    if (!size || !viewWidth) {
+      syncRequired = true;
+      return;
+    }
+    if (
+      viewWidth !== state.basis.view.width ||
       viewHeight !== state.basis.view.height ||
       state.basis.size.width !== size.width ||
-      state.basis.size.height !== size.height)
-  ) {
-    state = (() => {
+      state.basis.size.height !== size.height
+    ) {
+      syncRequired = true;
       const minimapScale = minimapSize / Math.max(size.width, size.height);
       const fit = Math.min(viewHeight / size.height, viewWidth / size.width);
-      return {
+      state = {
         ...state,
         x: 0,
         y: 0,
         basis: {
           view: { width: viewWidth, height: viewHeight },
-          size,
+          size: size!,
         },
         minimap: {
           width: size.width * minimapScale,
@@ -66,8 +70,10 @@
         zoom: fit,
         fit,
       };
-    })();
-  }
+    }
+    syncRequired = false;
+  };
+  $: size, viewWidth, sync();
   const zoom2span = (zoom: number) =>
     state.basis.view.width && state.basis.size.width && state.basis.size.height
       ? {
@@ -235,7 +241,9 @@
       : 0
   ) * 100}%;
     "
-  class="media-viewer {state.dragging ? 'dragging' : ''}"
+  class="media-viewer {state.dragging ? 'dragging' : ''} {syncRequired
+    ? 'sync-required'
+    : ''}"
 >
   <div
     bind:this={view}
@@ -243,13 +251,9 @@
     style="height: {state.basis.view.height}px; width: 100%"
   >
     <ClickTarget />
-    <div class="main" bind:this={main}>
-      <div class={loadState}>
-        <slot name="main" />
-      </div>
-      {#if loadState === "loaded"}
-        <slot name="regions" />
-      {/if}
+    <div class="main {loadState}" bind:this={main}>
+      <slot name="main" />
+      <slot name="regions" />
     </div>
     {#if loadState !== "loaded"}
       <div class="spinner">
@@ -304,6 +308,9 @@
 </div>
 
 <style>
+  .hidden {
+    visibility: hidden;
+  }
   .media-viewer {
     display: flex;
     flex-direction: column;
@@ -324,8 +331,10 @@
     position: absolute;
     touch-action: none;
   }
-  .main .loading,
-  .main .error {
+  .sync-required .main,
+  .sync-required .minimap,
+  .main.loading,
+  .main.error {
     visibility: hidden;
   }
   .footer {

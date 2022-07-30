@@ -55,7 +55,7 @@
 <MediaViewer
   {viewHeight}
   size={chartSize}
-  loadState={transitioning ? "loading" : "loaded"}
+  loadState={transitioning || !chartSize ? "loading" : "loaded"}
   enhancementControls={false}
 >
   <svelte:fragment slot="main"

@@ -19,6 +19,7 @@
     width: 100%;
     border: 1px solid;
     border-color: var(--border-color);
+    z-index: 1;
   }
   td {
     padding: 10px;

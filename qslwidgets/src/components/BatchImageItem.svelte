@@ -18,40 +18,48 @@
 
 <div
   class="item {showActionMenu ? 'with-actions' : 'without-actions'}"
-  on:click
   style="--item-size: {size}"
 >
-  {#if failed}
-    <span class="error-message">{src} failed to load.</span>
-  {:else if src}
-    <img {src} on:error={() => (failed = true)} alt="{src} failed to load." />
-  {/if}
-  {#if showActionMenu}
-    <div class="item-actions">
-      <div class="item-actions-container">
-        {#if labeled || ignored}
-          <IconButton label={typeof labeled === "string" ? labeled : undefined}>
-            {#if labeled}
-              <Labeled />
-            {:else}
-              <Ignored />
+  <div class="clickable" on:click>
+    {#if failed}
+      <span class="error-message">{src} failed to load.</span>
+    {:else if src}
+      <img {src} on:error={() => (failed = true)} alt="{src} failed to load." />
+    {/if}
+    {#if showActionMenu}
+      <div class="item-actions">
+        <div class="item-actions-container">
+          {#if labeled || ignored}
+            <IconButton
+              label={typeof labeled === "string" ? labeled : undefined}
+            >
+              {#if labeled}
+                <Labeled />
+              {:else}
+                <Ignored />
+              {/if}
+            </IconButton>
+          {/if}
+          <div class="item-actions-spacer" />
+          <IconButton>
+            {#if selected !== undefined}
+              {#if selected}
+                <Checked />
+              {:else}
+                <Unchecked />
+              {/if}
             {/if}
           </IconButton>
-        {/if}
-        <div class="item-actions-spacer" />
-        <IconButton>
-          {#if selected !== undefined}
-            {#if selected}
-              <Checked />
-            {:else}
-              <Unchecked />
-            {/if}
-          {/if}
-        </IconButton>
+        </div>
       </div>
-    </div>
+    {/if}
+    {#if !src}
+      <Metadata {metadata} />
+    {/if}
+  </div>
+  {#if src}
+    <Metadata {metadata} />
   {/if}
-  <Metadata {metadata} />
 </div>
 
 <style>
@@ -61,6 +69,9 @@
     border-radius: 16px;
     width: calc(var(--item-size) * 1px);
     border: 1px solid var(--border-color);
+  }
+  .item :global(.metadata) {
+    pointer-events: none;
   }
   .item.with-actions {
     padding-top: 32px;

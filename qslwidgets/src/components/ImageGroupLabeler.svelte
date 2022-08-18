@@ -88,7 +88,7 @@
         Object.entries(target.onClick).map(([key, value]) => [value, key])
       )
     : undefined;
-  $: groups = target?.images.reduce(
+  $: groups = (target && target.images ? target.images : []).reduce(
     (groups, entry) =>
       entry.group && groups.indexOf(entry.group) == -1
         ? groups.concat([entry.group])
@@ -118,7 +118,7 @@
 <div bind:this={container} class="container">
   <ClickTarget />
   <ItemGrid itemSize={columnSize} on:click={click}>
-    {#if !transitioning && target}
+    {#if !transitioning && target && target.images}
       {#each target.images as entry, entryi}
         {#if !entry.group}
           <BatchImageItem
@@ -136,7 +136,7 @@
     {#each groups as group}
       <h2>{group}</h2>
       <ItemGrid itemSize={columnSize} on:click={click}>
-        {#if !transitioning && target}
+        {#if !transitioning && target && target.images}
           {#each target.images as entry, entryi}
             {#if entry.group == group}
               <BatchImageItem

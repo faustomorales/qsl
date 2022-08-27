@@ -4,6 +4,8 @@
   import ButtonGroup from "./ButtonGroup.svelte";
   import Edit from "./icons/Edit.svelte";
   import IconButton from "./IconButton.svelte";
+  import Filter from "./icons/Filter.svelte";
+  import RemoveFilter from "./icons/RemoveFilter.svelte";
   import Sort from "./icons/Sort.svelte";
   import SortUp from "./icons/SortUp.svelte";
   import SortDown from "./icons/SortDown.svelte";
@@ -18,6 +20,28 @@
     indexState.sortModel.length > 0
       ? indexState.sortModel[0]
       : { field: undefined, sort: undefined };
+  $: filterState =
+    indexState.filterModel.length > 0
+      ? indexState.filterModel[0]
+      : { field: undefined, value: undefined };
+  const onFilterValueChange = (event: Event) => {
+    filterState = {
+      field: filterState.field as string,
+      value: (event.target as HTMLInputElement).value as string,
+    };
+    indexState = { ...indexState, filterModel: [filterState] };
+    dispatcher("sort");
+  };
+  const onFilterDeletion = () => {
+    filterState = { field: undefined, value: undefined };
+    indexState = { ...indexState, filterModel: [] };
+    dispatcher("sort");
+  };
+  const createFilterInitializer = (field: string) => () => {
+    filterState = { field, value: undefined };
+    indexState = { ...indexState, filterModel: [filterState] };
+    dispatcher("sort");
+  };
   const createLabelCallback = (index: number) => () => {
     idx = index;
     dispatcher("label");
@@ -39,16 +63,32 @@
   <thead>
     <tr>
       {#each indexState.columns as column}
-        <th on:click={createSortCallback(column.field)}
+        <th
           ><div class="heading">
             <span>{column.headerName || column.field}</span>
-            {#if sortState.field === column.field && sortState.sort === "asc"}
-              <SortUp />
-            {:else if sortState.field === column.field && sortState.sort === "desc"}
-              <SortDown />
-            {:else}
-              <Sort />
-            {/if}
+            <div class="heading-controls">
+              <span on:click={createSortCallback(column.field)}>
+                {#if sortState.field === column.field && sortState.sort === "asc"}
+                  <SortUp />
+                {:else if sortState.field === column.field && sortState.sort === "desc"}
+                  <SortDown />
+                {:else}
+                  <Sort />
+                {/if}
+              </span>
+              <div>
+                {#if filterState.field === column.field}
+                  <span on:click={onFilterDeletion}><RemoveFilter /></span>
+                {:else}
+                  <span on:click={createFilterInitializer(column.field)}
+                    ><Filter />
+                  </span>
+                {/if}
+              </div>
+              {#if filterState.field === column.field}
+                <input on:change={onFilterValueChange} class="filter" />
+              {/if}
+            </div>
           </div>
         </th>
       {/each}
@@ -135,7 +175,19 @@
     display: flex;
     flex-direction: row;
     align-items: center;
+    position: relative;
+  }
+  .heading-controls {
     cursor: pointer;
+    display: flex;
+    flex-direction: row;
+  }
+  .heading-controls .filter {
+    position: absolute;
+    left: 100%;
+    z-index: 1;
+    top: 100%;
+    transform: translateX(-20px);
   }
   .navigation {
     display: flex;
@@ -180,7 +232,7 @@
     border-bottom-right-radius: 10px;
   }
   td:first-child {
-    display:flex;
+    display: flex;
     flex-direction: row;
     white-space: nowrap;
     align-items: center;

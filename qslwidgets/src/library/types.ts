@@ -201,6 +201,7 @@ export interface IndexState {
   rowCount: number;
   rowsPerPage: number;
   sortModel: { field: string; sort: "asc" | "desc" }[];
+  filterModel: { field: string; value?: string }[];
   page: number;
 }
 

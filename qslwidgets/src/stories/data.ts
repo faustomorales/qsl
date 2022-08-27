@@ -138,6 +138,7 @@ export const indexState: IndexState = {
   page: 0,
   rowsPerPage: 7,
   sortModel: [],
+  filterModel: [],
 };
 
 const base = Array(100)

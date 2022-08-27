@@ -60,6 +60,7 @@ class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
             "page": 0,
             "rowsPerPage": 5,
             "sortModel": [],
+            "filterModel": [],
         }
     ).tag(sync=True)
     labels = t.Union(

@@ -22,6 +22,7 @@ const defaultWidgetState: WidgetState = {
     rowsPerPage: 5,
     rowCount: 0,
     sortModel: [],
+    filterModel: [],
     page: 1,
   },
   buttons: {

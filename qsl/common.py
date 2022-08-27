@@ -35,6 +35,48 @@ def flatten(l: typing.List[typing.Any]):
     return [item for sublist in l for item in sublist]
 
 
+def items2rows(idxs, items):
+    """Create the media index rows representation for a list of items."""
+    metadata_keys = list(
+        set(flatten([item.get("metadata", {}).keys() for item in items]))
+    )[:5]
+    return [
+        {
+            **{k: metadata.get(k) for k in metadata_keys},
+            "qslId": index,
+            "target": target2repr(target, ttype),
+            "labeled": "Yes" if labels or ignored else "No",
+            "ignored": "Yes" if ignored else "No",
+        }
+        for index, target, metadata, labels, ttype, ignored in [
+            (
+                idx,
+                item.get("target"),
+                item.get("metadata", {}),
+                item.get("labels", {}),
+                item.get("type", "image"),
+                item.get("ignore", False),
+            )
+            for idx, item in zip(idxs, items)
+        ]
+    ], metadata_keys
+
+
+def build_sort_keys(items, column):
+    """Build keys for a list of items to be used for sorting or filtering."""
+    if column == "target":
+        keys = [
+            target2repr(item.get("target"), item.get("type", "image")) for item in items
+        ]
+    elif column == "labeled":
+        keys = [bool(item.get("labels") or item.get("ignored")) for item in items]
+    elif column == "ignored":
+        keys = [bool(item.get("ignore")) for item in items]
+    else:
+        keys = [item.get("metadata", {}).get(column) for item in items]
+    return keys
+
+
 def counts2bitmap(counts: typing.List[int], dimensions: typing.Dict) -> "np.ndarray":
     """Convert a COCO-style bitmap into a bitmap."""
     return (
@@ -194,6 +236,7 @@ class BaseMediaLabeler:
             "page": 0,
             "rowsPerPage": 5,
             "sortModel": [],
+            "filterModel": [],
         }
         self.indexState = self.previousIndexState
         self.progress = self.get_progress()
@@ -235,25 +278,14 @@ class BaseMediaLabeler:
                 self._sortedIdxs = unsorted
             else:
                 sortOrd = self.indexState["sortModel"][0]["sort"]
-                if sortKey == "target":
-                    keys = [
-                        target2repr(item.get("target"), item.get("type", "image"))
-                        for item in self.items
-                    ]
-                elif sortKey == "labeled":
-                    keys = [
-                        bool(item.get("labels") or item.get("ignored"))
-                        for item in self.items
-                    ]
-                elif sortKey == "ignored":
-                    keys = [bool(item.get("ignore")) for item in self.items]
-                else:
-                    keys = [
-                        item.get("metadata", {}).get(sortKey) for item in self.items
-                    ]
                 self._sortedIdxs = [
                     idx
-                    for _, idx in sorted(zip(keys, unsorted), reverse=sortOrd != "asc")
+                    for _, idx in sorted(
+                        zip(
+                            build_sort_keys(items=self.items, column=sortKey), unsorted
+                        ),
+                        reverse=sortOrd != "asc",
+                    )
                 ]
                 self.previousIndexState["sortModel"] = self.indexState["sortModel"]
         return self._sortedIdxs
@@ -290,6 +322,8 @@ class BaseMediaLabeler:
         self.update(True)
 
     def get_index_state(self, reset_page=False):
+        # TODO: Perform initial filter and page selection based on
+        # filter model.
         rowsPerPage = round(self.maxViewHeight / 70)
         page = (
             math.floor(self.sortedIdxs.index(self.idx) / rowsPerPage)
@@ -300,34 +334,26 @@ class BaseMediaLabeler:
         endIdx = startIdx + rowsPerPage
         idxs = self.sortedIdxs[startIdx:endIdx]
         items = [self.items[idx] for idx in idxs]
-        metadata_keys = list(
-            set(flatten([item.get("metadata", {}).keys() for item in items]))
-        )[:5]
+
+        rows, metadata_keys = items2rows(
+            idxs=idxs,
+            items=items,
+        )
+        if self.indexState["filterModel"]:
+            filterKey = self.indexState["filterModel"][0]["field"]
+            filterVal = self.indexState["filterModel"][0].get("value", None)
+            if filterVal:
+                rows = [
+                    row
+                    for row in rows
+                    if row[filterKey] and row[filterKey].startswith(filterVal)
+                ]
         return {
             **self.indexState,
             "page": page,
             "rowCount": len(self.items),
             "rowsPerPage": rowsPerPage,
-            "rows": [
-                {
-                    **{k: metadata.get(k) for k in metadata_keys},
-                    "qslId": index,
-                    "target": target2repr(target, ttype),
-                    "labeled": "Yes" if labels or ignored else "No",
-                    "ignored": "Yes" if ignored else "No",
-                }
-                for index, target, metadata, labels, ttype, ignored in [
-                    (
-                        idx,
-                        item.get("target"),
-                        item.get("metadata", {}),
-                        item.get("labels", {}),
-                        item.get("type", "image"),
-                        item.get("ignore", False),
-                    )
-                    for idx, item in zip(idxs, items)
-                ]
-            ],
+            "rows": rows,
             "columns": [
                 {
                     "field": "target",

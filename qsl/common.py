@@ -267,7 +267,13 @@ class BaseMediaLabeler:
 
     @property
     def sortedIdxs(self):
-        if self.previousIndexState["sortModel"] != self.indexState["sortModel"]:
+        filterChanged = (
+            self.previousIndexState["filterModel"] != self.indexState["filterModel"]
+        )
+        sortChanged = (
+            self.previousIndexState["sortModel"] != self.indexState["sortModel"]
+        )
+        if filterChanged or sortChanged:
             sortKey = (
                 self.indexState["sortModel"][0]["field"]
                 if self.indexState["sortModel"]
@@ -288,6 +294,28 @@ class BaseMediaLabeler:
                     )
                 ]
                 self.previousIndexState["sortModel"] = self.indexState["sortModel"]
+        if filterChanged and self.indexState["filterModel"]:
+            LOGGER.info("Applying filters.")
+            filterKey = self.indexState["filterModel"][0]["field"]
+            filterVal = self.indexState["filterModel"][0].get("value", None)
+            if filterVal:
+                rows, _ = items2rows(
+                    idxs=self._sortedIdxs,
+                    items=[self.items[idx] for idx in self._sortedIdxs],
+                )
+                filtered = [
+                    idx
+                    for idx, row in zip(self._sortedIdxs, rows)
+                    if row.get(filterKey) and row[filterKey].startswith(filterVal)
+                ]
+                if not filtered:
+                    LOGGER.info("Did not find any matching filter criteria.")
+                    self.message = f"No rows matched the filter criteria ({filterKey}: {filterVal})."
+                    self.message = ""
+                else:
+                    if self.idx not in filtered:
+                        self.idx = filtered[0]
+                    self._sortedIdxs = filtered
         return self._sortedIdxs
 
     @property
@@ -322,8 +350,6 @@ class BaseMediaLabeler:
         self.update(True)
 
     def get_index_state(self, reset_page=False):
-        # TODO: Perform initial filter and page selection based on
-        # filter model.
         rowsPerPage = round(self.maxViewHeight / 70)
         page = (
             math.floor(self.sortedIdxs.index(self.idx) / rowsPerPage)
@@ -339,15 +365,6 @@ class BaseMediaLabeler:
             idxs=idxs,
             items=items,
         )
-        if self.indexState["filterModel"]:
-            filterKey = self.indexState["filterModel"][0]["field"]
-            filterVal = self.indexState["filterModel"][0].get("value", None)
-            if filterVal:
-                rows = [
-                    row
-                    for row in rows
-                    if row[filterKey] and row[filterKey].startswith(filterVal)
-                ]
         return {
             **self.indexState,
             "page": page,

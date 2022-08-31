@@ -24,10 +24,15 @@
     indexState.filterModel.length > 0
       ? indexState.filterModel[0]
       : { field: undefined, value: undefined };
-  const onFilterValueChange = (event: Event) => {
+  let filterValue = "";
+  const initializeFilterValue = () => {
+    filterValue = filterState && filterState.value ? filterState.value : "";
+  };
+  $: indexState, initializeFilterValue();
+  const onFilterValueChange = () => {
     filterState = {
       field: filterState.field as string,
-      value: (event.target as HTMLInputElement).value as string,
+      value: filterValue,
     };
     indexState = { ...indexState, filterModel: [filterState] };
     dispatcher("sort");
@@ -86,7 +91,12 @@
                 {/if}
               </div>
               {#if filterState.field === column.field}
-                <input on:change={onFilterValueChange} class="filter" />
+                <input
+                  type="text"
+                  class="filter"
+                  on:change={onFilterValueChange}
+                  bind:value={filterValue}
+                />
               {/if}
             </div>
           </div>
@@ -184,10 +194,15 @@
   }
   .heading-controls .filter {
     position: absolute;
-    left: 100%;
     z-index: 1;
     top: 100%;
+  }
+  th:not(:last-of-type) .heading-controls .filter {
+    left: 100%;
     transform: translateX(-20px);
+  }
+  th:last-of-type .heading-controls .filter {
+    right: 0%;
   }
   .navigation {
     display: flex;

@@ -306,7 +306,8 @@ class BaseMediaLabeler:
                 filtered = [
                     idx
                     for idx, row in zip(self._sortedIdxs, rows)
-                    if row.get(filterKey) and row[filterKey].startswith(filterVal)
+                    if row.get(filterKey)
+                    and str(row[filterKey]).startswith(str(filterVal))
                 ]
                 if not filtered:
                     LOGGER.info("Did not find any matching filter criteria.")

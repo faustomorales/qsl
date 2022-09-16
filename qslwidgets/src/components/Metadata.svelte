@@ -4,34 +4,36 @@
 </script>
 
 {#if metadata && Object.keys(metadata).length > 0}
-  <table tabindex="0" class="metadata">
+  <div tabindex="0" class="metadata">
     {#each Object.entries(metadata) as [key, value]}
-      <tr>
-        <td class="key">{key}</td>
-        <td class="value">{value}</td>
-      </tr>
+      <div class="entry">
+        <span class="key">{key}</span>
+        <span class="value">{value}</span>
+      </div>
     {/each}
-  </table>
+  </div>
 {/if}
 
 <style>
-  table {
-    width: 100%;
-    border: 1px solid;
+  .metadata {
     border-color: var(--border-color);
-    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    position: relative;
   }
-  td {
+  .entry {
     padding: 10px;
-    width: 50%;
+    display: flex;
+    flex-direction: row;
   }
-  td.key {
+  .key {
     text-align: right;
     font-weight: bold;
     padding-right: 5px;
   }
-  td.value {
+  .value {
     text-align: left;
     padding-left: 5px;
+    word-break: break-all;
   }
 </style>

@@ -71,17 +71,13 @@
     border: 1px solid var(--border-color);
   }
   .item :global(.metadata) {
-    pointer-events: none;
+    border-width: 1px 0 0 0;
   }
   .item.with-actions {
     padding-top: 32px;
   }
   .item.without-actions {
     padding-top: 0px;
-  }
-  .item :global(.metadata) {
-    border-radius: 0 0 16px 16px;
-    border-width: 1px 0 0 0;
   }
   .item-actions {
     position: absolute;

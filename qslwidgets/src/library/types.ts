@@ -136,7 +136,7 @@ export type Line = {
   color?: string;
   type?: string;
   axis?: "left" | "right";
-  values: number[];
+  values: (number | string)[];
   dot?: {
     labelKey?: string;
   };

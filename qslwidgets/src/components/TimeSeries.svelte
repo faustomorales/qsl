@@ -30,7 +30,11 @@
   const computeAxes = (lines: Line[], userSetting?: AxisDomainDefinition) => {
     const { dataMin, dataMax } = lines.reduce(
       (memo, line) => {
+        console.log("M1: values", line.values);
         return line.values.reduce((valueMemo, value) => {
+          if (typeof value === "string") {
+            return valueMemo;
+          }
           const current = {
             dataMin: Math.min(
               valueMemo.dataMin === undefined ? value : valueMemo.dataMin,
@@ -207,19 +211,24 @@
               x: lims.x.max - lims.x.min,
               y: lims.y.max - lims.y.min,
             };
-            const points = l.values.map((v, vi) => {
-              const value = { x: p.x.values[vi], y: v };
-              return {
-                x:
-                  ((value.x - lims.x.min) / dataSpan.x) * a.extents.x.span +
-                  a.extents.x.min,
-                y:
-                  a.size.height -
-                  (a.extents.y.min +
-                    ((value.y - lims.y.min) / dataSpan.y) * a.extents.y.span),
-                data: value,
-              };
-            });
+            const points = l.values
+              .map((v, vi) => {
+                const value = { x: p.x.values[vi], y: v };
+                return {
+                  x:
+                    ((value.x - lims.x.min) / dataSpan.x) * a.extents.x.span +
+                    a.extents.x.min,
+                  y:
+                    typeof value.y === "number"
+                      ? a.size.height -
+                        (a.extents.y.min +
+                          ((value.y - lims.y.min) / dataSpan.y) *
+                            a.extents.y.span)
+                      : null,
+                  data: value,
+                };
+              })
+              .filter((p) => p.y !== null);
             const interactive = !!l.dot?.labelKey;
             const selected = interactive
               ? labels.image[l.dot!.labelKey!] || []

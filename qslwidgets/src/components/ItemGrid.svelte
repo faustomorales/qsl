@@ -19,19 +19,22 @@
     clearInterval(intervalId);
     document.head.removeChild(styling);
   });
+  const alphabet = Array.from(Array(26))
+    .map((e, i) => i + 65)
+    .map((x) => String.fromCharCode(x));
+  const id = Array.from(Array(16)).reduce(
+    (memo) => memo + alphabet[Math.floor(Math.random() * alphabet.length)],
+    ""
+  );
   const reflow = () => {
     if (!styling || !container) {
       // We called reflow before the columns finished rendering. Just give it a minute.
       setTimeout(reflow, 10);
     } else {
-      const selector = Array.from(container.classList).reduce(
-        (selector, className) => `${selector}.${className.toString()}`,
-        ""
-      );
       let innerHTML = "";
       for (var index = 0; index < columns; index++) {
         innerHTML += `
-        ${selector} .column:nth-child(${
+        #${id} .column:nth-child(${
           index + 1
         }) > *:not(:nth-child(${columns}n + ${index + 1})) {
           display: none;
@@ -47,6 +50,7 @@
 </script>
 
 <div
+  {id}
   class="container"
   bind:this={container}
   on:click

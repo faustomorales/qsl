@@ -7,7 +7,7 @@
     Config,
     AxisDomainDefinition,
   } from "../library/types";
-  import { processSelectionChange } from "../library/common";
+  import { processSelectionChange, focus } from "../library/common";
   import Chart from "./icons/Chart.svelte";
   export let target: TimeSeriesTarget | undefined,
     config: Config,
@@ -26,11 +26,11 @@
     yMargin: 8,
     lineColor: "var(--text-color)",
   };
+  let container: HTMLDivElement;
   const debug = false;
   const computeAxes = (lines: Line[], userSetting?: AxisDomainDefinition) => {
     const { dataMin, dataMax } = lines.reduce(
       (memo, line) => {
-        console.log("M1: values", line.values);
         return line.values.reduce((valueMemo, value) => {
           if (typeof value === "string") {
             return valueMemo;
@@ -194,6 +194,9 @@
         },
       };
     }
+    if (container) {
+      focus(container);
+    }
   };
   $: lineGroups = !target
     ? []
@@ -287,6 +290,7 @@
 <div
   style="width: {chartSize?.width}px; height: {chartSize?.height}px;"
   class="chart"
+  bind:this={container}
 >
   {#each (target || { plots: [] }).plots.map((p, pi) => {
     return { p, a: axes[pi], lines: lineGroups[pi], areas: areaGroups[pi] };

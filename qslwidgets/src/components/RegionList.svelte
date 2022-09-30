@@ -52,6 +52,11 @@
     focus(container);
   };
   const onContainerClick = (event: MouseEvent) => {
+    if (container.closest(".media-viewer.dragging")) {
+      // We need to do this because our CSS-based rule
+      // in media-viewer doesn't appear to work in Chrome.
+      return;
+    }
     const point = convertCoordinates(
       { x: event.pageX, y: event.pageY },
       container

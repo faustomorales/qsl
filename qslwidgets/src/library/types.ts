@@ -228,6 +228,7 @@ export interface ButtonConfig {
   class?: string;
   tooltip: string;
   disabled: boolean;
+  highlighted?: boolean;
   hidden?: boolean;
 }
 

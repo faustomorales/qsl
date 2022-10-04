@@ -56,6 +56,8 @@
         dataIndex={configIndex}
         text={config.text}
         on:click={() => click(config.event)}
+        className={config.class}
+        highlighted={config.highlighted}
       />
     {/if}
   {/each}

@@ -256,7 +256,7 @@
               event: "save",
               shortcuts: [{ key: "Enter" }],
               tooltip: valid
-                ? "Save current labels."
+                ? ""
                 : "Please fill all required fields.",
               disabled: !actions.save || disabled || !valid,
             },

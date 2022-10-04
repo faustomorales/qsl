@@ -52,6 +52,7 @@
     {#if !config.hidden}
       <Button
         {basis}
+        tooltip={config.tooltip}
         disabled={config.disabled}
         dataIndex={configIndex}
         text={config.text}

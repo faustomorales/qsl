@@ -168,7 +168,7 @@
           min={1}
           max={50}
           disabled={draft.drawing.active && draft.drawing.mode !== "masks"}
-          aria-label="segmentation mask labeling radius"
+          ariaLabel="segmentation mask labeling radius"
         />
       </div>
       <div class="flood-threshold">
@@ -185,7 +185,7 @@
           )}
           disabled={draft.drawing.active && draft.drawing.mode !== "masks"}
           max={10}
-          aria-label="segmentation mask flood threshold"
+          ariaLabel="segmentation mask flood threshold"
         />
       </div>
     </div>
@@ -342,14 +342,26 @@
                 event: "prev",
                 disabled: disabled || !actions.prev || draft.dirty,
                 shortcuts: [{ key: "ArrowLeft" }],
-                tooltip: "Go to previous item.",
+                tooltip: draft.dirty
+                  ? "Please save or delete your changes."
+                  : disabled
+                  ? "Navigation is disabled."
+                  : actions.prev
+                  ? "Go to previous item."
+                  : "No previous items remaining.",
               },
               {
                 text: "Next",
                 event: "next",
                 disabled: disabled || !actions.next || draft.dirty,
                 shortcuts: [{ key: "ArrowRight" }],
-                tooltip: "Got to next item.",
+                tooltip: draft.dirty
+                  ? "Please save or delete your changes."
+                  : disabled
+                  ? "Navigation is disabled."
+                  : actions.next
+                  ? "Go to next item."
+                  : "No items remaining.",
               },
             ]}
           />

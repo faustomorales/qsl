@@ -59,31 +59,33 @@
 
 <LabelerLayout {layout}>
   <svelte:fragment slot="content">
-    <MediaViewer
-      size={$loadState.mediaState?.size}
-      {viewHeight}
-      loadState={transitioning ? "loading" : $loadState.loadState}
-    >
-      <img
-        slot="main"
-        src={target}
-        alt="labeling target image: {target}"
-        on:load={loadCallbacks.load}
-        on:error={loadCallbacks.error}
-        bind:this={image}
-      />
-      <img slot="mini" src={target} alt="minimap for {target}" />
-      <RegionList
-        slot="regions"
-        target={image}
-        on:change={draft.snapshot}
-        {maxCanvasSize}
-        bind:image={$draft.image}
-        bind:drawing={$draft.drawing}
-        bind:labels={$draft.labels}
-        bind:cursor
-      />
-    </MediaViewer>
+    {#if target}
+      <MediaViewer
+        size={$loadState.mediaState?.size}
+        {viewHeight}
+        loadState={transitioning ? "loading" : $loadState.loadState}
+      >
+        <img
+          slot="main"
+          src={target}
+          alt="labeling target image: {target}"
+          on:load={loadCallbacks.load}
+          on:error={loadCallbacks.error}
+          bind:this={image}
+        />
+        <img slot="mini" src={target} alt="minimap for {target}" />
+        <RegionList
+          slot="regions"
+          target={image}
+          on:change={draft.snapshot}
+          {maxCanvasSize}
+          bind:image={$draft.image}
+          bind:drawing={$draft.drawing}
+          bind:labels={$draft.labels}
+          bind:cursor
+        />
+      </MediaViewer>
+    {/if}
     <Metadata {metadata} />
   </svelte:fragment>
   <svelte:fragment slot="control">

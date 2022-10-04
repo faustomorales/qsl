@@ -12,6 +12,7 @@
     max: number,
     step: number = 0.1,
     disabled: boolean | undefined,
+    ariaLabel: string = "",
     marks: RangeSliderMark[] = [];
   const dispatcher = createEventDispatcher();
   let slider: target, api: API;
@@ -73,7 +74,7 @@
 
 <div class="range-slider-container">
   <div class="range-slider-label">{name}</div>
-  <div bind:this={slider} class="range-slider" />
+  <div bind:this={slider} class="range-slider" aria-label={ariaLabel} />
 </div>
 
 <style>

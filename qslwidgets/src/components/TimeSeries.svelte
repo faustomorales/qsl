@@ -53,13 +53,15 @@
         dataMax: undefined as number | undefined,
       }
     );
+    // The typeof check accounts for both "dataMin" / "dataMax" as well
+    // as nan / NaN.
     return {
       min:
-        userSetting && userSetting[0] && userSetting[0] !== "dataMin"
+        userSetting && userSetting[0] && typeof userSetting[0] !== "string"
           ? userSetting[0]
           : dataMin || 0,
       max:
-        userSetting && userSetting[1] && userSetting[1] !== "dataMax"
+        userSetting && userSetting[1] && typeof userSetting[1] !== "string"
           ? userSetting[1]
           : dataMax || 0,
     };

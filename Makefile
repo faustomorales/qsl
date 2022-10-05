@@ -37,3 +37,6 @@ package: build ## Make a local build of the Python package, source dist and whee
 	@$(PYTHON_EXEC) pyproject-build .
 publish-docs:
 	cd docs && git init && git remote add origin git@github.com:faustomorales/qsl.git; git branch -m gh-pages && git add . && git commit --amend --no-edit && git push --force --set-upstream origin gh-pages
+publish: package ## Publish the npm and pypi packages.
+	yarn --cwd qslwidgets publish
+	twine upload dist/*.whl

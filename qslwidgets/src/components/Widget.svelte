@@ -81,7 +81,7 @@
             on:save={createAction("save")}
             on:showIndex={createAction("index")}
           />
-        {:else if $type == "time-series" && !Array.isArray($labels) && urlObjects.length == 1 && urlObjects[0].plots}
+        {:else if $type == "time-series" && !Array.isArray($labels) && urlObjects.length == 1 && urlObjects[0] && urlObjects[0].plots}
           <TimeSeriesLabeler
             transitioning={$viewState === "transitioning"}
             target={urlObjects[0]}

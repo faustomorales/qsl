@@ -369,7 +369,7 @@ fn flood(
                                     Ok(value) => match value.equals(&node.value, threshold2) {
                                         true => match mask.set(&point, 255) {
                                             Ok(()) => {
-                                                q.add(FloodFillNode { value, point }).ok();
+                                                q.add(FloodFillNode { value: node.value, point }).ok();
                                             }
                                             _ => (),
                                         },

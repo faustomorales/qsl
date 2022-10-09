@@ -123,6 +123,16 @@ def entry2hash(entry):
     raise ValueError(f"Could not hash {entry}.")
 
 
+def merge_item(exists, insert):
+    """Merge two items such that the metadata and defaults of
+    an inserted item are preferred over those of the existing item."""
+    merged = exists.copy()
+    for key in ["defaults", "metadata", "target", "type", "ignore"]:
+        if key in insert:
+            merged[key] = insert[key]
+    return merged
+
+
 def merge_items(exists, insert):
     """Merge two lists of items if there is an
     unambiguous way to do so."""
@@ -143,9 +153,7 @@ def merge_items(exists, insert):
             elif not entry_exists and entry_insert:
                 combined.append(entry_insert)
             elif entry_exists and entry_insert:
-                if entry_insert.get("metadata"):
-                    entry_exists["metadata"] = entry_insert["metadata"]
-                combined.append(entry_exists)
+                combined.append(merge_item(exists=entry_exists, insert=entry_insert))
             else:
                 raise ValueError("An error occurred merging lists.")
     except TypeError as exception:
@@ -195,10 +203,9 @@ class BaseMediaLabeler:
                 jsonpath is None
             ), "You cannot supply both item- and labeler-level JSON paths."
             items = [
-                {
-                    **item,
-                    **(files.json_or_none(item["jsonpath"]) or {}),
-                }
+                merge_item(
+                    exists=files.json_or_none(item["jsonpath"]) or item, insert=item
+                )
                 for item in items
             ]
         if jsonpath is not None:

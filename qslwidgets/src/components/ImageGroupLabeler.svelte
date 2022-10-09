@@ -95,10 +95,7 @@
         : groups,
     [] as string[]
   );
-</script>
-
-<svelte:window
-  on:keydown={(event) => {
+  const onWindowKeydown = (event: any) => {
     if (
       (elementIsFocused(container) || event.key == currentKey) &&
       target?.onClick &&
@@ -110,7 +107,11 @@
     } else {
       currentKey = undefined;
     }
-  }}
+  };
+</script>
+
+<svelte:window
+  on:keydown={onWindowKeydown}
   on:keyup={() => {
     currentKey = undefined;
   }}

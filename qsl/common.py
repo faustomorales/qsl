@@ -93,15 +93,21 @@ def counts2bitmap(counts: typing.List[int], dimensions: typing.Dict) -> "np.ndar
 def bitmap2counts(bitmap: "np.ndarray") -> typing.Dict:
     """Convert a bitmap to an RLE counts object."""
     dimensions = {"width": bitmap.shape[1], "height": bitmap.shape[0]}
-    bitmap = bitmap.ravel().astype("uint8")
-    diff = np.diff(bitmap) > 0
-    ends = np.where(diff)[0]
-    offset = 1 if (bitmap[0] == 0) else 0
-    rle = np.zeros(diff.sum() + 1 + offset, dtype="int32")
-    rle[0 + offset] = ends[0] + 1
-    rle[1 + offset : -1] = ends[1:] - ends[:-1]
-    rle[-1] = diff.shape[0] - ends[-1]
-    return {"dimensions": dimensions, "counts": rle.tolist()}
+    if bitmap.max() == 0:
+        counts = [0, bitmap.shape[0] * bitmap.shape[1]]
+    elif bitmap.min() == 1:
+        counts = [bitmap.shape[0] * bitmap.shape[1], 0]
+    else:
+        bitmap = bitmap.ravel().astype("uint8")
+        diff = np.diff(bitmap) > 0
+        ends = np.where(diff)[0]
+        offset = 1 if (bitmap[0] == 0) else 0
+        rle = np.zeros(diff.sum() + 1 + offset, dtype="int32")
+        rle[0 + offset] = ends[0] + 1
+        rle[1 + offset : -1] = ends[1:] - ends[:-1]
+        rle[-1] = diff.shape[0] - ends[-1]
+        counts = rle.tolist()
+    return {"dimensions": dimensions, "counts": counts}
 
 
 def deprecate(old, new):

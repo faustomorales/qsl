@@ -4,7 +4,7 @@
 from .version import __version__
 
 from .widgets import MediaLabeler
-from .common import counts2bitmap
+from .common import counts2bitmap, bitmap2counts
 
 
 def _jupyter_labextension_paths():

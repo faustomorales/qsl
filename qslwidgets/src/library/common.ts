@@ -445,6 +445,7 @@ export const createDraftStore = () => {
                   }),
                   map: state.drawing.active.region.map,
                 },
+                editable: state.drawing.active.editable,
               }
             : structuredClone(state.drawing.active)
           : undefined,

@@ -147,7 +147,7 @@ def merge_item(exists, insert):
     """Merge two items such that the metadata and defaults of
     an inserted item are preferred over those of the existing item."""
     merged = exists.copy()
-    for key in ["defaults", "metadata", "target", "type", "ignore"]:
+    for key in ["defaults", "metadata", "target", "type", "ignore", "jsonpath"]:
         if key in insert:
             merged[key] = insert[key]
     return merged

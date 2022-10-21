@@ -24,7 +24,7 @@
   const idx = extract("idx");
   const indexState = extract("indexState");
   const createAction = (name: ActionType) => () => action.set(name);
-  const message = extract("message");
+  const message = extract("_message");
   const viewHeight = extract("maxViewHeight");
   const preload = extract("preload");
   const message2toast = () => {

@@ -7,7 +7,7 @@ const defaultWidgetState: WidgetState = {
   states: [],
   urls: [],
   type: "image",
-  message: "",
+  _message: "",
   config: { image: [], regions: [] } as Config,
   labels: { image: {}, polygons: [], masks: [], boxes: [] } as Labels,
   action: "",

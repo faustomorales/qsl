@@ -284,7 +284,7 @@ interface BaseWidgetState<Type, LabelType, UrlType> {
     labels: Labels;
   }[];
   urls: UrlType[];
-  message: string;
+  _message: string;
   type: Type;
   config: Config;
   labels: LabelType;

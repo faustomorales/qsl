@@ -208,7 +208,7 @@ class BaseMediaLabeler:
         self.preload = []
         self.tempdir = None
         self.viewState = "labeling"
-        self.message = ""
+        self._message = ""
 
         # Items needs to be handled specially depending
         # on if labeler-wide or items-specific jsonpaths
@@ -293,6 +293,15 @@ class BaseMediaLabeler:
         self.set_buttons()
 
     @property
+    def message(self):
+        return self._message
+
+    @message.setter
+    def message(self, message):
+        self._message = message
+        self._message = ""
+
+    @property
     def sortedIdxs(self):
         filterChanged = (
             self.previousIndexState["filterModel"] != self.indexState["filterModel"]
@@ -339,7 +348,6 @@ class BaseMediaLabeler:
                 if not filtered:
                     LOGGER.info("Did not find any matching filter criteria.")
                     self.message = f"No rows matched the filter criteria ({filterKey}: {filterVal})."
-                    self.message = ""
                 else:
                     if self.idx not in filtered:
                         self.idx = filtered[0]

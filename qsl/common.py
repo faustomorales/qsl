@@ -208,7 +208,7 @@ class BaseMediaLabeler:
         self.preload = []
         self.tempdir = None
         self.viewState = "labeling"
-        self._message = ""
+        self.message = ""
 
         # Items needs to be handled specially depending
         # on if labeler-wide or items-specific jsonpaths
@@ -291,15 +291,6 @@ class BaseMediaLabeler:
     def allowConfigChange(self, allowConfigChange):
         self._allowConfigChange = allowConfigChange
         self.set_buttons()
-
-    @property
-    def message(self):
-        return self._message
-
-    @message.setter
-    def message(self, message):
-        self._message = message
-        self._message = ""
 
     @property
     def sortedIdxs(self):

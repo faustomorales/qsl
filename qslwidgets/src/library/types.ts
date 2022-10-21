@@ -284,7 +284,7 @@ interface BaseWidgetState<Type, LabelType, UrlType> {
     labels: Labels;
   }[];
   urls: UrlType[];
-  _message: string;
+  message: string;
   type: Type;
   config: Config;
   labels: LabelType;
@@ -326,6 +326,9 @@ export type WidgetState =
   | TimeVideoState
   | ImageGroupWidgetState;
 
+export type ForceableWritable<T> = Writable<T> & {
+  set: (value: T, force?: boolean) => void;
+};
 export type Extractor = <V extends keyof WidgetState & string>(
   name: V
-) => Writable<WidgetState[V]>;
+) => ForceableWritable<WidgetState[V]>;

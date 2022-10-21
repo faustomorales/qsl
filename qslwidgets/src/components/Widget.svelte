@@ -24,14 +24,14 @@
   const idx = extract("idx");
   const indexState = extract("indexState");
   const createAction = (name: ActionType) => () => action.set(name);
-  const message = extract("_message");
+  const message = extract("message");
   const viewHeight = extract("maxViewHeight");
   const preload = extract("preload");
   const message2toast = () => {
     const update = $message;
     if (update) {
       toast.push(update);
-      message.set("");
+      message.set("", true);
     }
   };
   $: $message, message2toast();

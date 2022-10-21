@@ -79,7 +79,7 @@ class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
         ]
     ).tag(sync=True)
     action = t.Unicode("").tag(sync=True)
-    _message = t.Unicode("").tag(sync=True)
+    message = t.Unicode("").tag(sync=True)
     base = t.Dict(
         default_value={
             "url": None,

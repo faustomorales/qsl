@@ -1,5 +1,10 @@
 import type { Writable } from "svelte/store";
-import type { Config, Labels, WidgetState } from "../library/types";
+import type {
+  Config,
+  Labels,
+  WidgetState,
+  ForceableWritable,
+} from "../library/types";
 import { writable, get } from "svelte/store";
 import Widget from "../components/Widget.svelte";
 
@@ -7,7 +12,7 @@ const defaultWidgetState: WidgetState = {
   states: [],
   urls: [],
   type: "image",
-  _message: "",
+  message: "",
   config: { image: [], regions: [] } as Config,
   labels: { image: {}, polygons: [], masks: [], boxes: [] } as Labels,
   action: "",
@@ -54,18 +59,19 @@ const buildAttributeStoreFactory = <
     destroy: () => void;
   }
 ): {
-  extract: (name: T) => Writable<WidgetModelState[T] | null> & {
-    set: (value: WidgetModelState[T] | null, force: boolean) => void;
-  };
+  extract: (name: T) => ForceableWritable<WidgetModelState[T] | null>;
   destroy: () => void;
 } => {
-  const stores: { [key: string]: Writable<WidgetModelState[T] | null> } = {};
+  const stores: {
+    [key: string]: ForceableWritable<WidgetModelState[T] | null>;
+  } = {};
   const destructors: { [key: string]: () => void } = {};
   let pystamp: number | null = null;
   const inner = (name: T) => {
     let store: Writable<WidgetModelState[T] | null> = writable(null);
     let external = initializer(name, (value) => {
       if (value != get(store)) {
+        console.log(`Setting ${name} to ${value}.`);
         pystamp = Date.now();
         store.set(value);
       }

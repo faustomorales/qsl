@@ -226,7 +226,9 @@ def build_url(
             base["url"],
             os.path.join(
                 "files",
-                get_relpath(tfilepath, os.path.expanduser(base["serverRoot"])),
+                up.quote(
+                    get_relpath(tfilepath, os.path.expanduser(base["serverRoot"]))
+                ),
             ),
         )
     raise ValueError(f"Failed to load file at target: {target}")

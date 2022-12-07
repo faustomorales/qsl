@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { Extractor, ActionType } from "../library/types";
-  import { toast } from "../library/stores";
   import ImageLabeler from "./ImageLabeler.svelte";
   import BatchImageLabeler from "./BatchImageLabeler.svelte";
   import MediaIndex from "./MediaIndex.svelte";
@@ -9,7 +8,9 @@
   import ImagePreloader from "./ImagePreloader.svelte";
   import ImageGroupLabeler from "./ImageGroupLabeler.svelte";
   import Labeler from "./Labeler.svelte";
+  import { createStores } from "../library/instanceStores";
   export let extract: Extractor;
+  const stores = createStores();
   const viewState = extract("viewState");
   const urls = extract("urls");
   const type = extract("type");
@@ -30,7 +31,7 @@
   const message2toast = () => {
     const update = $message;
     if (update) {
-      toast.push(update);
+      stores.toast.push(update);
       message.set("", true);
     }
   };
@@ -39,7 +40,7 @@
   $: urlObjects = (($urls || []) as any[]).filter((u) => typeof u === "object");
 </script>
 
-<Labeler progress={$progress} mode={$mode}>
+<Labeler progress={$progress} mode={$mode} stores={stores}>
   {#if $viewState && $urls && $type && $labels}
     {#if $viewState == "labeling" || $viewState == "transitioning"}
       {#if $urls.length == 1}

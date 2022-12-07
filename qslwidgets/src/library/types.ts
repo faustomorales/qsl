@@ -1,4 +1,4 @@
-import type { Writable } from "svelte/store";
+import type { Writable, Readable } from "svelte/store";
 import type { Image, Mask } from "./wasmtools";
 
 export type ArbitraryMetadata = { [key: string]: string };
@@ -332,3 +332,14 @@ export type ForceableWritable<T> = Writable<T> & {
 export type Extractor = <V extends keyof WidgetState & string>(
   name: V
 ) => ForceableWritable<WidgetState[V]>;
+
+export type ToastStore = Readable<ToastEntry[]> & {
+  push: (msg: string, opts?: {}) => void;
+  pop: (id: number) => void;
+};
+
+export type SharedStores = {
+  id: string;
+  toast: ToastStore;
+  enhancements: Writable<ImageEnhancements>;
+};

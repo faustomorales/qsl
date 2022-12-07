@@ -1,6 +1,6 @@
 {
   "name": "qslwidgets",
-  "version": "0.2.18",
+  "version": "0.2.20",
   "description": "Widgets for the QSL media labeling package.",
   "keywords": [
     "jupyter",
@@ -50,7 +50,8 @@
   "dependencies": {
     "@jupyter-widgets/base": "^1.1.10 || ^2.0.0 || ^3.0.0 || ^4.0.0",
     "file-saver": "^2.0.5",
-    "html2canvas": "^1.4.1"
+    "html2canvas": "^1.4.1",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.14.5",
@@ -67,6 +68,7 @@
     "@types/file-saver": "^2.0.5",
     "@types/jest": "^26.0.0",
     "@types/node": "^18.0.0",
+    "@types/uuid": "^9.0.0",
     "@types/webpack-env": "^1.13.6",
     "@typescript-eslint/eslint-plugin": "^3.6.0",
     "@typescript-eslint/parser": "^3.6.0",

@@ -4,11 +4,11 @@
   // Jupyter.
   import { tweened } from "svelte/motion";
   import { linear } from "svelte/easing";
-  import { toast } from "../library/stores";
   import type { ToastEntry } from "../library/types";
+  import { getStores } from "../library/instanceStores";
 
   export let item: ToastEntry;
-
+  let { toast } = getStores();
   const progress = tweened(item.initial, {
     duration: item.duration,
     easing: linear,

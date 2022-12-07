@@ -1,5 +1,5 @@
 import { readable, get } from "svelte/store";
-import { toast } from "./stores";
+import { getStores } from "./instanceStores";
 import type {
   AlignedBoxLabel,
   Labels,
@@ -308,7 +308,7 @@ export const createContentLoader = <T>(options: {
     state: readable(state, (set) => {
       promise.then(set, () => {
         set({ ...state, loadState: "error" });
-        toast.push(`An error occurred loading ${options.target}`, {
+        getStores().toast.push(`An error occurred loading ${options.target}`, {
           theme: {
             "--toastBackground": "var(--color3)",
             "--toastBarBackground": "#C53030",

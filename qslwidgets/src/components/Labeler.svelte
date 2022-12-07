@@ -2,9 +2,14 @@
   import Toast from "./Toast.svelte";
   import ProgressBar from "./ProgressBar.svelte";
   import ClickTarget from "./ClickTarget.svelte";
-  import { enhancements } from "../library/stores";
+  import { createStores } from "../library/instanceStores";
+  import { setContext } from "svelte";
+
   export let progress: number | undefined = undefined,
-    mode: "dark" | "light" = "light";
+    mode: "dark" | "light" = "light",
+    stores = createStores();
+  setContext("sharedStores", stores);
+  let { enhancements, toast } = stores;
 </script>
 
 <div
@@ -19,7 +24,7 @@
 "
 >
   <ClickTarget />
-  <Toast />
+  <Toast {toast} />
   {#if progress !== undefined}
     <ProgressBar {progress} />
   {/if}

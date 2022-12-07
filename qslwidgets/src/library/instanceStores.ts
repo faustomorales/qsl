@@ -1,11 +1,15 @@
+import { getContext } from "svelte";
 import { writable } from "svelte/store";
-import type { ImageEnhancements, ToastEntry } from "./types";
+import type { ImageEnhancements, ToastEntry, SharedStores } from "./types";
+import { v4 as uuidv4 } from "uuid";
 
-export const enhancements = writable<ImageEnhancements>({
-  brightness: 1,
-  saturation: 1,
-  contrast: 1,
-});
+const createEnhancements = () => {
+  return writable<ImageEnhancements>({
+    brightness: 1,
+    saturation: 1,
+    contrast: 1,
+  });
+};
 
 const createToast = () => {
   const { subscribe, update } = writable<ToastEntry[]>([]);
@@ -37,4 +41,11 @@ const createToast = () => {
   return { subscribe, push, pop };
 };
 
-export const toast = createToast();
+export const createStores = (): SharedStores => ({
+  toast: createToast(),
+  enhancements: createEnhancements(),
+  id: uuidv4(),
+});
+
+export const getStores = (): SharedStores =>
+  getContext<SharedStores>("sharedStores");

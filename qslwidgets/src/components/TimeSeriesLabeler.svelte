@@ -11,11 +11,11 @@
   import html2canvas from "html2canvas";
   import FileSaver from "file-saver";
   import { createDraftStore } from "../library/common";
-  import { toast } from "../library/stores";
   import ControlMenu from "./ControlMenu.svelte";
   import MediaViewer from "./MediaViewer.svelte";
   import TimeSeries from "./TimeSeries.svelte";
   import Metadata from "./Metadata.svelte";
+  import { getStores } from "../library/instanceStores";
   export let target: TimeSeriesTarget | undefined,
     config: Config,
     labels: Labels,
@@ -30,6 +30,7 @@
   $: target, labels, draft.reset(labels);
   let downloadContainer: HTMLDivElement;
   let chartSize: Dimensions | undefined = undefined;
+  let { toast } = getStores();
   const download = () => {
     html2canvas(downloadContainer, {
       logging: false,

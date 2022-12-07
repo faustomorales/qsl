@@ -71,7 +71,7 @@ const buildAttributeStoreFactory = <
     let store: Writable<WidgetModelState[T] | null> = writable(null);
     let external = initializer(name, (value) => {
       if (value != get(store)) {
-        console.log(`Setting ${name} to ${value}.`);
+        // console.log(`Setting ${name} to ${value}.`);
         pystamp = Date.now();
         store.set(value);
       }

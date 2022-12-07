@@ -1,6 +1,7 @@
 <script lang="ts">
   import RangeSlider from "./RangeSlider.svelte";
-  import { enhancements } from "../library/stores";
+  import { getStores } from "../library/instanceStores";
+  const { enhancements } = getStores();
 </script>
 
 <div class="controls-container">

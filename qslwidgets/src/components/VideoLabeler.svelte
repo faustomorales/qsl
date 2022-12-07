@@ -13,12 +13,12 @@
     createDraftStore,
     labels4timestamp,
   } from "../library/common";
-  import { enhancements } from "../library/stores";
   import MediaViewer from "./MediaViewer.svelte";
   import RegionList from "./RegionList.svelte";
   import Metadata from "./Metadata.svelte";
   import Playbar from "./Playbar.svelte";
   import ControlMenu from "./ControlMenu.svelte";
+  import { getStores } from "../library/instanceStores";
   export let target: string | undefined,
     config: Config,
     labels: TimestampedLabel[],
@@ -52,6 +52,7 @@
     }
   };
   // If our enhancements change.
+  let { enhancements } = getStores();
   $: $enhancements, invalidateImage();
   // If the external inputs change ...
   $: target, labels, synchronize();
@@ -138,7 +139,9 @@
     dispatcher("save");
   }}
   on:reset={() => draft.reset(frame.labels)}
-  disabled={transitioning || !playback.paused || $loadState.loadState === "loading"}
+  disabled={transitioning ||
+    !playback.paused ||
+    $loadState.loadState === "loading"}
   {editableConfig}
   {navigation}
   actions={{ ...actions, undo: $history > 0 }}

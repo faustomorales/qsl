@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
+  import { getStores } from "../library/instanceStores";
   import type {
     Config,
     Labels,
@@ -7,7 +8,6 @@
     WidgetActions,
     ArbitraryMetadata,
   } from "../library/types";
-  import { enhancements } from "../library/stores";
   import { createContentLoader, createDraftStore } from "../library/common";
   import LabelerLayout from "./LabelerLayout.svelte";
   import ControlMenu from "./ControlMenu.svelte";
@@ -35,6 +35,7 @@
     }
   };
   // If our enhancements change.
+  let { enhancements } = getStores();
   $: $enhancements, invalidateImage();
   $: target, labels, draft.reset(labels);
   $: ({ callbacks: loadCallbacks, state: loadState } = createContentLoader({

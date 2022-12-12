@@ -193,7 +193,7 @@ class BaseMediaLabeler:
         items=None,
         config=None,
         allowConfigChange=True,
-        batchSize=1,
+        batchSize=None,
         jsonpath=None,
         base=None,
         mode="light",
@@ -242,7 +242,7 @@ class BaseMediaLabeler:
                 maxViewHeight = jsondata.get("maxViewHeight", maxViewHeight)
                 allowConfigChange = jsondata.get("allowConfigChange", allowConfigChange)
                 advanceOnSave = jsondata.get("advanceOnSave", advanceOnSave)
-                batchSize = jsondata.get("batchSize", batchSize)
+                batchSize = batchSize or jsondata.get("batchSize")
         assert items, "There must be at least one labeling target."
         self.mode = mode
         self.maxCanvasSize = maxCanvasSize
@@ -254,7 +254,7 @@ class BaseMediaLabeler:
         self.items = items
         self.idx = 0
         self._sortedIdxs = list(range(len(items)))
-        self.batchSize = batchSize
+        self.batchSize = batchSize or 1
         self.maxPreload = 3
         self.previousIndexState = {
             "rows": [],

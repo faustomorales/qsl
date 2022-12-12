@@ -11,9 +11,11 @@ class MediaLabeler(common.BaseMediaLabeler):
         self,
         items=None,
         jsonpath=None,
+        batchSize=None,
     ):
         super().__init__(
             items=items,
+            batchSize=batchSize,
             jsonpath=jsonpath,
             base={
                 "url": "http://localhost:8080",
@@ -46,7 +48,7 @@ class MediaLabeler(common.BaseMediaLabeler):
 
 
 # pylint: disable=unused-variable
-def start(jsonpath: str, targets: typing.List[str]):
+def start(jsonpath: str, targets: typing.List[str], batchSize: typing.Optional[int]):
     """Start Eel."""
     # A bit of a hack so that `files.build_url` works properly
     eel.BOTTLE_ROUTES = {
@@ -66,6 +68,7 @@ def start(jsonpath: str, targets: typing.List[str]):
             for t in files.filepaths_from_patterns(targets)
         ],
         jsonpath=jsonpath,
+        batchSize=batchSize,
     )
     eel.start(
         "index.html",

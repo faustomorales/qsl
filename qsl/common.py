@@ -47,6 +47,11 @@ def items2rows(idxs, items):
             "target": target2repr(target, ttype),
             "labeled": "Yes" if labels or ignored else "No",
             "ignored": "Yes" if ignored else "No",
+            "labels": "; ".join(
+                f"{k}: {', '.join(v)}" for k, v in labels.get("image", {}).items()
+            )
+            if labels
+            else "",
         }
         for index, target, metadata, labels, ttype, ignored in [
             (
@@ -333,8 +338,7 @@ class BaseMediaLabeler:
                 filtered = [
                     idx
                     for idx, row in zip(self._sortedIdxs, rows)
-                    if row.get(filterKey)
-                    and str(row[filterKey]).startswith(str(filterVal))
+                    if row.get(filterKey) and str(filterVal) in str(row[filterKey])
                 ]
                 if not filtered:
                     LOGGER.info("Did not find any matching filter criteria.")
@@ -392,6 +396,11 @@ class BaseMediaLabeler:
             idxs=idxs,
             items=items,
         )
+        reserved_keys = ["target", "labeled", "ignored", "labels"]
+        used_reserved_keys = set(metadata_keys).intersection(reserved_keys)
+        assert (
+            not used_reserved_keys
+        ), f"The following metadata keys are not permitted, because they are reserved: {used_reserved_keys}"
         return {
             **self.indexState,
             "page": page,
@@ -407,6 +416,7 @@ class BaseMediaLabeler:
                 },
                 {"field": "labeled", "type": "string", "headerName": "Labeled"},
                 {"field": "ignored", "type": "string", "headerName": "Ignored"},
+                {"field": "labels", "type": "string", "headerName": "Labels"},
             ]
             + [
                 {

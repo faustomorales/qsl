@@ -71,10 +71,7 @@
     ? []
     : target.plots.map((p) => {
         const limits = {
-          x: {
-            min: Math.min(...p.x.values),
-            max: Math.max(...p.x.values),
-          },
+          x: computeAxes([{ values: p.x.values, name: p.x.name }], p.x.limits),
           y: {
             left: computeAxes(
               p.y.lines.filter((line) => (line.axis || "left") == "left"),
@@ -520,14 +517,19 @@
     color: var(--text-color);
     fill: var(--text-color);
   }
-  .line polyline,
-  .line circle {
-    stroke: var(--line-color);
+  .line polyline {
     fill: none;
+    stroke: var(--line-color);
+  }
+  .line circle {
+    fill: var(--line-color);
+    fill-opacity: 0;
   }
   .line .dots.interactive circle:hover,
   .line .dots.interactive circle.active {
+    fill-opacity: 100;
     fill: var(--line-color);
+    stroke: var(--line-color);
   }
   .axis.x .tick text,
   .axis.x .label text {

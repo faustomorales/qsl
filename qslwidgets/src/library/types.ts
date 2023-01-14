@@ -160,6 +160,7 @@ export interface TimeSeriesTarget {
       name: string;
       height?: number;
       values: number[];
+      limits?: AxisDomainDefinition;
     };
     y: {
       animation?: number;

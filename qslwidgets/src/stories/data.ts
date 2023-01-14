@@ -158,7 +158,7 @@ export const timeSeries: TimeSeriesTarget[] = [
     filename: "chart",
     plots: [
       {
-        x: { name: "name", values: base.map((i) => i) },
+        x: { name: "name", values: base.map((i) => i), limits: [-5, 102] },
         y: {
           animation: 100,
           limits: {

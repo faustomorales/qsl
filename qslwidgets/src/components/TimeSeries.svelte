@@ -456,19 +456,6 @@
           {/each}
           {#each lines as line}
             <g class="line" style="--line-color: {line.color}">
-              <defs>
-                <mask id="dot-mask" class="mask">
-                  <rect
-                    x={a.extents.x.min}
-                    y={a.size.height - a.extents.y.max}
-                    width={a.extents.x.span}
-                    height={a.extents.y.span}
-                  />
-                  {#each line.dots as dot}
-                    <circle cx={dot.x} cy={dot.y} r={defaults.dotRadius} />
-                  {/each}
-                </mask>
-              </defs>
               <g class="dots {line.interactive ? 'interactive' : ''}">
                 {#each line.dots as dot}
                   <circle
@@ -481,7 +468,6 @@
                 {/each}
               </g>
               <polyline
-                mask="url(#dot-mask)"
                 points={line.points
                   .map((point) => `${point.x} ${point.y}`)
                   .join(" ")}
@@ -558,12 +544,6 @@
   .reference-area rect:hover,
   .reference-area rect.active:hover {
     fill: red;
-  }
-  .mask rect {
-    fill: white;
-  }
-  .mask circle {
-    fill: black;
   }
   .tick text {
     font-size: 10pt;

@@ -1,6 +1,6 @@
 {
   "name": "qslwidgets",
-  "version": "0.2.20",
+  "version": "0.2.23",
   "description": "Widgets for the QSL media labeling package.",
   "keywords": [
     "jupyter",

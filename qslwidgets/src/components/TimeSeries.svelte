@@ -236,7 +236,7 @@
               .filter((p) => p.y !== null);
             const interactive = !!l.dot?.labelKey;
             const selected = interactive
-              ? labels.image[l.dot!.labelKey!] || []
+              ? labels.image[l.dot!.labelKey!].map(parseFloat) || []
               : undefined;
             return {
               color: l.color || defaults.lineColor,
@@ -245,12 +245,13 @@
               interactive,
               dots: l.dot
                 ? points.map((point) => {
-                    const xString = point.data.x.toString();
                     return {
                       ...point,
-                      active: selected ? selected.indexOf(xString) > -1 : false,
+                      active: selected
+                        ? selected.indexOf(point.data.x) > -1
+                        : false,
                       onClick: interactive
-                        ? () => toggle(l.dot!.labelKey, xString)
+                        ? () => toggle(l.dot!.labelKey, point.data.x.toString())
                         : undefined,
                     };
                   })

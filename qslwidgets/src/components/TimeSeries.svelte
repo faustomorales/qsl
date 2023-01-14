@@ -236,7 +236,7 @@
               .filter((p) => p.y !== null);
             const interactive = !!l.dot?.labelKey;
             const selected = interactive
-              ? labels.image[l.dot!.labelKey!].map(parseFloat) || []
+              ? labels.image[l.dot!.labelKey!]?.map(parseFloat) || []
               : undefined;
             return {
               color: l.color || defaults.lineColor,

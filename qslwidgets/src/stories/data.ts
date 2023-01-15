@@ -183,6 +183,7 @@ export const timeSeries: TimeSeriesTarget[] = [
                 labelKey: "uvs",
                 labelMaxCount: 2,
               },
+              annotations: [{ x: 41, radius: 6, style: "fill-opacity: 0" }],
             },
             {
               name: "pv",

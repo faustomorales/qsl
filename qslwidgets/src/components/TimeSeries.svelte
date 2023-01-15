@@ -249,6 +249,19 @@
             const selected = interactive
               ? labels.image[l.dot!.labelKey!]?.map(parseFloat) || []
               : undefined;
+            const annotations = (l.annotations || [])
+              .map((a) => {
+                const idx = p.x.values.indexOf(a.x);
+                return idx > -1
+                  ? {
+                      ...a,
+                      ...points[idx],
+                      radius: a.radius || l.dot?.radius || defaults.dotRadius,
+                      style: a.style || ""
+                    }
+                  : null;
+              })
+              .filter((v) => v !== null) as { x: number; y: number, radius: number, style: string }[];
             return {
               color: l.color || defaults.lineColor,
               points,
@@ -256,6 +269,7 @@
               name: l.name,
               dotRadius: l.dot?.radius || defaults.dotRadius,
               interactive,
+              annotations,
               dots: l.dot
                 ? points.map((point) => {
                     return {
@@ -264,7 +278,12 @@
                         ? selected.indexOf(point.data.x) > -1
                         : false,
                       onClick: interactive
-                        ? () => toggle(l.dot!.labelKey, point.data.x.toString(), l.dot!.labelMaxCount)
+                        ? () =>
+                            toggle(
+                              l.dot!.labelKey,
+                              point.data.x.toString(),
+                              l.dot!.labelMaxCount
+                            )
                         : undefined,
                     };
                   })
@@ -477,6 +496,15 @@
                   .join(" ")}
               />
               <g class="dots {line.interactive ? 'interactive' : ''}">
+                {#each line.annotations as annotation}
+                  <circle
+                    cx={annotation.x}
+                    cy={annotation.y}
+                    class="active"
+                    style={annotation.style}
+                    r={annotation.radius}
+                  />
+                {/each}
                 {#each line.dots as dot}
                   <circle
                     cx={dot.x}
@@ -527,7 +555,7 @@
     fill-opacity: 0;
   }
   .line .dots.interactive circle:hover,
-  .line .dots.interactive circle.active {
+  .line .dots circle.active {
     fill-opacity: 100;
     fill: var(--line-color);
     stroke: var(--line-color);

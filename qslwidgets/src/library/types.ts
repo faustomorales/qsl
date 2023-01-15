@@ -143,6 +143,11 @@ export type Line = {
     labelMaxCount?: number;
     radius?: number;
   };
+  annotations?: {
+    x: number;
+    radius?: number;
+    style?: string;
+  }[];
 };
 
 export interface ImageGroupTarget {

@@ -23,11 +23,36 @@
     xAxisSize: 60,
     dotRadius: 3,
     legendSize: 35,
+    lineStyle: "",
     yMargin: 8,
     lineColor: "var(--text-color)",
   };
   let container: HTMLDivElement;
   const debug = false;
+  const computeTicks = (
+    tickSpan: number,
+    config: {
+      pos: { min: number; max: number };
+      val: { min: number; max: number };
+    },
+    precision?: number
+  ) => {
+    const n = Math.floor((config.pos.max - config.pos.min) / tickSpan);
+    const valStep = (config.val.max - config.val.min) / n;
+    return Array.from(Array(n).keys())
+      .map((t: number) => {
+        let val = config.val.min + t * valStep;
+        return {
+          val,
+          pos: config.pos.min + t * tickSpan,
+        };
+      })
+      .concat([{ pos: config.pos.max, val: config.val.max }])
+      .map((t) => ({
+        ...t,
+        txt: parseFloat(t.val.toFixed(precision || 1)).toString(),
+      }));
+  };
   const computeAxes = (lines: Line[], userSetting?: AxisDomainDefinition) => {
     const { dataMin, dataMax } = lines.reduce(
       (memo, line) => {
@@ -108,46 +133,33 @@
               (axisSizes.x + defaults.yMargin + defaults.legendSize),
           },
         };
-        const tickCount = {
-          x: Math.floor(extents.x.span / defaults.tickSpan),
-          y: Math.floor(extents.y.span / defaults.tickSpan),
-        };
-        const tickConfig = {
-          step: {
-            y: {
-              left: (limits.y.left.max - limits.y.left.min) / tickCount.y,
-              right: (limits.y.right.max - limits.y.right.min) / tickCount.y,
-            },
-            x: (limits.x.max - limits.x.min) / tickCount.x,
-          },
-        };
         const ticks = {
           y: {
-            left: Array.from(Array(tickCount.y).keys())
-              .map((t) => {
-                return {
-                  pos: extents.y.min + t * defaults.tickSpan,
-                  val: t * tickConfig.step.y.left + limits.y.left.min,
-                };
-              })
-              .concat([{ pos: extents.y.max, val: limits.y.left.max }]),
-            right: Array.from(Array(tickCount.y).keys())
-              .map((t) => {
-                return {
-                  pos: extents.y.min + t * defaults.tickSpan,
-                  val: limits.y.right.min + t * tickConfig.step.y.right,
-                };
-              })
-              .concat([{ pos: extents.y.max, val: limits.y.right.max }]),
+            left: computeTicks(
+              defaults.tickSpan,
+              {
+                pos: extents.y,
+                val: limits.y.left,
+              },
+              p.y.precision?.left
+            ),
+            right: computeTicks(
+              defaults.tickSpan,
+              {
+                pos: extents.y,
+                val: limits.y.right,
+              },
+              p.y.precision?.right
+            ),
           },
-          x: Array.from(Array(tickCount.x).keys())
-            .map((t) => {
-              return {
-                pos: extents.x.min + t * defaults.tickSpan,
-                val: t * tickConfig.step.x + limits.x.min,
-              };
-            })
-            .concat([{ pos: extents.x.max, val: limits.x.max }]),
+          x: computeTicks(
+            defaults.tickSpan,
+            {
+              pos: extents.x,
+              val: limits.x,
+            },
+            p.x.precision
+          ),
         };
         return {
           size,
@@ -164,7 +176,9 @@
               left: p.y.labels?.left || "",
               right: p.y.labels?.right || "",
             } as { [key: string]: string },
-            ticks: ticks.y as { [key: string]: { pos: number; val: number }[] },
+            ticks: ticks.y as {
+              [key: string]: { pos: number; val: number; txt: string }[];
+            },
           },
         };
       });
@@ -177,7 +191,7 @@
     },
     { width: 0, height: 0 }
   );
-  const toggle = (label: any, value: any) => {
+  const toggle = (label: any, value: any, maxCount?: number) => {
     const labelConfig = config.image?.find((c) => c.name === label);
     if (labelConfig) {
       labels = {
@@ -189,7 +203,7 @@
             labels["image"][label],
             labelConfig.multiple,
             labelConfig.required
-          ),
+          ).slice(maxCount ? -maxCount : undefined),
         },
       };
     }
@@ -238,7 +252,9 @@
             return {
               color: l.color || defaults.lineColor,
               points,
+              style: l.style || defaults.lineStyle,
               name: l.name,
+              dotRadius: l.dot?.radius || defaults.dotRadius,
               interactive,
               dots: l.dot
                 ? points.map((point) => {
@@ -248,7 +264,7 @@
                         ? selected.indexOf(point.data.x) > -1
                         : false,
                       onClick: interactive
-                        ? () => toggle(l.dot!.labelKey, point.data.x.toString())
+                        ? () => toggle(l.dot!.labelKey, point.data.x.toString(), l.dot!.labelMaxCount)
                         : undefined,
                     };
                   })
@@ -374,8 +390,7 @@
                   a.extents.y.min +
                   defaults.tickSize +
                   defaults.fontSize}
-                font-size={defaults.fontSize}
-                >{parseFloat(t.val.toFixed(1)).toString()}</text
+                font-size={defaults.fontSize}>{t.txt}</text
               >
             </g>
           {/each}
@@ -417,8 +432,7 @@
                   <text
                     x={side.x + side.sign * (1.25 * defaults.tickSize)}
                     y={a.size.height - t.pos + defaults.fontSize / 4}
-                    font-size={defaults.fontSize}
-                    >{parseFloat(t.val.toFixed(1)).toString()}</text
+                    font-size={defaults.fontSize}>{t.txt}</text
                   >
                 </g>
               {/each}
@@ -456,22 +470,23 @@
           {/each}
           {#each lines as line}
             <g class="line" style="--line-color: {line.color}">
+              <polyline
+                style={line.style}
+                points={line.points
+                  .map((point) => `${point.x} ${point.y}`)
+                  .join(" ")}
+              />
               <g class="dots {line.interactive ? 'interactive' : ''}">
                 {#each line.dots as dot}
                   <circle
                     cx={dot.x}
                     cy={dot.y}
                     class={dot.active ? "active" : ""}
-                    r={defaults.dotRadius}
+                    r={line.dotRadius}
                     on:click={dot.onClick}
                   />
                 {/each}
               </g>
-              <polyline
-                points={line.points
-                  .map((point) => `${point.x} ${point.y}`)
-                  .join(" ")}
-              />
             </g>
           {/each}
         </svg>

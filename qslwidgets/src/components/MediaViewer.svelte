@@ -37,9 +37,20 @@
     y: 0,
     zoom: 1,
     fit: 1,
+    recentReset: false,
     dragging: false,
   };
   let syncRequired = true;
+  const fitCheck = () => {
+    // If we go to a fit size and weren't at one before,
+    // reset the viewport to a neutral position.
+    if (state.zoom == state.fit && !state.recentReset) {
+      state = {...state, zoom: state.fit, x: 0, y: 0, recentReset: true}
+    } else if (state.zoom != state.fit) {
+      state = {...state, recentReset: false}
+    }
+  }
+  $: state.zoom, fitCheck()
   const sync = () => {
     if (!size || !viewWidth) {
       syncRequired = true;
@@ -150,36 +161,32 @@
           setTimeout(() => (state = { ...state, dragging: false }), 100);
           cleanup();
         },
-        onDrag: ({ delta: [deltaX, deltaY] }) => {
+        onDrag: (event: any) => {
           onMediaScroll({
-            deltaX,
-            deltaY,
+            deltaX: event.delta[0],
+            deltaY: event.delta[1],
             ctrlKey: false,
           });
         },
         onDragStart: () => {
           state = { ...state, dragging: true };
         },
-        onWheel: ({
-          delta: [deltaX, deltaY],
-          ctrlKey,
-          event: { pageX, pageY },
-        }) => {
+        onWheel: (detail: any) => {
           onMediaScroll({
-            deltaX: ctrlKey ? deltaX : -deltaX,
-            deltaY: ctrlKey ? deltaY : -deltaY,
-            ctrlKey,
+            deltaX: detail.ctrlKey ? detail.delta[0] : -detail.delta[0],
+            deltaY: detail.ctrlKey ? detail.delta[1] : -detail.delta[1],
+            ctrlKey: detail.ctrlKey,
             center: convertCoordinates(
               {
-                x: pageX,
-                y: pageY,
+                x: detail.event.pageX,
+                y: detail.event.pageY,
               },
               main
             ),
           });
           cleanup();
         },
-        onPinch: (event) => {
+        onPinch: (event: any) => {
           if (event.memo && event.memo > 0 && size) {
             onMediaScroll({
               deltaX: 0,

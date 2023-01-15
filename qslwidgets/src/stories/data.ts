@@ -160,6 +160,9 @@ export const timeSeries: TimeSeriesTarget[] = [
       {
         x: { name: "name", values: base.map((i) => i), limits: [-5, 102] },
         y: {
+          precision: {
+            left: 3,
+          },
           animation: 100,
           limits: {
             left: [-10, 203],
@@ -174,9 +177,11 @@ export const timeSeries: TimeSeriesTarget[] = [
               name: "uv",
               axis: "left",
               color: "blue",
+              style: "stroke-width:10; stroke: purple; stroke-opacity: 50%",
               values: base.map((i) => i * 2 + 3),
               dot: {
                 labelKey: "uvs",
+                labelMaxCount: 2,
               },
             },
             {

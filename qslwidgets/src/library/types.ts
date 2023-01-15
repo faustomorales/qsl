@@ -137,8 +137,11 @@ export type Line = {
   type?: string;
   axis?: "left" | "right";
   values: (number | string)[];
+  style?: string;
   dot?: {
     labelKey?: string;
+    labelMaxCount?: number;
+    radius?: number;
   };
 };
 
@@ -161,12 +164,17 @@ export interface TimeSeriesTarget {
       height?: number;
       values: number[];
       limits?: AxisDomainDefinition;
+      precision?: number;
     };
     y: {
       animation?: number;
       limits?: {
         left?: AxisDomainDefinition;
         right?: AxisDomainDefinition;
+      };
+      precision?: {
+        left?: number;
+        right?: number;
       };
       widths?: {
         left?: number;

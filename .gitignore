@@ -162,3 +162,6 @@ notebooks
 
 # docs
 docs/index*
+
+# Temporary directories
+qsl-temp*

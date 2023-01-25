@@ -331,6 +331,8 @@ class BaseMediaLabeler:
             filterKey = self.indexState["filterModel"][0]["field"]
             filterVal = self.indexState["filterModel"][0].get("value", None)
             if filterVal:
+                LOGGER.info("Applying filter value.")
+                self.indexState = {**self.indexState, "page": 0}
                 rows, _ = items2rows(
                     idxs=self._sortedIdxs,
                     items=[self.items[idx] for idx in self._sortedIdxs],
@@ -382,14 +384,17 @@ class BaseMediaLabeler:
 
     def get_index_state(self, reset_page=False):
         rowsPerPage = round(self.maxViewHeight / 70)
+        # Recompute sortedIdxs if we have to (which may recompute
+        # page as a side effect).
+        sortedIdxs = self.sortedIdxs
         page = (
-            math.floor(self.sortedIdxs.index(self.idx) / rowsPerPage)
+            math.floor(sortedIdxs.index(self.idx) / rowsPerPage)
             if reset_page
             else self.indexState["page"]
         )
         startIdx = page * rowsPerPage
         endIdx = startIdx + rowsPerPage
-        idxs = self.sortedIdxs[startIdx:endIdx]
+        idxs = sortedIdxs[startIdx:endIdx]
         items = [self.items[idx] for idx in idxs]
 
         rows, metadata_keys = items2rows(

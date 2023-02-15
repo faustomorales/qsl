@@ -179,12 +179,12 @@
           min={-1}
           step={1}
           marks={[{ value: -1, label: "Off" }].concat(
-            new Array(11)
+            new Array(5)
               .fill(undefined)
-              .map((v, i) => ({ value: i, label: i.toString() }))
+              .map((v, i) => ({ value: i * 5, label: (i * 5).toString() }))
           )}
           disabled={draft.drawing.active && draft.drawing.mode !== "masks"}
-          max={10}
+          max={20}
           ariaLabel="segmentation mask flood threshold"
         />
       </div>

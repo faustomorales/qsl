@@ -282,33 +282,53 @@ export const processSelectionChange = (
     ? (selected || []).concat([value])
     : [value];
 
-export const createContentLoader = <T>(options: {
-  target?: string;
-  load: (event: any) => Promise<T>;
+export const createContentLoader = <T, V>(options: {
+  targets: (V | undefined)[];
+  load: (event: any, target: V | undefined) => Promise<T>;
 }) => {
   let state = {
-    target: options.target,
-    loadState: (options.target ? "loading" : "empty") as MediaLoadState,
-    mediaState: undefined as T | undefined,
+    targets: options.targets,
+    loadState: (options.targets.every((t) => t === undefined)
+      ? "empty"
+      : "loading") as MediaLoadState,
+    mediaState: undefined as
+      | undefined
+      | {
+          states: T[];
+        },
   };
-  let apply: { resolve: (update: typeof state) => void; reject: () => void };
+  let interim = options.targets.map(() => undefined as T | undefined);
+  let apply: {
+    resolve: (update: typeof state) => void;
+    reject: (target: V | undefined) => void;
+  };
   const promise = new Promise<typeof state>(
     (resolve, reject) => (apply = { reject, resolve })
   );
+  const stores = getStores();
   return {
-    callbacks: {
-      error: () => apply.reject(),
+    callbacks: options.targets.map((target, targeti) => ({
       load: (event: Event) =>
-        options.load(event).then(
-          (mediaState: T) =>
-            apply.resolve({ ...state, mediaState, loadState: "loaded" }),
-          () => apply.reject()
+        options.load(event, target).then(
+          (mediaState: T) => {
+            interim[targeti] = mediaState;
+            if (interim.every((i) => i !== undefined)) {
+              apply.resolve({
+                ...state,
+                loadState: "loaded",
+                mediaState: { states: interim as T[] },
+              });
+            }
+          },
+          () => apply.reject(target)
         ),
-    },
+      error: () => apply.reject(target),
+    })),
+    promise,
     state: readable(state, (set) => {
-      promise.then(set, () => {
+      promise.then(set, (t) => {
         set({ ...state, loadState: "error" });
-        getStores().toast.push(`An error occurred loading ${options.target}`, {
+        stores.toast.push(`An error occurred loading ${t}.`, {
           theme: {
             "--toastBackground": "var(--color3)",
             "--toastBarBackground": "#C53030",

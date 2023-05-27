@@ -8,7 +8,10 @@
     WidgetActions,
     ArbitraryMetadata,
   } from "../library/types";
-  import { createContentLoader, createDraftStore } from "../library/common";
+  import {
+    createContentLoader,
+    createDraftStore,
+  } from "../library/common";
   import LabelerLayout from "./LabelerLayout.svelte";
   import ControlMenu from "./ControlMenu.svelte";
   import MediaViewer from "./MediaViewer.svelte";
@@ -38,22 +41,25 @@
   let { enhancements } = getStores();
   $: $enhancements, invalidateImage();
   $: target, labels, draft.reset(labels);
-  $: ({ callbacks: loadCallbacks, state: loadState } = createContentLoader({
-    target,
-    load: async (event: { currentTarget: HTMLElement }) => {
-      const target = event.currentTarget as HTMLImageElement;
-      return {
-        size: {
-          width: target.naturalWidth,
-          height: target.naturalHeight,
-        },
-      };
-    },
-  }));
+  $: ({ callbacks: loadCallbacks, state: loadState } = createContentLoader(
+    {
+      targets: [target],
+      load: async (event: { currentTarget: HTMLElement }) => {
+        const target = event.currentTarget as HTMLImageElement;
+        return {
+          size: {
+            width: target.naturalWidth,
+            height: target.naturalHeight,
+          },
+        };
+      },
+    }
+  ));
   let layout: "horizontal" | "vertical" = "vertical";
   $: if ($loadState.mediaState)
     layout =
-      $loadState.mediaState.size.width > $loadState.mediaState.size.height
+      $loadState.mediaState.states[0].size.width >
+      $loadState.mediaState.states[0].size.height
         ? "vertical"
         : "horizontal";
 </script>
@@ -62,7 +68,7 @@
   <svelte:fragment slot="content">
     {#if target}
       <MediaViewer
-        size={$loadState.mediaState?.size}
+        size={$loadState.mediaState?.states[0].size}
         {viewHeight}
         loadState={transitioning ? "loading" : $loadState.loadState}
       >
@@ -70,8 +76,8 @@
           slot="main"
           src={target}
           alt="labeling target image: {target}"
-          on:load={loadCallbacks.load}
-          on:error={loadCallbacks.error}
+          on:load={loadCallbacks[0].load}
+          on:error={loadCallbacks[0].error}
           bind:this={image}
         />
         <img slot="mini" src={target} alt="minimap for {target}" />
@@ -103,7 +109,7 @@
       on:undo={() => history.undo()}
       {layout}
       on:save={() => {
-        labels = draft.export($loadState.mediaState?.size);
+        labels = draft.export($loadState.mediaState?.states[0].size);
         dispatcher("save");
       }}
       on:reset={() => draft.reset(labels)}

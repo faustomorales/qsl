@@ -58,37 +58,38 @@
   $: target, labels, synchronize();
   // If our current timestamp changes.
   $: if (frame.timestamp !== playback.t1 && playback.paused) synchronize();
-  $: ({ callbacks: loadCallbacks, state: loadState } = createContentLoader({
-    target,
-    load: async (event: { currentTarget: HTMLElement }) => {
-      const target = event.currentTarget as HTMLVideoElement;
-      return {
-        size: {
-          width: target.videoWidth,
-          height: target.videoHeight,
-        },
-        duration: target.duration,
-      };
-    },
-  }));
+  $: ({ callbacks: loadCallbacks, state: loadState } = createContentLoader(
+    {
+      targets: [target],
+      load: async (event: { currentTarget: HTMLElement }) => {
+        const target = event.currentTarget as HTMLVideoElement;
+        return {
+          size: {
+            width: target.videoWidth,
+            height: target.videoHeight,
+          },
+          duration: target.duration,
+        };
+      },
+    }
+  ));
 </script>
 
 <!-- svelte-ignore a11y-media-has-caption -->
 
 <MediaViewer
   {viewHeight}
-  size={$loadState.mediaState?.size}
+  size={$loadState.mediaState?.states[0].size}
   loadState={transitioning ? "loading" : $loadState.loadState}
 >
   <video
     slot="main"
     bind:this={main}
     src={target}
-    alt="video located at {target}"
-    on:loadedmetadata={loadCallbacks.load}
-    on:error={loadCallbacks.error}
+    on:loadedmetadata={loadCallbacks[0].load}
+    on:error={loadCallbacks[0].error}
   />
-  <video slot="mini" bind:this={mini} src={target} alt="minimap for {target}" />
+  <video slot="mini" bind:this={mini} src={target} />
   <RegionList
     slot="regions"
     target={main}
@@ -110,7 +111,7 @@
       value: l.timestamp,
       label: l.timestamp.toFixed(2).toString(),
     }))}
-    duration={$loadState.mediaState?.duration}
+    duration={$loadState.mediaState?.states[0].duration}
     disabled={$draft.dirty}
     slot="custom-controls"
   />
@@ -130,7 +131,7 @@
   on:save={() => {
     labels = insertOrAppendByTimestamp(
       {
-        labels: draft.export($loadState.mediaState?.size),
+        labels: draft.export($loadState.mediaState?.states[0].size),
         timestamp: playback.t1,
         end: playback.t2,
       },

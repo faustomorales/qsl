@@ -49,7 +49,7 @@ def items2rows(idxs, items):
             "labeled": "Yes" if labels or ignored else "No",
             "ignored": "Yes" if ignored else "No",
             "labels": "; ".join(
-                f"{k}: {', '.join(v)}" for k, v in labels.get("image", {}).items()
+                f"{k}: {', '.join(v or [])}" for k, v in labels.get("image", {}).items()
             )
             if labels
             else "",

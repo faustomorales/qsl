@@ -4,6 +4,8 @@
     DrawingState,
     DraftLabels,
     ImageData,
+    Dimensions,
+    StackContentLayer,
   } from "../library/types";
   import { createEventDispatcher } from "svelte";
   import { getDistance, convertCoordinates, snap } from "../library/geometry";
@@ -18,6 +20,8 @@
     cursor: Point | undefined = undefined,
     target: HTMLImageElement | HTMLVideoElement,
     image: ImageData | null = null,
+    transform: { size: Dimensions; layer: StackContentLayer } | undefined =
+      undefined,
     maxCanvasSize: number;
   let container: HTMLDivElement;
   let canvas: HTMLCanvasElement;
@@ -111,7 +115,7 @@
           // Adding to a mask.
           dispatcher("change");
           if (!image) {
-            image = img2hsv(target, canvas, maxCanvasSize);
+            image = img2hsv(target, canvas, maxCanvasSize, transform);
           }
           const dimensions = target.getBoundingClientRect();
           drawing = {
@@ -179,7 +183,7 @@
       }
       const dimensions = container.getBoundingClientRect();
       if (!image) {
-        image = img2hsv(target, canvas, maxCanvasSize);
+        image = img2hsv(target, canvas, maxCanvasSize, transform);
       }
       drawing = {
         ...drawing,

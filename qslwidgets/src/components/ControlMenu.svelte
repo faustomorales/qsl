@@ -190,6 +190,7 @@
       </div>
     </div>
   {/if}
+  <slot name="pre-button controls" />
   <div class="controls">
     <div class="control-group">
       {#if draft.drawing.active}

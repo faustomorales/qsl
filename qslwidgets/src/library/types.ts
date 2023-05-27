@@ -119,6 +119,10 @@ export type TimestampedLabel = {
   timestamp: number;
   labels: Labels;
   end?: number;
+  match?: {
+    timestamp: number;
+    end?: number;
+  };
 };
 
 export interface BatchEntry {
@@ -147,6 +151,15 @@ export type Line = {
     x: number;
     radius?: number;
     style?: string;
+  }[];
+};
+
+export type ImageStackTarget = {
+  images: {
+    name: string;
+    target: string;
+    alt?: string;
+    transform: number[][];
   }[];
 };
 
@@ -331,14 +344,38 @@ type ImageGroupWidgetState = BaseWidgetState<
   Labels,
   ImageGroupTarget
 >;
+
+export interface VideoSegmentVideo {
+  target: string;
+  metadata?: ArbitraryMetadata;
+}
+
+export interface VideoSegmentTarget {
+  video1: VideoSegmentVideo;
+  video2: VideoSegmentVideo;
+}
+
+type VideoSegmentPairingWidgetState = BaseWidgetState<
+  "video-segment-pairs",
+  TimestampedLabel[],
+  VideoSegmentTarget
+>;
+
 type ImageWidgetState = BaseWidgetState<"image", Labels, string>;
 type VideoWidgetState = BaseWidgetState<"video", TimestampedLabel[], string>;
 type TimeVideoState = BaseWidgetState<"time-series", Labels, TimeSeriesTarget>;
+type ImageStackWidgetState = BaseWidgetState<
+  "image-stack",
+  Labels,
+  ImageStackTarget
+>;
 export type WidgetState =
   | VideoWidgetState
   | ImageWidgetState
   | TimeVideoState
-  | ImageGroupWidgetState;
+  | ImageGroupWidgetState
+  | ImageStackWidgetState
+  | VideoSegmentPairingWidgetState;
 
 export type ForceableWritable<T> = Writable<T> & {
   set: (value: T, force?: boolean) => void;
@@ -356,4 +393,14 @@ export type SharedStores = {
   id: string;
   toast: ToastStore;
   enhancements: Writable<ImageEnhancements>;
+};
+
+export type StackContentLayer = {
+  size: Dimensions;
+  transform: number[][];
+};
+
+export type StackContentState = {
+  size: Dimensions;
+  layers: StackContentLayer[];
 };

@@ -40,6 +40,9 @@ export const convertCoordinates = (
   };
 };
 
+export const mat2str = (mat: number[][]) =>
+  `matrix(${mat[0][0]}, ${mat[1][0]}, ${mat[0][1]}, ${mat[1][1]}, ${mat[0][2]}, ${mat[1][2]})`;
+
 export const simplify = (raw: Point[], cursor?: Point) => {
   const points = cursor ? raw.concat([cursor]) : raw;
   const [xmin, ymin, xmax, ymax] = [Math.min, Math.max]
@@ -50,4 +53,27 @@ export const simplify = (raw: Point[], cursor?: Point) => {
     )
     .flat() as number[];
   return { points, xmin, ymin, xmax, ymax };
+};
+
+export const destructureAffineTransform = (mat: number[][]) => ({
+  cos: mat[0][0],
+  sin: -mat[0][1],
+  tx: mat[0][2],
+  ty: mat[1][2],
+});
+
+export const invertAffineTransform = (mat: number[][]) => {
+  // http://negativeprobability.blogspot.com/2011/11/affine-transformations-and-their.html
+  let { cos, sin, tx, ty } = destructureAffineTransform(mat);
+  return [
+    [cos, sin, -tx * cos, -ty * sin],
+    [-sin, cos, -ty * cos + tx * sin],
+  ];
+};
+
+export const project = (mat: number[][], point: Point) => {
+  return {
+    x: mat[0][0] * point.x + mat[0][1] * point.y + mat[0][2],
+    y: mat[1][0] * point.x + mat[1][1] * point.y + mat[1][2],
+  };
 };

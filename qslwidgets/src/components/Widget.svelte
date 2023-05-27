@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Extractor, ActionType } from "../library/types";
   import ImageLabeler from "./ImageLabeler.svelte";
+  import ImageStackLabeler from "./ImageStackLabeler.svelte";
   import BatchImageLabeler from "./BatchImageLabeler.svelte";
   import MediaIndex from "./MediaIndex.svelte";
   import VideoLabeler from "./VideoLabeler.svelte";
@@ -40,7 +41,7 @@
   $: urlObjects = (($urls || []) as any[]).filter((u) => typeof u === "object");
 </script>
 
-<Labeler progress={$progress} mode={$mode} stores={stores}>
+<Labeler progress={$progress} mode={$mode} {stores}>
   {#if $viewState && $urls && $type && $labels}
     {#if $viewState == "labeling" || $viewState == "transitioning"}
       {#if $urls.length == 1}
@@ -48,6 +49,25 @@
           <ImageLabeler
             transitioning={$viewState === "transitioning"}
             target={urlStrings[0]}
+            viewHeight={$viewHeight}
+            bind:config={$config}
+            bind:labels={$labels}
+            maxCanvasSize={$maxCanvasSize}
+            metadata={$states[0].metadata}
+            editableConfig={$buttons.config}
+            actions={{ ...$buttons, showIndex: true }}
+            on:next={createAction("next")}
+            on:prev={createAction("prev")}
+            on:delete={createAction("delete")}
+            on:ignore={createAction("ignore")}
+            on:unignore={createAction("unignore")}
+            on:save={createAction("save")}
+            on:showIndex={createAction("index")}
+          />
+        {:else if $type === "image-stack" && !Array.isArray($labels)}
+          <ImageStackLabeler
+            transitioning={$viewState === "transitioning"}
+            target={urlObjects[0]}
             viewHeight={$viewHeight}
             bind:config={$config}
             bind:labels={$labels}
@@ -123,7 +143,7 @@
       {:else if !Array.isArray($labels)}
         <BatchImageLabeler
           transitioning={$viewState === "transitioning"}
-          targets={urlStrings}
+          targets={urlObjects[0]}
           bind:states={$states}
           bind:config={$config}
           bind:labels={$labels}

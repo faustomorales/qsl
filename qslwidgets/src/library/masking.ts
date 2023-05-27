@@ -5,6 +5,7 @@ import type {
   Bitmap,
   RLEMap,
   MaskLabel,
+  StackContentLayer,
 } from "./types";
 
 import init, { Image, Mask } from "./wasmtools";
@@ -45,17 +46,29 @@ const getNaturalDimensions = (
 const img2hsv = (
   img: HTMLImageElement | HTMLVideoElement,
   canvas: HTMLCanvasElement,
-  maxSize: number
+  maxSize: number,
+  transform?: { size: Dimensions; layer: StackContentLayer }
 ): ImageData => {
   const context = canvas.getContext("2d");
   const natural = getNaturalDimensions(img);
+  const baseCanvasSize = transform ? transform.size : natural;
   if (!context) {
     throw Error("Failed to get a drawing context.");
   }
-  const scale = maxSize / Math.max(natural.width, natural.height);
-  canvas.width = Math.round(scale * natural.width);
-  canvas.height = Math.round(scale * natural.height);
+  const scale = maxSize / Math.max(baseCanvasSize.width, baseCanvasSize.height);
+  canvas.width = Math.round(scale * baseCanvasSize.width);
+  canvas.height = Math.round(scale * baseCanvasSize.height);
   context.filter = getComputedStyle(img).filter;
+  if (transform) {
+    context.transform(
+      transform.layer.transform[0][0],
+      transform.layer.transform[1][0],
+      transform.layer.transform[0][1],
+      transform.layer.transform[1][1],
+      transform.layer.transform[0][2],
+      transform.layer.transform[1][2]
+    );
+  }
   context.drawImage(
     img,
     0,
@@ -64,8 +77,8 @@ const img2hsv = (
     natural.height,
     0,
     0,
-    canvas.width,
-    canvas.height
+    Math.round(scale * natural.width),
+    Math.round(scale * natural.height)
   );
   let data: Uint8ClampedArray | undefined;
   try {

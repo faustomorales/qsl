@@ -30,6 +30,7 @@ Target = tx.TypedDict(
     },
 )
 
+
 # Taken from https://stackoverflow.com/questions/952914/how-to-make-a-flat-list-out-of-a-list-of-lists
 def flatten(l: typing.List[typing.Any]):
     return [item for sublist in l for item in sublist]
@@ -686,7 +687,7 @@ class BaseMediaLabeler:
             )
             if self.type == "time-series":
                 self.urls = [self.targets[0]["target"]]
-            elif self.type == "image-group":
+            elif self.type in ["image-group", "image-stack"]:
                 target = self.targets[0]["target"]
                 self.urls = [
                     {

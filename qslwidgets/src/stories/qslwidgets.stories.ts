@@ -4,6 +4,7 @@ import VideoLabeler from "./VideoLabeler.svelte";
 import TimeSeriesLabeler from "./TimeSeriesLabeler.svelte";
 import MediaIndex from "./MediaIndex.svelte";
 import ImageGroupLabeler from "./ImageGroupLabeler.svelte";
+import ImageStackLabeler from "./ImageStackLabeler.svelte";
 
 export default {
   title: "qslwidgets",
@@ -24,6 +25,9 @@ export const Time = () => ({
 });
 export const ImageGroup = () => ({
   Component: ImageGroupLabeler,
+});
+export const ImageStack = () => ({
+  Component: ImageStackLabeler,
 });
 export const Index = () => ({
   Component: MediaIndex,

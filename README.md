@@ -164,6 +164,53 @@ qsl.MediaLabeler(**params)
 
 ![time series labeling demo](https://github.com/faustomorales/qsl/releases/download/example-files/time-series.gif)
 
+### Stacked Image
+
+```python
+params = dict(
+    items=[
+        {
+            "type": "image-stack",
+            "target": {
+                "images": [
+                    {
+                        "name": image["name"],
+                        "target": image["filepath"],
+                        "transform": cv2.getRotationMatrix2D(
+                            center=(0, 0), angle=image["angle"], scale=1
+                        ),
+                    }
+                    for image in qsl.testing.files.ROTATED_TEST_IMAGES
+                ]
+            },
+        }
+    ],
+    config={
+        "image": [
+            {
+                "name": "Type",
+                "multiple": False,
+                "options": [{"name": "Cat"}, {"name": "Dog"}],
+            },
+            {
+                "name": "Location",
+                "multiple": False,
+                "options": [{"name": "Indoor"}, {"name": "Outdoor"}],
+            },
+            {"name": "Flags", "multiple": True, "freeform": True},
+        ],
+        "regions": [
+            {
+                "name": "Type",
+                "multiple": False,
+                "options": [{"name": "Eye"}, {"name": "Nose"}],
+            }
+        ],
+    },
+)
+qsl.MediaLabeler(**params)
+```
+
 ## API
 
 ### Jupyter Widget

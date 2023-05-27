@@ -26,7 +26,7 @@ class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
 
     Args:
 
-        - items: This can be as simple as a list of {"target": "path/to/image.png"} objects. See READM for more information.
+        - items: This can be as simple as a list of {"target": "path/to/image.png"} objects. See README for more information.
         - config: The labeling configuration. See README for more information.
         - allowConfigChange: Whether to allow the configuration to be edited from the UI.
         - advanceOnSave: Whether to automatically advance to the next item when it is saved.

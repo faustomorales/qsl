@@ -35,6 +35,7 @@ export const images: {
           pt1: { x: 0.25, y: 0.25 },
           pt2: { x: 0.75, y: 0.75 },
           labels: { Type: ["person"] },
+          readonly: true,
         },
         {
           pt1: { x: 0.4, y: 0.4 },

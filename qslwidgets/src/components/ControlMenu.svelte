@@ -110,7 +110,8 @@
     labels={state.labels}
     {configShortcuts}
     {editableConfig}
-    {disabled}
+    disabled={disabled ||
+      (level == "regions" && !!draft.drawing.active?.region.readonly)}
     on:change={save}
     on:editConfig={(event) => {
       const config = state.config.find((c) => c.name == event.detail.name);
@@ -256,9 +257,7 @@
               text: "Save",
               event: "save",
               shortcuts: [{ key: "Enter" }],
-              tooltip: valid
-                ? ""
-                : "Please fill all required fields.",
+              tooltip: valid ? "" : "Please fill all required fields.",
               disabled: !actions.save || disabled || !valid,
             },
             {

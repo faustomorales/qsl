@@ -24,7 +24,8 @@
         value,
         selected,
         config.multiple,
-        config.required
+        config.required,
+        config.options && config.options.length > 0
       ),
     });
   };

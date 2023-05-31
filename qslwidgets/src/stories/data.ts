@@ -12,17 +12,6 @@ export const images: {
   metadata?: { [key: string]: string };
 }[] = [
   {
-    url: "image3.jpg",
-    labels: {},
-    metadata: {
-      meta1: "value1",
-      meta2: "value2",
-      meta3: "value3",
-      long: "abcdefghijklmnpqrstuvwxyz",
-    },
-  },
-  { url: undefined, labels: {}, metadata: { meta1: "value2" } },
-  {
     url: "image2.jpg",
     metadata: { foo: "bar" },
     labels: {
@@ -50,6 +39,17 @@ export const images: {
       ],
     },
   },
+  {
+    url: "image3.jpg",
+    labels: {},
+    metadata: {
+      meta1: "value1",
+      meta2: "value2",
+      meta3: "value3",
+      long: "abcdefghijklmnpqrstuvwxyz",
+    },
+  },
+  { url: undefined, labels: {}, metadata: { meta1: "value2" } },
   { url: "not-an-image.jpg", labels: {} },
   { url: "image1.jpg", labels: {} },
   { url: "image4.jpg", labels: {} },

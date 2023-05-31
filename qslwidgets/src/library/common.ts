@@ -270,14 +270,17 @@ export const processSelectionChange = (
   value: string,
   selected: string[] | undefined,
   multiple: boolean,
-  required?: boolean
+  required?: boolean,
+  options?: boolean
 ) =>
   selected && selected.indexOf(value) > -1
     ? multiple
       ? selected.filter((v) => v != value)
       : required
       ? selected
-      : []
+      : options
+      ? []
+      : [value]
     : multiple
     ? (selected || []).concat([value])
     : [value];

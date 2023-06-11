@@ -91,6 +91,7 @@
       </MediaViewer>
     {/if}
     <Metadata {metadata} />
+    <Metadata metadata={$draft.drawing.active?.region.metadata} />
   </svelte:fragment>
   <svelte:fragment slot="control">
     <ControlMenu

@@ -58,21 +58,19 @@
   $: target, labels, synchronize();
   // If our current timestamp changes.
   $: if (frame.timestamp !== playback.t1 && playback.paused) synchronize();
-  $: ({ callbacks: loadCallbacks, state: loadState } = createContentLoader(
-    {
-      targets: [target],
-      load: async (event: { currentTarget: HTMLElement }) => {
-        const target = event.currentTarget as HTMLVideoElement;
-        return {
-          size: {
-            width: target.videoWidth,
-            height: target.videoHeight,
-          },
-          duration: target.duration,
-        };
-      },
-    }
-  ));
+  $: ({ callbacks: loadCallbacks, state: loadState } = createContentLoader({
+    targets: [target],
+    load: async (event: { currentTarget: HTMLElement }) => {
+      const target = event.currentTarget as HTMLVideoElement;
+      return {
+        size: {
+          width: target.videoWidth,
+          height: target.videoHeight,
+        },
+        duration: target.duration,
+      };
+    },
+  }));
 </script>
 
 <!-- svelte-ignore a11y-media-has-caption -->
@@ -117,6 +115,7 @@
   />
 </MediaViewer>
 <Metadata {metadata} />
+<Metadata metadata={$draft.drawing.active?.region.metadata} />
 <ControlMenu
   bind:config
   bind:draft={$draft}

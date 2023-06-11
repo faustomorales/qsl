@@ -8,10 +8,7 @@
     WidgetActions,
     ArbitraryMetadata,
   } from "../library/types";
-  import {
-    createContentLoader,
-    createDraftStore,
-  } from "../library/common";
+  import { createContentLoader, createDraftStore } from "../library/common";
   import LabelerLayout from "./LabelerLayout.svelte";
   import ControlMenu from "./ControlMenu.svelte";
   import MediaViewer from "./MediaViewer.svelte";
@@ -41,20 +38,18 @@
   let { enhancements } = getStores();
   $: $enhancements, invalidateImage();
   $: target, labels, draft.reset(labels);
-  $: ({ callbacks: loadCallbacks, state: loadState } = createContentLoader(
-    {
-      targets: [target],
-      load: async (event: { currentTarget: HTMLElement }) => {
-        const target = event.currentTarget as HTMLImageElement;
-        return {
-          size: {
-            width: target.naturalWidth,
-            height: target.naturalHeight,
-          },
-        };
-      },
-    }
-  ));
+  $: ({ callbacks: loadCallbacks, state: loadState } = createContentLoader({
+    targets: [target],
+    load: async (event: { currentTarget: HTMLElement }) => {
+      const target = event.currentTarget as HTMLImageElement;
+      return {
+        size: {
+          width: target.naturalWidth,
+          height: target.naturalHeight,
+        },
+      };
+    },
+  }));
   let layout: "horizontal" | "vertical" = "vertical";
   $: if ($loadState.mediaState)
     layout =
@@ -94,6 +89,7 @@
       </MediaViewer>
     {/if}
     <Metadata {metadata} />
+    <Metadata metadata={$draft.drawing.active?.region.metadata} />
   </svelte:fragment>
   <svelte:fragment slot="control">
     <ControlMenu

@@ -118,6 +118,7 @@
     >
       <div slot="pre-button controls">
         <hr />
+        <Metadata metadata={target?.images[selected[0]].metadata} />
         <LabelPanelEntry
           config={{
             required: true,

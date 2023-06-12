@@ -158,6 +158,7 @@ export type ImageStackTarget = {
   images: {
     name: string;
     target: string;
+    metadata?: ArbitraryMetadata;
     alt?: string;
     transform: number[][];
   }[];

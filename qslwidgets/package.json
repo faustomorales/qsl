@@ -100,7 +100,7 @@
     "ts-jest": "^26.0.0",
     "ts-loader": "^8.0.0",
     "typanion": "^3.9.0",
-    "typescript": "~4.5.0",
+    "typescript": "^5.0.0",
     "webpack": "^5.0.0",
     "webpack-cli": "^4.0.0"
   },

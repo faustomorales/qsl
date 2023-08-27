@@ -105,7 +105,7 @@ export const config: Config = {
   ],
 };
 
-export const indexState: IndexState = {
+export const indexState: IndexState<number> = {
   rows: [
     {
       qslId: 0,

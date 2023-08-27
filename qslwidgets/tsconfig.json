@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "ignoreDeprecations": "5.0",
     "declaration": true,
     "esModuleInterop":true,
     "lib": ["es2019", "dom", "DOM", "DOM.Iterable"],

@@ -220,10 +220,10 @@ export interface TimeSeriesTarget {
 
 export type MediaLoadState = "loading" | "loaded" | "error" | "empty";
 
-export interface IndexState {
+export interface IndexState<T extends string | number> {
   rows: {
     [key: string]: number | string | null;
-    qslId: number;
+    qslId: T;
   }[];
   columns: { field: string; type: "string" | "number"; headerName: string }[];
   rowCount: number;
@@ -322,7 +322,7 @@ interface BaseWidgetState<Type, LabelType, UrlType> {
   maxViewHeight: number;
   idx: number;
   viewState: "transitioning" | "labeling" | "index";
-  indexState: IndexState;
+  indexState: IndexState<string | number>;
   buttons: {
     next: boolean;
     prev: boolean;

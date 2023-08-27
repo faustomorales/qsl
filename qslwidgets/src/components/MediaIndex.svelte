@@ -1,4 +1,4 @@
-<script lang="ts">
+<script lang="ts" generics="T extends number | string">
   import { createEventDispatcher } from "svelte";
   import type { IndexState } from "../library/types";
   import ButtonGroup from "./ButtonGroup.svelte";
@@ -12,8 +12,7 @@
   import ClickTarget from "./ClickTarget.svelte";
   import FocusIndicator from "./FocusIndicator.svelte";
 
-  export let indexState: IndexState,
-    idx: number = 0;
+  export let indexState: IndexState<T>, idx: T;
   const dispatcher = createEventDispatcher();
   $: pages = Math.ceil(indexState.rowCount / indexState.rowsPerPage);
   $: sortState =
@@ -47,7 +46,7 @@
     indexState = { ...indexState, filterModel: [filterState] };
     dispatcher("sort");
   };
-  const createLabelCallback = (index: number) => () => {
+  const createLabelCallback = (index: T) => () => {
     idx = index;
     dispatcher("label");
   };

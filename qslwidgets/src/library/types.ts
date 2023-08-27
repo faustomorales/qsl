@@ -1,7 +1,7 @@
 import type { Writable, Readable } from "svelte/store";
 import type { Image, Mask } from "./wasmtools";
 
-export type ArbitraryMetadata = { [key: string]: string };
+export type ArbitraryMetadata = { [key: string]: string | number };
 export type Point = { x: number; y: number };
 export type Vec = { dx: number; dy: number };
 export type Scale = { sx: number; sy: number };

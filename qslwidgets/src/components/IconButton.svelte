@@ -16,8 +16,8 @@
     border-radius: 50%;
     border: none;
     background-color: transparent;
-    width: 1.5rem;
-    height: 1.5rem;
+    width: var(--icon-button-size, 1.5rem);
+    height: var(--icon-button-size, 1.5rem);
   }
   button:active:not(:disabled) {
     background-color: lightgrey;

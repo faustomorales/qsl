@@ -1,5 +1,7 @@
 {
-    "python.formatting.provider": "black",
+    "svelte.plugin.svelte.compilerWarnings": {
+        "a11y-media-has-caption": "ignore",
+    },
     "python.defaultInterpreterPath": ".venv/bin/python",
     "[python]": {
         "editor.formatOnSave": true

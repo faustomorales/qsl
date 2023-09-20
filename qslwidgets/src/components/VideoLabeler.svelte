@@ -32,32 +32,22 @@
   const dispatcher = createEventDispatcher();
   let main: HTMLVideoElement;
   let mini: HTMLVideoElement;
-  let frame: TimestampedLabel = labels4timestamp(labels, 0);
+  let { label: frame } = labels4timestamp(labels, 0);
   let cursor: Point | undefined = undefined;
   let { draft, history } = createDraftStore();
-  let playback = { paused: true, muted: false, t1: 0, t2: undefined } as {
+  let playback = {
+    paused: true,
+    muted: false,
+    playhead: 0,
+    t1: 0,
+    t2: undefined,
+  } as {
     paused: boolean;
     muted: boolean;
+    playhead: number;
     t1: number;
     t2: undefined | number;
   };
-  const synchronize = () => {
-    frame = labels4timestamp(labels, playback.t1);
-    playback = { ...playback, t2: frame.end };
-    draft.reset(frame.labels);
-  };
-  const invalidateImage = () => {
-    if ($draft.image) {
-      draft.set({ ...$draft, image: null });
-    }
-  };
-  // If our enhancements change.
-  let { enhancements } = getStores();
-  $: $enhancements, invalidateImage();
-  // If the external inputs change ...
-  $: target, labels, synchronize();
-  // If our current timestamp changes.
-  $: if (frame.timestamp !== playback.t1 && playback.paused) synchronize();
   $: ({ callbacks: loadCallbacks, state: loadState } = createContentLoader({
     targets: [target],
     load: async (event: { currentTarget: HTMLElement }) => {
@@ -71,6 +61,48 @@
       };
     },
   }));
+  const synchronize = () => {
+    if (playback.paused) {
+      const existing = labels4timestamp(labels, playback.t1);
+      frame = existing.label;
+      if (!existing.exists) {
+        playback = {
+          ...playback,
+          t2: $loadState.mediaState?.states[0].duration,
+        };
+      }
+      draft.reset(frame.labels);
+    } else {
+      console.error(
+        "synchronize() was called when unpaused, which should not occur."
+      );
+    }
+  };
+  const invalidateImage = () => {
+    if ($draft.image) {
+      draft.set({ ...$draft, image: null });
+    }
+  };
+  // If our enhancements change.
+  let { enhancements } = getStores();
+  $: $enhancements, invalidateImage();
+  // If the external inputs change ...
+  $: target, labels, $loadState, synchronize();
+  // If our current timestamp changes.
+  $: if (frame.timestamp !== playback.t1) synchronize();
+  const save = () => {
+    if (playback.paused && playback.t1 !== undefined) {
+      const current = {
+        labels: draft.export($loadState.mediaState?.states[0].size),
+        timestamp: playback.t1!,
+        end: playback.t2,
+      };
+      labels = insertOrAppendByTimestamp(current, labels || []);
+      dispatcher("save");
+    } else {
+      console.error("Attempted to save while playing or t1 was undefined.");
+    }
+  };
 </script>
 
 <!-- svelte-ignore a11y-media-has-caption -->
@@ -99,10 +131,14 @@
     bind:cursor
   />
   <Playbar
-    e1={main}
-    e2={mini}
-    bind:t1={playback.t1}
-    bind:t2={playback.t2}
+    mains={[main]}
+    secondaries={[mini]}
+    bind:playhead={playback.playhead}
+    t1={playback.t1}
+    t2={playback.t2}
+    on:setMarkers={(event) => {
+      playback = { ...playback, ...event.detail };
+    }}
     bind:paused={playback.paused}
     bind:muted={playback.muted}
     marks={labels.map((l) => ({
@@ -127,17 +163,7 @@
   on:unignore
   on:showIndex
   on:undo={() => history.undo()}
-  on:save={() => {
-    labels = insertOrAppendByTimestamp(
-      {
-        labels: draft.export($loadState.mediaState?.states[0].size),
-        timestamp: playback.t1,
-        end: playback.t2,
-      },
-      labels || []
-    );
-    dispatcher("save");
-  }}
+  on:save={save}
   on:reset={() => draft.reset(frame.labels)}
   disabled={transitioning ||
     !playback.paused ||

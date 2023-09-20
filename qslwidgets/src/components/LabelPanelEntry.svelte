@@ -13,7 +13,7 @@
   export let config: LabelConfig,
     disabled: boolean,
     selected: string[] | undefined,
-    shortcut: string | undefined,
+    shortcut: string | undefined = undefined,
     editableConfig: boolean;
   const dispatcher = createEventDispatcher();
   let freeform = { value: "", dirty: false };

@@ -113,17 +113,34 @@ export interface DraftState {
   dirty: boolean;
   image: ImageData | null;
   drawing: DrawingState;
+  timestampInfo?: TimestampInfo | TimestampInfoWithMatch;
 }
 
-export type TimestampedLabel = {
+export interface TimestampInfo {
   timestamp: number;
-  labels: Labels;
   end?: number;
-  match?: {
+}
+
+export interface TimestampInfoWithMatch extends TimestampInfo {
+  end: number;
+  match: {
     timestamp: number;
-    end?: number;
+    end: number;
   };
-};
+}
+
+export interface TimestampedLabel extends TimestampInfo {
+  labels: Labels;
+}
+
+export interface TimestampedLabelWithMatch extends TimestampInfoWithMatch {
+  labels: Labels;
+  end: number;
+  match: {
+    timestamp: number;
+    end: number;
+  };
+}
 
 export interface BatchEntry {
   metadata?: ArbitraryMetadata;
@@ -358,7 +375,7 @@ export interface VideoSegmentTarget {
 
 type VideoSegmentPairingWidgetState = BaseWidgetState<
   "video-segment-pairs",
-  TimestampedLabel[],
+  TimestampedLabelWithMatch[],
   VideoSegmentTarget
 >;
 

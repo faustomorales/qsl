@@ -10,7 +10,9 @@ import type {
   Bitmap,
   MediaLoadState,
   DraftState,
+  TimestampInfoWithMatch,
   Dimensions,
+  TimestampInfo,
 } from "./types";
 import { bmp2rle, rle2bmp } from "./masking";
 
@@ -266,9 +268,9 @@ export const focus = (element?: HTMLElement) => {
   return true;
 };
 
-export const processSelectionChange = (
-  value: string,
-  selected: string[] | undefined,
+export const processSelectionChange = <T>(
+  value: T,
+  selected: T[] | undefined,
   multiple: boolean,
   required?: boolean,
   options?: boolean
@@ -347,7 +349,8 @@ export const undoable = <T>(
   serialize?: (current: T) => T,
   deserialize?: (value: T) => T,
   destroy?: (remove: T[], keep: T[]) => void,
-  length: number = 10
+  length: number = 10,
+  debounce: number = 500
 ) => {
   let count = 0;
   let subscribers: {
@@ -367,7 +370,7 @@ export const undoable = <T>(
       subscriber(history.length)
     );
   };
-
+  let lastSnapshotTime = Date.now();
   return {
     history: {
       undo: () => {
@@ -392,14 +395,29 @@ export const undoable = <T>(
         notify();
       },
       snapshot: () => {
-        const remove = history.slice(0, -(length - 1));
-        history = [
-          ...history.slice(-(length - 1)),
-          (serialize || structuredClone)(current),
-        ];
+        const nextSnapshotTime = Date.now();
+        let nextSnapshot: T = (serialize || structuredClone)(current);
+        let remove: T[];
+        // Debounce should not apply to the first item, since it's likely our "initial state"
+        // and we do not want to overwrite it.
+        if (
+          nextSnapshotTime - lastSnapshotTime > debounce ||
+          history.length == 1
+        ) {
+          // Get as many items as needed from the front of the array.
+          remove = history.slice(0, -(length - 1));
+          history = [...history.slice(-(length - 1)), nextSnapshot];
+        } else {
+          // Get the last item from the array, since we're just going
+          // to treat that last snapshot as redundant.
+          remove = history.slice(-1);
+          history = [...history.slice(0, -1), nextSnapshot];
+        }
+
         if (destroy) {
           destroy(remove, history);
         }
+        lastSnapshotTime = nextSnapshotTime;
       },
       reset: (update: T) => {
         if (destroy) {
@@ -452,6 +470,7 @@ export const createDraftStore = () => {
     (state) => ({
       dirty: state.dirty,
       image: state.image,
+      timestampInfo: structuredClone(state.timestampInfo),
       labels: {
         ...structuredClone(state.labels),
         masks: state.labels.masks,
@@ -477,7 +496,10 @@ export const createDraftStore = () => {
     undefined,
     deallocateMaps
   );
-  const reset = (labels: Labels) => {
+  const reset = (
+    labels: Labels,
+    timestampInfo?: TimestampInfo | TimestampInfoWithMatch
+  ) => {
     const initial = get(inner.state);
     if (initial.image) {
       initial.image.free();
@@ -487,6 +509,7 @@ export const createDraftStore = () => {
       dirty: false,
       image: null,
       labels: labels2draft(labels),
+      timestampInfo,
     });
   };
   return {
@@ -505,13 +528,19 @@ export const createDraftStore = () => {
 export const labels4timestamp = (
   labels: TimestampedLabel[],
   timestamp: number
-): TimestampedLabel => {
-  if (!labels) return { timestamp, end: undefined, labels: { image: {} } };
-  return (
-    labels.filter((l) => l.timestamp === timestamp)[0] || {
+): { label: TimestampedLabel; exists: boolean } => {
+  if (!labels)
+    return {
+      label: { timestamp, end: undefined, labels: { image: {} } },
+      exists: false,
+    };
+  const existing = labels.filter((l) => l.timestamp === timestamp)[0];
+  return {
+    label: existing || {
       timestamp,
       end: undefined,
       labels: { image: {} },
-    }
-  );
+    },
+    exists: !!existing,
+  };
 };

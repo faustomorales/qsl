@@ -9,7 +9,7 @@
   import Spinner from "./Spinner.svelte";
   import * as useGesture from "@use-gesture/vanilla";
   export let size: Dimensions | undefined,
-    viewHeight: number = 384,
+    viewHeight: number | null = 384,
     loadState: MediaLoadState = "loaded",
     enhancementControls: boolean = true;
   let main: HTMLDivElement;
@@ -45,12 +45,12 @@
     // If we go to a fit size and weren't at one before,
     // reset the viewport to a neutral position.
     if (state.zoom == state.fit && !state.recentReset) {
-      state = {...state, zoom: state.fit, x: 0, y: 0, recentReset: true}
+      state = { ...state, zoom: state.fit, x: 0, y: 0, recentReset: true };
     } else if (state.zoom != state.fit) {
-      state = {...state, recentReset: false}
+      state = { ...state, recentReset: false };
     }
-  }
-  $: state.zoom, fitCheck()
+  };
+  $: state.zoom, fitCheck();
   const sync = () => {
     if (!size || !viewWidth) {
       syncRequired = true;
@@ -64,13 +64,16 @@
     ) {
       syncRequired = true;
       const minimapScale = minimapSize / Math.max(size.width, size.height);
-      const fit = Math.min(viewHeight / size.height, viewWidth / size.width);
+      const fit = Math.min(
+        (viewHeight || size.height) / size.height,
+        viewWidth / size.width
+      );
       state = {
         ...state,
         x: 0,
         y: 0,
         basis: {
-          view: { width: viewWidth, height: viewHeight },
+          view: { width: viewWidth, height: viewHeight || size.height },
           size: size!,
         },
         minimap: {
@@ -111,7 +114,9 @@
     state = {
       ...state,
       x: Math.min(Math.max(point.x - span.width / 2, 0), 1 - span.width),
-      y: Math.min(Math.max(point.y - span.height / 2, 0), 1 - span.height),
+      y: viewHeight
+        ? Math.min(Math.max(point.y - span.height / 2, 0), 1 - span.height)
+        : 0,
     };
   };
   $: onMediaScroll = (operation: {
@@ -124,11 +129,16 @@
       return;
     }
     if (!operation.ctrlKey) {
+      const next = { 
+        x: Math.max(state.x - operation.deltaX / (state.zoom * size.width), 0),
+        y: viewHeight
+          ? Math.max(state.y - operation.deltaY / (state.zoom * size.height), 0)
+          : 0,
+      }
       state = {
         ...state,
         zoom: state.zoom,
-        x: Math.max(state.x - operation.deltaX / (state.zoom * size.width), 0),
-        y: Math.max(state.y - operation.deltaY / (state.zoom * size.height), 0),
+        ...next
       };
     } else {
       const zoom = Math.max(
@@ -140,12 +150,13 @@
       const center = operation.center || { x: state.x, y: state.y };
       const relative = {
         x: (center.x - state.x) / spani.width,
-        y: (center.y - state.y) / spani.height,
+        y: viewHeight ? (center.y - state.y) / spani.height : 0,
       };
       const next = {
         x: Math.max(center.x - relative.x * spanf.width, 0),
-        y: Math.max(center.y - relative.y * spanf.height, 0),
+        y: viewHeight ? Math.max(center.y - relative.y * spanf.height, 0) : 0,
       };
+
       state = {
         ...state,
         ...next,
@@ -172,6 +183,15 @@
           state = { ...state, dragging: true };
         },
         onWheel: (detail: any) => {
+          // Make this computation about whether there
+          // is more to scroll horizontally/vertically.
+          // So if the viewport already covers the full image
+          // in that direction, don't prevent default behavior!
+          // https://github.com/pmndrs/use-gesture/blob/97765d604372e5190002df1f64da649deea3faa6/documentation/pages/docs/options.mdx#L107
+          if (Math.abs(detail.delta[0]) > 1 || viewHeight) {
+            detail.event.preventDefault();
+            detail.event.stopPropagation();
+          }
           onMediaScroll({
             deltaX: detail.ctrlKey ? detail.delta[0] : -detail.delta[0],
             deltaY: detail.ctrlKey ? detail.delta[1] : -detail.delta[1],
@@ -210,7 +230,7 @@
           delay: 500,
         },
         wheel: {
-          preventDefault: true,
+          preventDefault: false,
           eventOptions: {
             passive: false,
           },
@@ -244,7 +264,9 @@
   ) * 100}%; --media-viewer-minimap-limit-height: {Math.min(
     1 - state.y,
     state.basis.view.height && state.basis.size.height
-      ? state.basis.view.height / (state.basis.size.height * state.zoom)
+      ? viewHeight
+        ? state.basis.view.height / (state.basis.size.height * state.zoom)
+        : 1 - state.y
       : 0
   ) * 100}%;
     "
@@ -255,7 +277,9 @@
   <div
     bind:this={view}
     class="viewport"
-    style="height: {state.basis.view.height}px; width: 100%"
+    style="height: {viewHeight || !state.basis.size.height
+      ? state.basis.view.height
+      : (1 - state.y) * (state.basis.size.height * state.zoom)}px; width: 100%"
   >
     <ClickTarget />
     <div class="main {loadState}" bind:this={main}>

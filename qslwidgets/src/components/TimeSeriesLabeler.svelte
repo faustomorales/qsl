@@ -23,7 +23,7 @@
     navigation: boolean = false,
     editableConfig: boolean = false,
     transitioning: boolean = false,
-    viewHeight: number = 384,
+    viewHeight: number | null = 384,
     actions: WidgetActions = {};
   const dispatcher = createEventDispatcher();
   let { draft, history } = createDraftStore();

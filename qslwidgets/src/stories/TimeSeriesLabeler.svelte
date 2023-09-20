@@ -8,5 +8,5 @@
 </script>
 
 <Labeler>
-  <TimeSeriesLabeler {target} bind:config bind:labels />
+  <TimeSeriesLabeler {target} bind:config bind:labels viewHeight={null} />
 </Labeler>

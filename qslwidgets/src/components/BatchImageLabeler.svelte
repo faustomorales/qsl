@@ -15,7 +15,7 @@
   export let labels: Labels,
     config: Config,
     states: BatchEntry[] = [],
-    targets: (string | undefined)[] = [],
+    targets: (string | undefined)[] | undefined = [],
     navigation: boolean = false,
     editableConfig: boolean = false,
     transitioning: boolean = false,
@@ -39,7 +39,7 @@
     })));
   $: targets, labels, draft.reset(labels);
   $: items =
-    targets.length === states.length
+    targets && targets.length === states.length
       ? targets
           .map((target, index) => ({ target, state: states[index], index }))
           .filter((entry) => entry.state.visible)

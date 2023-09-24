@@ -36,8 +36,6 @@
     }
   };
 </script>
-
-{#if timestampInfo}
   <div class="video-pair">
     <div style="--icon-button-size: 2.5rem">
       <IconButton on:click={onClick}>
@@ -53,14 +51,16 @@
     <!-- svelte-ignore a11y-media-has-caption -->
     <VideoWithPlaybar
       target={target.video1.target}
-      t1={timestampInfo.timestamp}
-      t2={timestampInfo.end}
+      t1={timestampInfo?.timestamp}
+      t2={timestampInfo?.end}
       bind:playhead={playbackState.video1.playhead}
       bind:paused={playbackState.video1.paused}
+      on:loaded={(event) => dispatcher("loaded-video1", event.detail)}
       on:setMarkers={(event) => {
         dispatcher("change");
         draft = {
           ...draft,
+          dirty: true,
           timestampInfo: {
             ...draft.timestampInfo,
             timestamp: event.detail.t1,
@@ -72,10 +72,11 @@
     <!-- svelte-ignore a11y-media-has-caption -->
     <VideoWithPlaybar
       target={target.video2.target}
-      t1={timestampInfo.match.timestamp}
-      t2={timestampInfo.match.end}
+      t1={timestampInfo?.match.timestamp}
+      t2={timestampInfo?.match.end}
       bind:playhead={playbackState.video2.playhead}
       bind:paused={playbackState.video2.paused}
+      on:loaded={(event) => dispatcher("loaded-video2", event.detail)}
       on:setMarkers={(event) => {
         if (
           event.detail.t1 !== undefined &&
@@ -86,6 +87,7 @@
           dispatcher("change");
           draft = {
             ...draft,
+            dirty: true,
             timestampInfo: {
               ...draft.timestampInfo,
               match: {
@@ -98,8 +100,6 @@
       }}
     />
   </div>
-{/if}
-
 <style>
   .video-pair {
     display: flex;

@@ -7,6 +7,7 @@
 <Labeler>
   <VideoSegmentLabeler
     config={{}}
+    actions={{ save: true }}
     target={{
       video1: {
         target: data.videos[0].url,

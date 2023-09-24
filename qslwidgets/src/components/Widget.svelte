@@ -6,6 +6,7 @@
   import MediaIndex from "./MediaIndex.svelte";
   import VideoLabeler from "./VideoLabeler.svelte";
   import TimeSeriesLabeler from "./TimeSeriesLabeler.svelte";
+  import VideoSegmentLabeler from "./VideoSegmentLabeler.svelte";
   import ImagePreloader from "./ImagePreloader.svelte";
   import ImageGroupLabeler from "./ImageGroupLabeler.svelte";
   import Labeler from "./Labeler.svelte";
@@ -102,6 +103,23 @@
             on:save={createAction("save")}
             on:showIndex={createAction("index")}
           />
+        {:else if $type == "video-segment-pairs" && Array.isArray($labels)}
+          <VideoSegmentLabeler
+            transitioning={$viewState === "transitioning"}
+            target={urlObjects[0]}
+            bind:config={$config}
+            bind:labels={$labels}
+            metadata={$states[0].metadata}
+            editableConfig={$buttons.config}
+            actions={{ ...$buttons, showIndex: true }}
+            on:next={createAction("next")}
+            on:prev={createAction("prev")}
+            on:delete={createAction("delete")}
+            on:ignore={createAction("ignore")}
+            on:unignore={createAction("unignore")}
+            on:save={createAction("save")}
+            on:showIndex={createAction("index")}
+          />
         {:else if $type == "time-series" && !Array.isArray($labels) && urlObjects.length == 1 && urlObjects[0] && urlObjects[0].plots}
           <TimeSeriesLabeler
             transitioning={$viewState === "transitioning"}
@@ -143,7 +161,7 @@
       {:else if !Array.isArray($labels)}
         <BatchImageLabeler
           transitioning={$viewState === "transitioning"}
-          targets={urlObjects[0]}
+          targets={urlStrings}
           bind:states={$states}
           bind:config={$config}
           bind:labels={$labels}

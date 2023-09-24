@@ -630,7 +630,12 @@ class BaseMediaLabeler:
             (
                 base_item.get("labels")
                 or base_item.get("defaults")
-                or ([] if base_item.get("type", "image") == "video" else {})
+                or (
+                    []
+                    if base_item.get("type", "image")
+                    in ("video", "video-segment-pairs")
+                    else {}
+                )
             ),
         )
         sIdx = self.sortedIdxs.index(self.idx)
@@ -687,6 +692,29 @@ class BaseMediaLabeler:
             )
             if self.type == "time-series":
                 self.urls = [self.targets[0]["target"]]
+            elif self.type == "video-segment-pairs":
+                target = self.targets[0]["target"]
+                self.urls = [
+                    {
+                        "video1": {
+                            **target["video1"],
+                            "target": files.build_url(
+                                target["video1"]["target"],
+                                base=self.base,
+                                get_tempdir=self.get_temporary_directory,
+                            ),
+                        },
+                        "video2": {
+                            **target["video2"],
+                            "target": files.build_url(
+                                target["video2"]["target"],
+                                base=self.base,
+                                get_tempdir=self.get_temporary_directory,
+                            ),
+                        },
+                    }
+                ]
+
             elif self.type in ["image-group", "image-stack"]:
                 target = self.targets[0]["target"]
                 self.urls = [

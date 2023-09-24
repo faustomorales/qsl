@@ -39,14 +39,10 @@
     paused: true,
     muted: false,
     playhead: 0,
-    t1: 0,
-    t2: undefined,
   } as {
     paused: boolean;
     muted: boolean;
     playhead: number;
-    t1: number;
-    t2: undefined | number;
   };
   $: ({ callbacks: loadCallbacks, state: loadState } = createContentLoader({
     targets: [target],
@@ -63,15 +59,17 @@
   }));
   const synchronize = () => {
     if (playback.paused) {
-      const existing = labels4timestamp(labels, playback.t1);
+      const existing = labels4timestamp(
+        labels,
+        $draft.timestampInfo?.timestamp || 0
+      );
       frame = existing.label;
-      if (!existing.exists) {
-        playback = {
-          ...playback,
-          t2: $loadState.mediaState?.states[0].duration,
-        };
-      }
-      draft.reset(frame.labels);
+      draft.reset(frame.labels, {
+        timestamp: existing.label.timestamp,
+        end: existing.exists
+          ? existing.label.end
+          : $loadState.mediaState?.states[0].duration,
+      });
     } else {
       console.error(
         "synchronize() was called when unpaused, which should not occur."
@@ -89,13 +87,17 @@
   // If the external inputs change ...
   $: target, labels, $loadState, synchronize();
   // If our current timestamp changes.
-  $: if (frame.timestamp !== playback.t1) synchronize();
+  $: if (frame.timestamp !== $draft.timestampInfo?.timestamp) synchronize();
   const save = () => {
-    if (playback.paused && playback.t1 !== undefined) {
+    if (playback.paused && $draft.timestampInfo?.timestamp !== undefined) {
+      // We can't edit start points of labels because moving the start point
+      // results in a reset/history erasure. Is that okay? If not,
+      // we'll need to add a way to differentiate between "move start time"
+      // and "create new label."
       const current = {
         labels: draft.export($loadState.mediaState?.states[0].size),
-        timestamp: playback.t1!,
-        end: playback.t2,
+        timestamp: $draft.timestampInfo.timestamp,
+        end: $draft.timestampInfo.end,
       };
       labels = insertOrAppendByTimestamp(current, labels || []);
       dispatcher("save");
@@ -134,10 +136,14 @@
     mains={[main]}
     secondaries={[mini]}
     bind:playhead={playback.playhead}
-    t1={playback.t1}
-    t2={playback.t2}
+    t1={$draft.timestampInfo?.timestamp || 0}
+    t2={$draft.timestampInfo?.end}
     on:setMarkers={(event) => {
-      playback = { ...playback, ...event.detail };
+      draft.snapshot();
+      draft.set({
+        ...$draft,
+        timestampInfo: { timestamp: event.detail.t1, end: event.detail.t2 },
+      });
     }}
     bind:paused={playback.paused}
     bind:muted={playback.muted}

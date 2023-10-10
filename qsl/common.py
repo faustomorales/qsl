@@ -51,8 +51,8 @@ def items2rows(idxs, items):
             "labels": "; ".join(
                 f"{k}: {', '.join(v or [])}" for k, v in labels.get("image", {}).items()
             )
-            if labels
-            else "",
+            if labels and isinstance(labels, dict)
+            else (len(labels) if isinstance(labels, dict) else ""),
         }
         for index, target, metadata, labels, ttype, ignored in [
             (

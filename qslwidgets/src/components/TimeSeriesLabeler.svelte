@@ -30,6 +30,7 @@
   $: target, labels, draft.reset(labels);
   let downloadContainer: HTMLDivElement;
   let chartSize: Dimensions | undefined = undefined;
+  let clientWidth = 0;
   let { toast } = getStores();
   const download = () => {
     html2canvas(downloadContainer, {
@@ -52,7 +53,7 @@
     });
   };
 </script>
-
+<div bind:clientWidth />
 <MediaViewer
   {viewHeight}
   size={chartSize}
@@ -63,6 +64,7 @@
     ><TimeSeries
       {config}
       {target}
+      defaultWidth={clientWidth}
       bind:labels={$draft.labels}
       bind:chartSize
     /></svelte:fragment
@@ -71,30 +73,30 @@
     ><TimeSeries {config} {target} labels={$draft.labels} /></svelte:fragment
   >
 </MediaViewer>
-<Metadata {metadata} />
-<ControlMenu
-  bind:config
-  bind:draft={$draft}
-  on:change={draft.snapshot}
-  on:next
-  on:prev
-  on:delete
-  on:ignore
-  on:unignore
-  on:showIndex
-  on:download={download}
-  on:undo={() => history.undo()}
-  on:save={() => {
-    labels = draft.export();
-    dispatcher("save");
-  }}
-  on:reset={() => draft.reset(labels)}
-  disabled={transitioning}
-  {editableConfig}
-  {navigation}
-  regions={false}
-  actions={{ ...actions, undo: $history > 0, download: !!target?.filename }}
-/>
+  <Metadata {metadata} />
+  <ControlMenu
+    bind:config
+    bind:draft={$draft}
+    on:change={draft.snapshot}
+    on:next
+    on:prev
+    on:delete
+    on:ignore
+    on:unignore
+    on:showIndex
+    on:download={download}
+    on:undo={() => history.undo()}
+    on:save={() => {
+      labels = draft.export();
+      dispatcher("save");
+    }}
+    on:reset={() => draft.reset(labels)}
+    disabled={transitioning}
+    {editableConfig}
+    {navigation}
+    regions={false}
+    actions={{ ...actions, undo: $history > 0, download: !!target?.filename }}
+  />
 <div class="download-container-wrapper">
   <div bind:this={downloadContainer} class="download-container">
     <TimeSeries {config} {target} labels={$draft.labels} />

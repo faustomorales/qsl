@@ -58,7 +58,7 @@
     }
     if (
       viewWidth !== state.basis.view.width ||
-      viewHeight !== state.basis.view.height ||
+      (viewHeight !== null && viewHeight !== state.basis.view.height) ||
       state.basis.size.width !== size.width ||
       state.basis.size.height !== size.height
     ) {
@@ -129,16 +129,16 @@
       return;
     }
     if (!operation.ctrlKey) {
-      const next = { 
+      const next = {
         x: Math.max(state.x - operation.deltaX / (state.zoom * size.width), 0),
         y: viewHeight
           ? Math.max(state.y - operation.deltaY / (state.zoom * size.height), 0)
           : 0,
-      }
+      };
       state = {
         ...state,
         zoom: state.zoom,
-        ...next
+        ...next,
       };
     } else {
       const zoom = Math.max(

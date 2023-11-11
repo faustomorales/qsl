@@ -222,7 +222,7 @@ export interface TimeSeriesTarget {
       };
       lines: Line[];
     };
-    size?: Dimensions;
+    size?: { width?: number; height?: number };
     areas?: {
       x1: number;
       x2: number;

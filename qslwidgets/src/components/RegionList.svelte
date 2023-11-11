@@ -6,16 +6,18 @@
     ImageData,
     Dimensions,
     StackContentLayer,
+    Config,
   } from "../library/types";
   import { createEventDispatcher } from "svelte";
   import { getDistance, convertCoordinates, snap } from "../library/geometry";
-  import { focus } from "../library/common";
+  import { focus, computeDefaultRegionLabels } from "../library/common";
   import { Mask, img2hsv, findMaskByPoint } from "../library/masking";
   import RegionBox from "./RegionBox.svelte";
   import RegionMask from "./RegionMask.svelte";
   import RegionPolygon from "./RegionPolygon.svelte";
   import RegionCursor from "./RegionCursor.svelte";
   export let labels: DraftLabels,
+    config: Config,
     drawing: DrawingState,
     cursor: Point | undefined = undefined,
     target: HTMLImageElement | HTMLVideoElement,
@@ -156,7 +158,7 @@
           editable: true,
           region: {
             pt1: point,
-            labels: {},
+            labels: computeDefaultRegionLabels(config),
           },
         },
       };
@@ -170,7 +172,7 @@
           editable: true,
           region: {
             points: [point],
-            labels: {},
+            labels: computeDefaultRegionLabels(config),
           } as any,
         },
       };
@@ -191,7 +193,7 @@
         active: {
           editable: true,
           region: {
-            labels: {},
+            labels: computeDefaultRegionLabels(config),
             map: Mask.from_flood(
               image,
               point.x,

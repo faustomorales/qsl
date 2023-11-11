@@ -77,6 +77,7 @@
           target={image}
           on:change={draft.snapshot}
           {maxCanvasSize}
+          {config}
           transform={$loadState.mediaState
             ? {
                 size: $loadState.mediaState.states[0].size,

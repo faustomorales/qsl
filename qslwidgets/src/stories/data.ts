@@ -98,6 +98,7 @@ export const config: Config = {
         { name: "place", displayName: "Place", shortcut: "l" },
         { name: "thing", displayName: "Thing", shortcut: "t" },
       ],
+      defaults: ["thing"],
       multiple: false,
       freeform: false,
       required: true,

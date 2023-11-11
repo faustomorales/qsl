@@ -91,9 +91,13 @@ export interface LabelConfig {
   layout?: "column" | "row";
 }
 
+export interface RegionLabelConfig extends LabelConfig {
+  defaults?: string[];
+}
+
 export interface Config {
   image?: LabelConfig[];
-  regions?: LabelConfig[];
+  regions?: RegionLabelConfig[];
 }
 
 export type DrawingMode = "polygons" | "boxes" | "masks";

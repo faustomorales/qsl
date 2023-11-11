@@ -1,11 +1,13 @@
 import { readable, get } from "svelte/store";
 import { getStores } from "./instanceStores";
 import type {
+  Config,
   AlignedBoxLabel,
   Labels,
   DraftLabels,
   TimestampedLabel,
   LabelConfig,
+  LabelData,
   Point,
   Bitmap,
   MediaLoadState,
@@ -130,6 +132,12 @@ export const shortcutify = (initial: LabelConfig[]): LabelConfig[] => {
         : undefined,
     };
   });
+};
+
+export const computeDefaultRegionLabels = (config: Config): LabelData => {
+  return config.regions
+    ? Object.fromEntries(config.regions.map((r) => [r.name, r.defaults || []]))
+    : {};
 };
 
 export const renderBitmapToCanvas = (

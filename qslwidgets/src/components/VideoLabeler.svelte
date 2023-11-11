@@ -127,6 +127,7 @@
     target={main}
     on:change={draft.snapshot}
     {maxCanvasSize}
+    {config}
     bind:image={$draft.image}
     bind:drawing={$draft.drawing}
     bind:labels={$draft.labels}

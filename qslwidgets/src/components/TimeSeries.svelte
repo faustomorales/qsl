@@ -12,6 +12,7 @@
   export let target: TimeSeriesTarget | undefined,
     config: Config,
     labels: DraftLabels,
+    defaultWidth: undefined | number = undefined,
     chartSize: Dimensions | undefined = undefined;
   const defaults = {
     width: 512,
@@ -109,7 +110,7 @@
           } as { [key: string]: { min: number; max: number } },
         };
         const size = {
-          width: p.size?.width || defaults.width,
+          width: p.size?.width || defaultWidth || defaults.width,
           height: p.size?.height || defaults.height,
         };
         const axisSizes = {
@@ -257,11 +258,16 @@
                       ...a,
                       ...points[idx],
                       radius: a.radius || l.dot?.radius || defaults.dotRadius,
-                      style: a.style || ""
+                      style: a.style || "",
                     }
                   : null;
               })
-              .filter((v) => v !== null) as { x: number; y: number, radius: number, style: string }[];
+              .filter((v) => v !== null) as {
+              x: number;
+              y: number;
+              radius: number;
+              style: string;
+            }[];
             return {
               color: l.color || defaults.lineColor,
               points,
@@ -321,7 +327,6 @@
           );
         });
 </script>
-
 <div
   style="width: {chartSize?.width}px; height: {chartSize?.height}px;"
   class="chart"

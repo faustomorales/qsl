@@ -155,87 +155,66 @@ export const indexState: IndexState<number> = {
 const base = Array(100)
   .fill(0)
   .map((v, i) => i);
-export const timeSeries: TimeSeriesTarget[] = [
-  {
-    filename: "chart",
-    plots: [
-      {
-        x: { name: "name", values: base.map((i) => i), limits: [-5, 102] },
-        y: {
-          precision: {
-            left: 3,
-          },
-          animation: 100,
-          limits: {
-            left: [-10, 203],
-            right: [-5, 301],
-          },
-          labels: {
-            left: "uv",
-            right: "pv",
-          },
-          lines: [
-            {
-              name: "uv",
-              axis: "left",
-              color: "blue",
-              style: "stroke-width:10; stroke: purple; stroke-opacity: 50%",
-              values: base.map((i) => i * 2 + 3),
-              dot: {
-                labelKey: "uvs",
-                labelMaxCount: 2,
-              },
-              annotations: [{ x: 41, radius: 6, style: "fill-opacity: 0" }],
-            },
-            {
-              name: "pv",
-              axis: "right",
-              color: "green",
-              values: base.map((i) => i * 3 + 1),
-            },
-          ],
+const timeSeriesItem: TimeSeriesTarget = {
+  filename: "chart",
+  plots: [
+    {
+      x: { name: "name", values: base.map((i) => i), limits: [-5, 102] },
+      y: {
+        precision: {
+          left: 3,
         },
-        size: {
-          width: 1024,
-          height: 512,
+        animation: 100,
+        limits: {
+          left: [-10, 203],
+          right: [-5, 301],
         },
-        areas: [
+        labels: {
+          left: "uv",
+          right: "pv",
+        },
+        lines: [
           {
-            x1: 2.1,
-            x2: 3.5,
-            label: "hello!",
-            labelKey: "kind",
-            labelVal: "foo",
+            name: "uv",
+            axis: "left",
+            color: "blue",
+            style: "stroke-width:10; stroke: purple; stroke-opacity: 50%",
+            values: base.map((i) => i * 2 + 3),
+            dot: {
+              labelKey: "uvs",
+              labelMaxCount: 2,
+            },
+            annotations: [{ x: 41, radius: 6, style: "fill-opacity: 0" }],
+          },
+          {
+            name: "pv",
+            axis: "right",
+            color: "green",
+            values: base.map((i) => i * 3 + 1),
           },
         ],
       },
-    ],
-  },
-  {
-    plots: [
-      {
-        x: {
-          name: "x",
-          values: [0, 1, 2, 3],
-        },
-        y: {
-          lines: [
-            {
-              name: "foo",
-              values: [0, 2, 4, 6],
-              dot: {
-                labelKey: "Peaks",
-              },
-            },
-          ],
-        },
-        size: {
-          width: 512,
-          height: 256,
-        },
-        areas: [],
+      size: {
+        width: 1024,
+        height: 512,
       },
-    ],
+      areas: [
+        {
+          x1: 2.1,
+          x2: 3.5,
+          label: "hello!",
+          labelKey: "kind",
+          labelVal: "foo",
+        },
+      ],
+    },
+  ],
+};
+export const timeSeries: TimeSeriesTarget[] = [
+  timeSeriesItem,
+  {
+    ...timeSeriesItem,
+    plots: timeSeriesItem.plots.map((p) => ({ ...p, size: undefined })),
   },
 ];
 
@@ -243,5 +222,6 @@ export const timeSeriesConfig = {
   image: [
     { name: "kind", freeform: true, multiple: false },
     { name: "uvs", freeform: true, multiple: true },
+    { name: "peaks", freeform: true, multiple: true },
   ],
 };

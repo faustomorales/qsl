@@ -2,11 +2,23 @@
   import * as data from "./data";
   import TimeSeriesLabeler from "../components/TimeSeriesLabeler.svelte";
   import Labeler from "../components/Labeler.svelte";
-  const target = data.timeSeries[0];
+  let targets = data.timeSeries;
+  let idx = 0;
   let config = data.timeSeriesConfig;
   let labels = {};
 </script>
 
 <Labeler>
-  <TimeSeriesLabeler {target} bind:config bind:labels viewHeight={null} />
+  <TimeSeriesLabeler
+    target={targets[idx]}
+    bind:config
+    bind:labels
+    viewHeight={null}
+    on:next={() => (idx += 1)}
+    on:prev={() => (idx -= 1)}
+    actions={{
+      next: idx + 1 < targets.length,
+      prev: idx > 0,
+    }}
+  />
 </Labeler>

@@ -13,7 +13,7 @@
     target={targets[idx]}
     bind:config
     bind:labels
-    viewHeight={null}
+    viewHeight={900}
     on:next={() => (idx += 1)}
     on:prev={() => (idx -= 1)}
     actions={{

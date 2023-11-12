@@ -10,6 +10,7 @@
   import * as useGesture from "@use-gesture/vanilla";
   export let size: Dimensions | undefined,
     viewHeight: number | null = 384,
+    fixedHeight: boolean = true,
     loadState: MediaLoadState = "loaded",
     enhancementControls: boolean = true;
   let main: HTMLDivElement;
@@ -73,7 +74,10 @@
         x: 0,
         y: 0,
         basis: {
-          view: { width: viewWidth, height: viewHeight || size.height },
+          view: {
+            width: viewWidth,
+            height: viewHeight || size.height,
+          },
           size: size!,
         },
         minimap: {
@@ -278,7 +282,9 @@
     bind:this={view}
     class="viewport"
     style="height: {viewHeight || !state.basis.size.height
-      ? state.basis.view.height
+      ? viewHeight && state.basis.size.height && !fixedHeight
+        ? Math.min(viewHeight, state.basis.size.height * state.zoom)
+        : state.basis.view.height
       : (1 - state.y) * (state.basis.size.height * state.zoom)}px; width: 100%"
   >
     <ClickTarget />

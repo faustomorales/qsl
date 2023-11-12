@@ -24,6 +24,7 @@
     editableConfig: boolean = false,
     transitioning: boolean = false,
     viewHeight: number | null = 384,
+    fixedHeight: boolean = false,
     actions: WidgetActions = {};
   const dispatcher = createEventDispatcher();
   let { draft, history } = createDraftStore();
@@ -60,6 +61,7 @@
   size={chartSize}
   loadState={transitioning || !chartSize ? "loading" : "loaded"}
   enhancementControls={false}
+  fixedHeight={fixedHeight}
 >
   <svelte:fragment slot="main"
     ><TimeSeries

@@ -203,9 +203,17 @@ const timeSeriesItem: TimeSeriesTarget = {
         {
           x1: 2.1,
           x2: 3.5,
-          label: "hello!",
+          label: "hi",
           labelKey: "kind",
           labelVal: "foo",
+        },
+        {
+          x1: 6.5,
+          x2: 7.0,
+          label: "bye",
+          labelKey: undefined,
+          labelVal: undefined,
+          inactiveColor: "green",
         },
       ],
     },

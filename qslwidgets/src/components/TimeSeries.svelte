@@ -24,6 +24,9 @@
     xAxisSize: 60,
     dotRadius: 3,
     legendSize: 35,
+    areaInactiveColor: "gray",
+    areaHoverColor: "red",
+    areaActiveColor: "blue",
     lineStyle: "",
     yMargin: 8,
     lineColor: "var(--text-color)",
@@ -307,7 +310,7 @@
           const limitSpan = a.x.limits.max - a.x.limits.min;
           return (
             p.areas?.map((area) => {
-              const selected = labels.image[area.labelKey] || [];
+              const selected = area.labelKey ? (labels.image[area.labelKey] || []) : [];
               return {
                 x1:
                   a.extents.x.min +
@@ -319,9 +322,13 @@
                 y2: a.extents.y.max,
                 strokeDashArray: area.strokeDashArray || "4",
                 stroke: area.stroke || "black",
-                active: selected.indexOf(area.labelVal) > -1,
+                active: area.labelKey ? selected.indexOf(area.labelVal) > -1 : false,
                 label: area.label,
-                onClick: () => toggle(area.labelKey, area.labelVal),
+                inactiveColor: area.inactiveColor || defaults.areaInactiveColor,
+                activeColor: area.activeColor || defaults.areaActiveColor,
+                hoverColor: area.hoverColor || defaults.areaHoverColor,
+                interactive: !!area.labelKey,
+                onClick: area.labelKey ? () => toggle(area.labelKey, area.labelVal) : null,
               };
             }) || []
           );
@@ -473,7 +480,7 @@
             .extents.x.span} {a.extents.y.span}"
         >
           {#each areas as area}
-            <g class="reference-area">
+            <g class="reference-area {area.interactive ? 'interactive' : ''}" style="--area-inactive-color: {area.inactiveColor}; --area-active-color: {area.activeColor}; --area-hover-color: {area.hoverColor}">
               <rect
                 x={area.x1}
                 y={a.size.height - area.y2}
@@ -584,14 +591,14 @@
   }
   .reference-area rect {
     fill-opacity: 0.25;
-    fill: gray;
+    fill: var(--area-inactive-color)
   }
-  .reference-area rect.active {
-    fill: blue;
+  .reference-area.interactive rect.active {
+    fill: var(--area-active-color)
   }
-  .reference-area rect:hover,
-  .reference-area rect.active:hover {
-    fill: red;
+  .reference-area.interactive rect:hover,
+  .reference-area.interactive rect.active:hover {
+    fill: var(--area-hover-color);
   }
   .tick text {
     font-size: 10pt;

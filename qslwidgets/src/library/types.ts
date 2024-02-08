@@ -227,15 +227,32 @@ export interface TimeSeriesTarget {
       lines: Line[];
     };
     size?: { width?: number; height?: number };
-    areas?: {
-      x1: number;
-      x2: number;
-      stroke?: string;
-      strokeDashArray?: string;
-      label: string;
-      labelKey: string;
-      labelVal: string;
-    }[];
+    areas?: (
+      | {
+          x1: number;
+          x2: number;
+          activeColor?: string;
+          hoverColor?: string;
+          inactiveColor?: string;
+          stroke?: string;
+          strokeDashArray?: string;
+          label: string;
+          labelKey: string;
+          labelVal: string;
+        }
+      | {
+          x1: number;
+          x2: number;
+          activeColor?: string;
+          hoverColor?: string;
+          inactiveColor?: string;
+          stroke?: string;
+          strokeDashArray?: string;
+          label: string;
+          labelKey: undefined;
+          labelVal: undefined;
+        }
+    )[];
   }[];
 }
 

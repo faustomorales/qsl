@@ -24,6 +24,7 @@
     xAxisSize: 60,
     dotRadius: 3,
     legendSize: 35,
+    areaLabelLocation: "middle",
     areaInactiveColor: "gray",
     areaHoverColor: "red",
     areaActiveColor: "blue",
@@ -99,6 +100,8 @@
   $: axes = !target
     ? []
     : target.plots.map((p) => {
+
+        const header = { height: p.config?.areaLabelLocation == "top" ? (p.config?.areaLabelFontSize || defaults.fontSize) * Math.max(...((p.areas || []).map((a ) => Array.isArray(a.label) ? a.label.length : 1))) + 10 : 0 }
         const limits = {
           x: computeAxes([{ values: p.x.values, name: p.x.name }], p.x.limits),
           y: {
@@ -131,10 +134,10 @@
           },
           y: {
             min: axisSizes.x + defaults.legendSize,
-            max: size.height - defaults.yMargin,
+            max: size.height - defaults.yMargin - header.height,
             span:
               size.height -
-              (axisSizes.x + defaults.yMargin + defaults.legendSize),
+              (axisSizes.x + defaults.yMargin + defaults.legendSize + header.height),
           },
         };
         const ticks = {
@@ -167,6 +170,7 @@
         };
         return {
           size,
+          header,
           extents,
           axisSizes,
           x: {
@@ -311,19 +315,23 @@
           return (
             p.areas?.map((area) => {
               const selected = area.labelKey ? (labels.image[area.labelKey] || []) : [];
+              let x1 = (a.extents.x.min +
+                  ((area.x1 - a.x.limits.min) / limitSpan) * a.extents.x.span)
+              let x2 = a.extents.x.min +
+                  ((area.x2 - a.x.limits.min) / limitSpan) * a.extents.x.span
+                let y1 = a.extents.y.min
+                let y2 = a.extents.y.max
               return {
-                x1:
-                  a.extents.x.min +
-                  ((area.x1 - a.x.limits.min) / limitSpan) * a.extents.x.span,
-                x2:
-                  a.extents.x.min +
-                  ((area.x2 - a.x.limits.min) / limitSpan) * a.extents.x.span,
-                y1: a.extents.y.min,
-                y2: a.extents.y.max,
+                x1, x2, y1, y2,
                 strokeDashArray: area.strokeDashArray || "4",
                 stroke: area.stroke || "black",
                 active: area.labelKey ? selected.indexOf(area.labelVal) > -1 : false,
-                label: area.label,
+                label: {
+                  fontSize: p.config?.areaLabelFontSize || defaults.fontSize,
+                  texts: Array.isArray(area.label) ? area.label : [area.label],
+                  x: (x1 + x2) / 2,
+                  y: (p.config?.areaLabelLocation || defaults.areaLabelLocation) == "middle" ? a.size.height - ((y2 + y1) / 2) : 0 + defaults.fontSize,
+                },
                 inactiveColor: area.inactiveColor || defaults.areaInactiveColor,
                 activeColor: area.activeColor || defaults.areaActiveColor,
                 hoverColor: area.hoverColor || defaults.areaHoverColor,
@@ -341,7 +349,7 @@
 >
   {#each (target || { plots: [] }).plots.map((p, pi) => {
     return { p, a: axes[pi], lines: lineGroups[pi], areas: areaGroups[pi] };
-  }) as { a, lines, areas }}
+  }) as { p, a, lines, areas }}
     <div style="width: {a.size.width}px; height: {a.size.height}px;">
       <svg
         class="plot"
@@ -427,7 +435,18 @@
           {/each}
         </g>
         {#each ["left", "right"].map((side) => {
-          return { limits: a.y.limits[side], sign: side == "left" ? -1 : 1, x: side === "left" ? a.extents.x.min : a.extents.x.max, ticks: a.y.ticks[side], side: side, label: a.y.labels[side] };
+          let x =  side === "left" ? a.extents.x.min : a.extents.x.max
+          let sign = side == "left" ? -1 : 1
+          return {
+            limits: a.y.limits[side],
+            sign,
+            x,
+            ticks: a.y.ticks[side],
+            side: side,
+            label: a.y.labels[side],
+            labelX: x + sign * (defaults.tickSize + 3.0 * defaults.fontSize),
+            labelY: a.size.height - (a.extents.y.min + a.extents.y.span / 2)
+          };
         }) as side}
           <g class="axis y {side.side}">
             <line
@@ -438,9 +457,9 @@
             />
             <text
               class="label"
-              x={side.x +
-                side.sign * (defaults.tickSize + 3.0 * defaults.fontSize)}
-              y={a.size.height - (a.extents.y.min + a.extents.y.span / 2)}
+              x={side.labelX}
+              y={side.labelY}
+              style={`transform-origin: ${side.labelX}px ${side.labelY}px`}
               font-size={defaults.fontSize}>{side.label}</text
             >
             {#if side.limits.max != 0 || side.limits.min != 0}
@@ -470,6 +489,19 @@
             {/if}
           </g>
         {/each}
+        {#if p.config?.areaLabelLocation == "top"}
+        {#each areas as area}
+        {#each area.label.texts as text, texti}
+        <text
+        x={area.label.x}
+        y={area.label.y + texti * area.label.fontSize}
+        font-size={area.label.fontSize}
+        class="reference-area-label"
+        >{text}</text
+      >
+      {/each}
+        {/each}
+        {/if}
         <svg
           class="chart-area"
           width={a.extents.x.span}
@@ -490,12 +522,16 @@
                 class={area.active ? "active" : ""}
                 style="stroke: {area.stroke}; stroke-dasharray: {area.strokeDashArray}"
               />
-              {#if area.label}
-                <text
-                  x={(area.x1 + area.x2) / 2}
-                  font-size={defaults.fontSize}
-                  y={a.size.height - (area.y2 + area.y1) / 2}>{area.label}</text
-                >
+              {#if p.config?.areaLabelLocation || defaults.areaLabelLocation == "middle" && area.label}
+              {#each area.label.texts as text, texti}
+              <text
+              x={area.label.x}
+              y={area.label.y + texti * area.label.fontSize}
+              font-size={area.label.fontSize}
+              class="reference-area-label"
+              >{text}</text
+            >
+              {/each}
               {/if}
             </g>
           {/each}
@@ -579,6 +615,9 @@
   .axis.y.left .tick text {
     text-anchor: end;
   }
+  .axis.y.left .label {
+    transform: scale(-1, -1)
+  }
   .axis.y.right .tick text {
     text-anchor: start;
   }
@@ -586,7 +625,7 @@
     text-anchor: middle;
     writing-mode: vertical-lr;
   }
-  .reference-area text {
+  .reference-area-label {
     text-anchor: middle;
   }
   .reference-area rect {

@@ -160,6 +160,10 @@ const timeSeriesItem: TimeSeriesTarget = {
   filename: "chart",
   plots: [
     {
+      config: {
+        areaLabelLocation: "top",
+        areaLabelFontSize: 15,
+      },
       x: { name: "name", values: base.map((i) => i), limits: [-5, 102] },
       y: {
         precision: {
@@ -199,11 +203,12 @@ const timeSeriesItem: TimeSeriesTarget = {
         width: 1024,
         height: 512,
       },
+
       areas: [
         {
           x1: 2.1,
           x2: 3.5,
-          label: "hi",
+          label: ["hi1", "hi2"],
           labelKey: "kind",
           labelVal: "foo",
         },

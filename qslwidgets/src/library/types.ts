@@ -199,6 +199,10 @@ export interface ImageGroupTarget {
 export interface TimeSeriesTarget {
   filename?: string;
   plots: {
+    config?: {
+      areaLabelLocation?: "top" | "middle";
+      areaLabelFontSize?: number;
+    };
     x: {
       name: string;
       height?: number;
@@ -236,7 +240,7 @@ export interface TimeSeriesTarget {
           inactiveColor?: string;
           stroke?: string;
           strokeDashArray?: string;
-          label: string;
+          label: string | string[];
           labelKey: string;
           labelVal: string;
         }
@@ -248,7 +252,7 @@ export interface TimeSeriesTarget {
           inactiveColor?: string;
           stroke?: string;
           strokeDashArray?: string;
-          label: string;
+          label: string | string[];
           labelKey: undefined;
           labelVal: undefined;
         }

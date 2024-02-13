@@ -24,6 +24,9 @@
     xAxisSize: 60,
     dotRadius: 3,
     legendSize: 35,
+    areaStroke: "black",
+    areaStrokeWidth: "1px",
+    areaStrokeDashArray: "4",
     areaLabelLocation: "middle",
     areaInactiveColor: "gray",
     areaHoverColor: "red",
@@ -323,8 +326,6 @@
                 let y2 = a.extents.y.max
               return {
                 x1, x2, y1, y2,
-                strokeDashArray: area.strokeDashArray || "4",
-                stroke: area.stroke || "black",
                 active: area.labelKey ? selected.indexOf(area.labelVal) > -1 : false,
                 label: {
                   fontSize: p.config?.areaLabelFontSize || defaults.fontSize,
@@ -336,6 +337,7 @@
                 activeColor: area.activeColor || defaults.areaActiveColor,
                 hoverColor: area.hoverColor || defaults.areaHoverColor,
                 interactive: !!area.labelKey,
+                style: `stroke: ${area.stroke || defaults.areaStroke}; stroke-dasharray: ${area.strokeDashArray || defaults.areaStrokeDashArray}; stroke-width: ${area.strokeWidth || defaults.areaStrokeWidth}`,
                 onClick: area.labelKey ? () => toggle(area.labelKey, area.labelVal) : null,
               };
             }) || []
@@ -520,7 +522,7 @@
                 height={area.y2 - area.y1}
                 on:click={area.onClick}
                 class={area.active ? "active" : ""}
-                style="stroke: {area.stroke}; stroke-dasharray: {area.strokeDashArray}"
+                style={area.style}
               />
               {#if p.config?.areaLabelLocation || defaults.areaLabelLocation == "middle" && area.label}
               {#each area.label.texts as text, texti}

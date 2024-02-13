@@ -239,6 +239,7 @@ export interface TimeSeriesTarget {
           hoverColor?: string;
           inactiveColor?: string;
           stroke?: string;
+          strokeWidth?: string;
           strokeDashArray?: string;
           label: string | string[];
           labelKey: string;
@@ -251,6 +252,7 @@ export interface TimeSeriesTarget {
           hoverColor?: string;
           inactiveColor?: string;
           stroke?: string;
+          strokeWidth?: string;
           strokeDashArray?: string;
           label: string | string[];
           labelKey: undefined;

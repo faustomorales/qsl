@@ -103,8 +103,20 @@
   $: axes = !target
     ? []
     : target.plots.map((p) => {
-
-        const header = { height: p.config?.areaLabelLocation == "top" ? (p.config?.areaLabelFontSize || defaults.fontSize) * Math.max(...((p.areas || []).map((a ) => Array.isArray(a.label) ? a.label.length : 1))) + 10 : 0 }
+        const header = {
+          height:
+            p.config?.areaLabelLocation == "top" &&
+            p.areas &&
+            p.areas.length > 0
+              ? (p.config?.areaLabelFontSize || defaults.fontSize) *
+                  Math.max(
+                    ...p.areas.map((a) =>
+                      Array.isArray(a.label) ? a.label.length : 1
+                    )
+                  ) +
+                10
+              : 0,
+        };
         const limits = {
           x: computeAxes([{ values: p.x.values, name: p.x.name }], p.x.limits),
           y: {
@@ -140,7 +152,10 @@
             max: size.height - defaults.yMargin - header.height,
             span:
               size.height -
-              (axisSizes.x + defaults.yMargin + defaults.legendSize + header.height),
+              (axisSizes.x +
+                defaults.yMargin +
+                defaults.legendSize +
+                header.height),
           },
         };
         const ticks = {
@@ -317,33 +332,49 @@
           const limitSpan = a.x.limits.max - a.x.limits.min;
           return (
             p.areas?.map((area) => {
-              const selected = area.labelKey ? (labels.image[area.labelKey] || []) : [];
-              let x1 = (a.extents.x.min +
-                  ((area.x1 - a.x.limits.min) / limitSpan) * a.extents.x.span)
-              let x2 = a.extents.x.min +
-                  ((area.x2 - a.x.limits.min) / limitSpan) * a.extents.x.span
-                let y1 = a.extents.y.min
-                let y2 = a.extents.y.max
+              const selected = area.labelKey
+                ? labels.image[area.labelKey] || []
+                : [];
+              let x1 =
+                a.extents.x.min +
+                ((area.x1 - a.x.limits.min) / limitSpan) * a.extents.x.span;
+              let x2 =
+                a.extents.x.min +
+                ((area.x2 - a.x.limits.min) / limitSpan) * a.extents.x.span;
+              let y1 = a.extents.y.min;
+              let y2 = a.extents.y.max;
               return {
-                x1, x2, y1, y2,
-                active: area.labelKey ? selected.indexOf(area.labelVal) > -1 : false,
+                x1,
+                x2,
+                y1,
+                y2,
+                active: area.labelKey
+                  ? selected.indexOf(area.labelVal) > -1
+                  : false,
                 label: {
                   fontSize: p.config?.areaLabelFontSize || defaults.fontSize,
                   texts: Array.isArray(area.label) ? area.label : [area.label],
                   x: (x1 + x2) / 2,
-                  y: (p.config?.areaLabelLocation || defaults.areaLabelLocation) == "middle" ? a.size.height - ((y2 + y1) / 2) : 0 + defaults.fontSize,
+                  y:
+                    (p.config?.areaLabelLocation ||
+                      defaults.areaLabelLocation) == "middle"
+                      ? a.size.height - (y2 + y1) / 2
+                      : 0 + defaults.fontSize,
                 },
                 inactiveColor: area.inactiveColor || defaults.areaInactiveColor,
                 activeColor: area.activeColor || defaults.areaActiveColor,
                 hoverColor: area.hoverColor || defaults.areaHoverColor,
                 interactive: !!area.labelKey,
                 style: `stroke: ${area.stroke || defaults.areaStroke}; stroke-dasharray: ${area.strokeDashArray || defaults.areaStrokeDashArray}; stroke-width: ${area.strokeWidth || defaults.areaStrokeWidth}`,
-                onClick: area.labelKey ? () => toggle(area.labelKey, area.labelVal) : null,
+                onClick: area.labelKey
+                  ? () => toggle(area.labelKey, area.labelVal)
+                  : null,
               };
             }) || []
           );
         });
 </script>
+
 <div
   style="width: {chartSize?.width}px; height: {chartSize?.height}px;"
   class="chart"
@@ -437,18 +468,9 @@
           {/each}
         </g>
         {#each ["left", "right"].map((side) => {
-          let x =  side === "left" ? a.extents.x.min : a.extents.x.max
-          let sign = side == "left" ? -1 : 1
-          return {
-            limits: a.y.limits[side],
-            sign,
-            x,
-            ticks: a.y.ticks[side],
-            side: side,
-            label: a.y.labels[side],
-            labelX: x + sign * (defaults.tickSize + 3.0 * defaults.fontSize),
-            labelY: a.size.height - (a.extents.y.min + a.extents.y.span / 2)
-          };
+          let x = side === "left" ? a.extents.x.min : a.extents.x.max;
+          let sign = side == "left" ? -1 : 1;
+          return { limits: a.y.limits[side], sign, x, ticks: a.y.ticks[side], side: side, label: a.y.labels[side], labelX: x + sign * (defaults.tickSize + 3.0 * defaults.fontSize), labelY: a.size.height - (a.extents.y.min + a.extents.y.span / 2) };
         }) as side}
           <g class="axis y {side.side}">
             <line
@@ -492,17 +514,16 @@
           </g>
         {/each}
         {#if p.config?.areaLabelLocation == "top"}
-        {#each areas as area}
-        {#each area.label.texts as text, texti}
-        <text
-        x={area.label.x}
-        y={area.label.y + texti * area.label.fontSize}
-        font-size={area.label.fontSize}
-        class="reference-area-label"
-        >{text}</text
-      >
-      {/each}
-        {/each}
+          {#each areas as area}
+            {#each area.label.texts as text, texti}
+              <text
+                x={area.label.x}
+                y={area.label.y + texti * area.label.fontSize}
+                font-size={area.label.fontSize}
+                class="reference-area-label">{text}</text
+              >
+            {/each}
+          {/each}
         {/if}
         <svg
           class="chart-area"
@@ -514,7 +535,10 @@
             .extents.x.span} {a.extents.y.span}"
         >
           {#each areas as area}
-            <g class="reference-area {area.interactive ? 'interactive' : ''}" style="--area-inactive-color: {area.inactiveColor}; --area-active-color: {area.activeColor}; --area-hover-color: {area.hoverColor}">
+            <g
+              class="reference-area {area.interactive ? 'interactive' : ''}"
+              style="--area-inactive-color: {area.inactiveColor}; --area-active-color: {area.activeColor}; --area-hover-color: {area.hoverColor}"
+            >
               <rect
                 x={area.x1}
                 y={a.size.height - area.y2}
@@ -524,16 +548,15 @@
                 class={area.active ? "active" : ""}
                 style={area.style}
               />
-              {#if p.config?.areaLabelLocation || defaults.areaLabelLocation == "middle" && area.label}
-              {#each area.label.texts as text, texti}
-              <text
-              x={area.label.x}
-              y={area.label.y + texti * area.label.fontSize}
-              font-size={area.label.fontSize}
-              class="reference-area-label"
-              >{text}</text
-            >
-              {/each}
+              {#if p.config?.areaLabelLocation || (defaults.areaLabelLocation == "middle" && area.label)}
+                {#each area.label.texts as text, texti}
+                  <text
+                    x={area.label.x}
+                    y={area.label.y + texti * area.label.fontSize}
+                    font-size={area.label.fontSize}
+                    class="reference-area-label">{text}</text
+                  >
+                {/each}
               {/if}
             </g>
           {/each}
@@ -618,7 +641,7 @@
     text-anchor: end;
   }
   .axis.y.left .label {
-    transform: scale(-1, -1)
+    transform: scale(-1, -1);
   }
   .axis.y.right .tick text {
     text-anchor: start;
@@ -632,10 +655,10 @@
   }
   .reference-area rect {
     fill-opacity: 0.25;
-    fill: var(--area-inactive-color)
+    fill: var(--area-inactive-color);
   }
   .reference-area.interactive rect.active {
-    fill: var(--area-active-color)
+    fill: var(--area-active-color);
   }
   .reference-area.interactive rect:hover,
   .reference-area.interactive rect.active:hover {

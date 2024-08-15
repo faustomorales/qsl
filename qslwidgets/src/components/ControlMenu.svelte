@@ -265,7 +265,7 @@
               event: actions.ignore ? "ignore" : "unignore",
               disabled,
               hidden: !actions.ignore && !actions.unignore,
-              shortcuts: [],
+              shortcuts: [{ key: "i", ctrlKey: true }],
               tooltip: "Ignore this item.",
             },
             {

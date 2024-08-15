@@ -289,6 +289,7 @@ qsl.MediaLabeler(**params)
 You can launch the same labeling interface from the command line using `qsl label <project-json-file> <...files>`. If the project file does not exist, it will be created. The files you provide will be added. If the project file already exists, files that aren't already on the list will be added. You can edit the project file to modify the settings that cannot be changed from within the UI (i.e., `allowConfigChange`, `maxCanvasSize`, `maxViewHeight`, `mode`, and `batchSize`).
 
 ## Development
+Make sure you have `rustup` and `wasm-pack` installed.
 
 1. Create a local development environment using `make init`
 2. Run widget development with live re-building using `make develop`

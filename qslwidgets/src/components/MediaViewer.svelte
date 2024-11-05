@@ -37,6 +37,7 @@
     x: 0,
     y: 0,
     zoom: 1,
+    rotate: 0,
     fit: 1,
     recentReset: false,
     dragging: false,
@@ -255,24 +256,19 @@
 </script>
 
 <div
-  style="--media-viewer-scale: {state.zoom}; --media-viewer-x: {100 *
-    state.x}%; --media-viewer-y: {100 *
-    state.y}%; --media-viewer-minimap-scale: {state.minimap
-    .scale}; --media-viewer-minimap-width: {state.minimap
-    .width}; --media-viewer-minimap-height: {state.minimap.height};
-    --media-viewer-minimap-limit-width: {Math.min(
-    1 - state.x,
-    state.basis.view.width && state.basis.size.width
-      ? state.basis.view.width / (state.basis.size.width * state.zoom)
-      : 0
-  ) * 100}%; --media-viewer-minimap-limit-height: {Math.min(
-    1 - state.y,
-    state.basis.view.height && state.basis.size.height
-      ? viewHeight
-        ? state.basis.view.height / (state.basis.size.height * state.zoom)
-        : 1 - state.y
-      : 0
-  ) * 100}%;
+  style="--media-viewer-scale: {state.zoom}; --media-viewer-rotate: {state.rotate}; --media-viewer-x: {100 * state.x}%; --media-viewer-y: {100 * state.y}%; --media-viewer-minimap-scale: {state.minimap.scale}; --media-viewer-minimap-width: {state.minimap.width}; --media-viewer-minimap-height: {state.minimap.height}; --media-viewer-minimap-limit-width: {Math.min(
+            1 - state.x,
+            state.basis.view.width && state.basis.size.width
+            ? state.basis.view.width / (state.basis.size.width * state.zoom)
+            : 0
+        ) * 100}%; --media-viewer-minimap-limit-height: {Math.min(
+            1 - state.y,
+            state.basis.view.height && state.basis.size.height
+            ? viewHeight
+                ? state.basis.view.height / (state.basis.size.height * state.zoom)
+                : 1 - state.y
+            : 0
+        ) * 100}%;
     "
   class="media-viewer {state.dragging ? 'dragging' : ''} {syncRequired
     ? 'sync-required'
@@ -313,19 +309,33 @@
       <slot name="custom-controls" />
       {#if enhancementControls}
         <EnhancementControls>
-          <RangeSlider
-            name="Zoom"
-            disabled={false}
-            min={0.1}
-            max={10}
-            bind:value={state.zoom}
-            marks={Math.abs(state.fit - 1) > 0.5
-              ? [
-                  { value: 1, label: "1" },
-                  { value: state.fit, label: "Fit" },
-                ]
-              : [{ value: state.fit, label: "Fit" }]}
-          />
+            <RangeSlider
+              name="Zoom"
+              disabled={false}
+              min={0.1}
+              max={10}
+              bind:value={state.zoom}
+              marks={Math.abs(state.fit - 1) > 0.5
+                ? [
+                    { value: 1, label: "1" },
+                    { value: state.fit, label: "Fit" },
+                  ]
+                : [{ value: state.fit, label: "Fit" }]}
+            />
+            <RangeSlider
+              name="Rotate"
+              disabled={false}
+              min={-180}
+              max={180}
+              bind:value={state.rotate}
+              marks={[
+                {value: -180, label: "-180"},
+                {value: -90, label: "-90"},
+                {value: 0, label: "0"},
+                {value: 90, label: "90"},
+                {value: 180, label: "180"},
+                ]}
+            />
         </EnhancementControls>
       {:else}
         <RangeSlider
@@ -363,7 +373,8 @@
       translate(
         calc(-1 * var(--media-viewer-x)),
         calc(-1 * var(--media-viewer-y))
-      );
+      )
+      rotate(var(--media-viewer-rotate)deg);
     transform-origin: 0 0;
     position: absolute;
     touch-action: none;

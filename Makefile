@@ -6,6 +6,7 @@ init: ## Build local development environment
 	mkdir -p .venv
 	yarn --cwd qslwidgets install
 	pipenv install
+	make build
 	@$(PYTHON_EXEC) jupyter labextension develop --overwrite --no-build .
 	@$(PYTHON_EXEC) jupyter nbextension install --sys-prefix --symlink --overwrite --py qsl
 	@$(PYTHON_EXEC) jupyter nbextension enable --sys-prefix --py qsl

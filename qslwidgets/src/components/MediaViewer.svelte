@@ -355,10 +355,7 @@
             max={270}
             bind:value={state.rotation}
             marks={[
-                { value: 0, label: "0"},
-                { value: 90, label: "90"},
-                { value: 180, label: "180"},
-                { value: 270, label: "270"},
+                { value: 0 }, { value: 90 }, { value: 180 }, { value: 270 }
             ]}
           />
         </EnhancementControls>

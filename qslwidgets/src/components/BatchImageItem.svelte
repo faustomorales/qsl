@@ -8,6 +8,7 @@
   import Unchecked from "./icons/Unchecked.svelte";
   export let src: string | undefined,
     size: number,
+    rotation: number = 0,
     labeled: boolean | string = false,
     selected: boolean | undefined = undefined,
     ignored: boolean = false,
@@ -18,7 +19,7 @@
 
 <div
   class="item {showActionMenu ? 'with-actions' : 'without-actions'}"
-  style="--item-size: {size}"
+  style="--item-size: {size}; --item-rotation: {rotation}"
 >
   <div class="clickable" on:click>
     {#if failed}
@@ -109,6 +110,7 @@
     max-width: calc(var(--item-size) * 1px);
     max-height: calc(var(--item-size) * 2px);
     filter: var(--image-enhancements-filter);
+    transform: rotate(calc(1deg * var(--item-rotation)));
   }
 
   .error-message {

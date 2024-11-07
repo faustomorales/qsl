@@ -37,6 +37,9 @@
     x: 0,
     y: 0,
     zoom: 1,
+    rotation: 0,
+    top: 0,  // top and left are used to position the image after rotation
+    left: 0,  // top and left are used to position the image after rotation
     fit: 1,
     recentReset: false,
     dragging: false,
@@ -52,6 +55,25 @@
     }
   };
   $: state.zoom, fitCheck();
+  const rotationCheck = () => {
+    let {size} = state.basis
+    let height: number = (size.height || 0) * state.zoom;
+    let width: number = (size.width || 0) * state.zoom;
+    let angle: number = Math.ceil(state.rotation / 90) * 90 || 0;  // snap to 90 degree increments
+    let left: number = 0,
+        top: number = 0;
+
+    if (angle == 90) {
+        left = height;
+    } else if (angle == 180) {
+        left = width;
+        top = height;
+    } else if (angle == 270){
+        top = width;
+    }
+    state = {...state, rotation: angle, left: left, top: top}
+  }
+  $: state.rotation, rotationCheck();
   const sync = () => {
     if (!size || !viewWidth) {
       syncRequired = true;
@@ -69,6 +91,7 @@
         (viewHeight || size.height) / size.height,
         viewWidth / size.width
       );
+
       state = {
         ...state,
         x: 0,
@@ -86,12 +109,13 @@
           scale: minimapScale,
         },
         zoom: fit,
+        rotation: 0,
         fit,
       };
     }
     syncRequired = false;
   };
-  $: size, viewWidth, sync();
+  $: size, viewWidth, state.rotation, sync();
   const zoom2span = (zoom: number) =>
     state.basis.view.width && state.basis.size.width && state.basis.size.height
       ? {
@@ -255,8 +279,7 @@
 </script>
 
 <div
-  style="--media-viewer-scale: {state.zoom}; --media-viewer-x: {100 *
-    state.x}%; --media-viewer-y: {100 *
+  style="--media-viewer-scale: {state.zoom}; --media-viewer-rotation: {state.rotation}; --media-viewer-x: {100 * state.x}%; --media-viewer-y: {100 *
     state.y}%; --media-viewer-minimap-scale: {state.minimap
     .scale}; --media-viewer-minimap-width: {state.minimap
     .width}; --media-viewer-minimap-height: {state.minimap.height};
@@ -272,7 +295,7 @@
         ? state.basis.view.height / (state.basis.size.height * state.zoom)
         : 1 - state.y
       : 0
-  ) * 100}%;
+  ) * 100}%; --media-viewer-top: {state.top}; --media-viewer-left: {state.left}
     "
   class="media-viewer {state.dragging ? 'dragging' : ''} {syncRequired
     ? 'sync-required'
@@ -326,6 +349,16 @@
                 ]
               : [{ value: state.fit, label: "Fit" }]}
           />
+          <RangeSlider
+            name="Rotation"
+            disabled={false}
+            min={0}
+            max={270}
+            bind:value={state.rotation}
+            marks={[
+                { value: 0 }, { value: 90 }, { value: 180 }, { value: 270 }
+            ]}
+          />
         </EnhancementControls>
       {:else}
         <RangeSlider
@@ -363,9 +396,12 @@
       translate(
         calc(-1 * var(--media-viewer-x)),
         calc(-1 * var(--media-viewer-y))
-      );
+      )
+      rotate(calc(1deg * var(--media-viewer-rotation)));
     transform-origin: 0 0;
     position: absolute;
+    top: calc(1px * var(--media-viewer-top));
+    left: calc(1px * var(--media-viewer-left));
     touch-action: none;
   }
   .sync-required .main,

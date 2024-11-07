@@ -21,6 +21,7 @@
     transitioning: boolean = false,
     actions: WidgetActions = {};
   let columnSize = 256,
+    rotation = 0,
     container: HTMLDivElement;
   const dispatcher = createEventDispatcher();
   const { draft, history } = createDraftStore();
@@ -52,6 +53,7 @@
       {#each items as entry}
         <BatchImageItem
           size={columnSize}
+          rotation={rotation}
           src={entry.target}
           metadata={entry.state.metadata}
           labeled={entry.state.labeled}
@@ -71,6 +73,14 @@
     marks={[{ value: 128 }, { value: 256 }, { value: 384 }, { value: 512 }]}
     disabled={false}
     name="Size"
+  />
+  <RangeSlider
+    bind:value={rotation}
+    min={0}
+    max={270}
+    marks={[{ value: 0 }, { value: 90 }, { value: 180 }, { value: 270 }]}
+    disabled={false}
+    name="Rotation"
   />
 </EnhancementControls>
 <ControlMenu

@@ -350,7 +350,7 @@
               : [{ value: state.fit, label: "Fit" }]}
           />
           <RangeSlider
-            name="Rotate"
+            name="Rotation"
             disabled={false}
             min={0}
             max={270}

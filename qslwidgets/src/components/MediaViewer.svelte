@@ -38,8 +38,8 @@
     y: 0,
     zoom: 1,
     rotation: 0,
-    top: 0,
-    left: 0,
+    top: 0,  // top and left are used to position the image after rotation
+    left: 0,  // top and left are used to position the image after rotation
     fit: 1,
     recentReset: false,
     dragging: false,
@@ -59,8 +59,9 @@
     let {size} = state.basis
     let height: number = (size.height || 0) * state.zoom;
     let width: number = (size.width || 0) * state.zoom;
-    let angle: number = Math.ceil(state.rotation / 90) * 90 || 0;
-    let left: number = 0, top: number = 0;
+    let angle: number = Math.ceil(state.rotation / 90) * 90 || 0;  // snap to 90 degree increments
+    let left: number = 0,
+        top: number = 0;
 
     if (angle == 90) {
         left = height;

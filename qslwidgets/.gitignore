@@ -1,2 +1,3 @@
 src/library/wasmtools
 /*.tgz
+src/jupyterlab-staging

@@ -7,12 +7,11 @@ module.exports = {
     "../src/**/*.stories.@(js|jsx|ts|tsx|svelte)",
   ],
   addons: [],
-  framework: "@storybook/svelte",
-  svelteOptions: {
-    preprocess: require("svelte-preprocess")(),
-  },
-  core: {
-    builder: "webpack5",
+  framework: {
+    name: "@storybook/svelte-webpack5",
+    options: {
+      preprocess: require("svelte-preprocess")(),
+    }
   },
   staticDirs: ["../../qsl/testing/data"],
   webpackFinal: async (config) => {

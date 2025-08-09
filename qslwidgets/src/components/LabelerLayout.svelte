@@ -29,6 +29,8 @@
 
   .horizontal .control {
     width: 256px;
+    min-width: 256px;
+    max-width: 256px;
   }
 
   .horizontal .content {

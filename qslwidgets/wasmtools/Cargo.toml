@@ -31,7 +31,7 @@ features = ["console"]
 # to interact with JavaScript.
 [dependencies.wasm-bindgen]
 features= ["serde-serialize"]
-version = "0.2.81"
+version = "0.2.88"
 
 [dependencies.serde]
 version = "1.0.139"

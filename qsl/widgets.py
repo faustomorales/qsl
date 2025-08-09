@@ -14,7 +14,9 @@ def module_version():
     back to a default value if it doesn't yet exist."""
     try:
         return json.loads(
-            importlib.resources.files("qsl").joinpath("ui/labextension/package.json")
+            importlib.resources.files("qsl")
+            .joinpath("ui/labextension/package.json")
+            .read_text()
         )["version"]
     except FileNotFoundError:
         return "0.0.0"

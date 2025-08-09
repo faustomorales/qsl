@@ -1,3 +1,107 @@
+[project]
+name = "qsl"
+license = "MIT"
+authors = [{ name = "Fausto Morales", email = "fausto@robinbay.com" }]
+dynamic = ["version"]
+readme = "README.md"
+classifiers = [
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Unix",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+]
+requires-python = ">=3.8"
+keywords = ["Jupyter", "Widgets", "IPython"]
+description = "A package for labeling image, video, and time series data quickly"
+dependencies = [
+    "ipywidgets>=7.0.0",
+    "filetype",
+    "click",
+    "eel",
+    "opencv-python-headless",
+]
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
 [build-system]
-requires = ["jupyter_packaging==0.12.0", "jupyterlab==3.*", "setuptools>=40.8.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+artifacts = ["qsl/ui/labextension", "qsl/ui/eelapp"]
+exclude = ["docs"]
+
+
+[tool.hatch.build.targets.wheel.shared-data]
+"qsl/ui/assets/qsl.json" = "etc/jupyter/nbconfig/notebook.d/qsl.json"
+"qsl/ui/assets/install.json" = "share/jupyter/labextensions/qslwidgets/install.json"
+"qsl/ui/nbextension" = "share/jupyter/nbextensions/qslwidgets"
+"qsl/ui/labextension" = "share/jupyter/labextensions/qslwidgets"
+
+[project.optional-dependencies]
+app = ["eel<=0.14.0", "click"]
+
+[tool.setuptools.packages]
+find = {}
+
+[tool.uv]
+package = false
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
+
+[tool.uv.sources]
+qsl = { path = ".", editable = true }
+
+
+[project.urls]
+Homepage = "https://github.com/faustomorales/qsl"
+Repository = "https://github.com/faustomorales/qsl"
+
+
+[project.scripts]
+qsl = "qsl.cli:cli"
+
+[tool.mypy]
+exclude = []
+no_implicit_optional = false
+ignore_missing_imports = true
+check_untyped_defs = true
+
+[tool.pylint."messages_control"]
+disable = [
+    "line-too-long",
+    "missing-module-docstring",
+    "invalid-name",
+    "attribute-defined-outside-init",
+    "too-many-locals",
+    "too-many-arguments",
+    "too-many-branches",
+    "too-many-statements",
+    "duplicate-code",
+    "protected-access",
+    "wrong-import-position",
+    "unnecessary-lambda-assignment",
+    "too-few-public-methods",
+    "use-dict-literal",
+]
+
+[tool.pytest.ini_options]
+addopts = "--cov=mira --cov-report=term-missing"
+
+[dependency-groups]
+dev = [
+    "boto3",
+    "botocore",
+    "black",
+    "mypy",
+    "types-setuptools",
+    "pylint",
+    "pytest",
+    "pytest-cov",
+    "jupyterlab",
+]

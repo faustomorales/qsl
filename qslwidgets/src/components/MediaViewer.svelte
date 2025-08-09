@@ -38,8 +38,8 @@
     y: 0,
     zoom: 1,
     rotation: 0,
-    top: 0,  // top and left are used to position the image after rotation
-    left: 0,  // top and left are used to position the image after rotation
+    top: 0, // top and left are used to position the image after rotation
+    left: 0, // top and left are used to position the image after rotation
     fit: 1,
     recentReset: false,
     dragging: false,
@@ -56,23 +56,23 @@
   };
   $: state.zoom, fitCheck();
   const rotationCheck = () => {
-    let {size} = state.basis
+    let { size } = state.basis;
     let height: number = (size.height || 0) * state.zoom;
     let width: number = (size.width || 0) * state.zoom;
-    let angle: number = Math.ceil(state.rotation / 90) * 90 || 0;  // snap to 90 degree increments
+    let angle: number = Math.ceil(state.rotation / 90) * 90 || 0; // snap to 90 degree increments
     let left: number = 0,
-        top: number = 0;
+      top: number = 0;
 
     if (angle == 90) {
-        left = height;
+      left = height;
     } else if (angle == 180) {
-        left = width;
-        top = height;
-    } else if (angle == 270){
-        top = width;
+      left = width;
+      top = height;
+    } else if (angle == 270) {
+      top = width;
     }
-    state = {...state, rotation: angle, left: left, top: top}
-  }
+    state = { ...state, rotation: angle, left: left, top: top };
+  };
   $: state.rotation, rotationCheck();
   const sync = () => {
     if (!size || !viewWidth) {
@@ -89,7 +89,7 @@
       const minimapScale = minimapSize / Math.max(size.width, size.height);
       const fit = Math.min(
         (viewHeight || size.height) / size.height,
-        viewWidth / size.width
+        viewWidth / size.width,
       );
 
       state = {
@@ -121,11 +121,11 @@
       ? {
           width: Math.min(
             state.basis.view.width / (zoom * state.basis.size.width),
-            1
+            1,
           ),
           height: Math.min(
             state.basis.view.height / (zoom * state.basis.size.height),
-            1
+            1,
           ),
         }
       : { width: 0, height: 0 };
@@ -171,7 +171,7 @@
     } else {
       const zoom = Math.max(
         state.zoom - operation.deltaY / (2 * 100),
-        10 / Math.min(size.width, size.height)
+        10 / Math.min(size.width, size.height),
       );
       const spani = zoom2span(state.zoom);
       const spanf = zoom2span(zoom);
@@ -229,7 +229,7 @@
                 x: detail.event.pageX,
                 y: detail.event.pageY,
               },
-              main
+              main,
             ),
           });
           cleanup();
@@ -245,7 +245,7 @@
                   x: event.origin[0] + window.scrollX,
                   y: event.origin[1] + window.scrollY,
                 },
-                main
+                main,
               ),
             });
           }
@@ -263,7 +263,7 @@
             passive: false,
           },
         },
-      }
+      },
     );
     const intervalId = setInterval(() => {
       if (viewWidth !== view.clientWidth) {
@@ -279,7 +279,8 @@
 </script>
 
 <div
-  style="--media-viewer-scale: {state.zoom}; --media-viewer-rotation: {state.rotation}; --media-viewer-x: {100 * state.x}%; --media-viewer-y: {100 *
+  style="--media-viewer-scale: {state.zoom}; --media-viewer-rotation: {state.rotation}; --media-viewer-x: {100 *
+    state.x}%; --media-viewer-y: {100 *
     state.y}%; --media-viewer-minimap-scale: {state.minimap
     .scale}; --media-viewer-minimap-width: {state.minimap
     .width}; --media-viewer-minimap-height: {state.minimap.height};
@@ -287,14 +288,14 @@
     1 - state.x,
     state.basis.view.width && state.basis.size.width
       ? state.basis.view.width / (state.basis.size.width * state.zoom)
-      : 0
+      : 0,
   ) * 100}%; --media-viewer-minimap-limit-height: {Math.min(
     1 - state.y,
     state.basis.view.height && state.basis.size.height
       ? viewHeight
         ? state.basis.view.height / (state.basis.size.height * state.zoom)
         : 1 - state.y
-      : 0
+      : 0,
   ) * 100}%; --media-viewer-top: {state.top}; --media-viewer-left: {state.left}
     "
   class="media-viewer {state.dragging ? 'dragging' : ''} {syncRequired
@@ -356,7 +357,10 @@
             max={270}
             bind:value={state.rotation}
             marks={[
-                { value: 0 }, { value: 90 }, { value: 180 }, { value: 270 }
+              { value: 0 },
+              { value: 90 },
+              { value: 180 },
+              { value: 270 },
             ]}
           />
         </EnhancementControls>

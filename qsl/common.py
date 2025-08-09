@@ -9,18 +9,17 @@ try:
     import numpy as np
 except ImportError:
     np = None  # type: ignore
-import typing_extensions as tx
 
 from . import files
 
 LOGGER = logging.getLogger(__name__)
 
-Target = tx.TypedDict(
+Target = typing.TypedDict(
     "Target",
     {
         "idx": int,
         "target": typing.Union[str, "np.ndarray"],
-        "type": tx.Literal["video", "image"],
+        "type": typing.Literal["video", "image"],
         "metadata": dict,
         "visible": bool,
         "selected": bool,
@@ -48,11 +47,14 @@ def items2rows(idxs, items):
             "target": target2repr(target, ttype),
             "labeled": "Yes" if labels or ignored else "No",
             "ignored": "Yes" if ignored else "No",
-            "labels": "; ".join(
-                f"{k}: {', '.join(v or [])}" for k, v in labels.get("image", {}).items()
-            )
-            if labels and isinstance(labels, dict)
-            else (len(labels) if isinstance(labels, dict) else ""),
+            "labels": (
+                "; ".join(
+                    f"{k}: {', '.join(v or [])}"
+                    for k, v in labels.get("image", {}).items()
+                )
+                if labels and isinstance(labels, dict)
+                else (len(labels) if isinstance(labels, dict) else "")
+            ),
         }
         for index, target, metadata, labels, ttype, ignored in [
             (
@@ -427,13 +429,15 @@ class BaseMediaLabeler:
             + [
                 {
                     "field": k,
-                    "type": "number"
-                    if all(
-                        k not in item.get("metadata", {})
-                        or isinstance(item["metadata"][k], (float, int))
-                        for item in self.items
-                    )
-                    else "string",
+                    "type": (
+                        "number"
+                        if all(
+                            k not in item.get("metadata", {})
+                            or isinstance(item["metadata"][k], (float, int))
+                            for item in self.items
+                        )
+                        else "string"
+                    ),
                     "flex": 1,
                 }
                 for k in metadata_keys
@@ -668,9 +672,11 @@ class BaseMediaLabeler:
             100
             * sum(
                 [
-                    1
-                    if item.get("labels") is not None or item.get("ignore", False)
-                    else 0
+                    (
+                        1
+                        if item.get("labels") is not None or item.get("ignore", False)
+                        else 0
+                    )
                     for item in self.items
                 ]
             )

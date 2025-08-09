@@ -43,8 +43,9 @@ module.exports = (env) => {
     externals: ["@jupyter-widgets/base"],
     resolve: {
       alias: {
-        svelte: path.resolve("node_modules", "svelte"),
+        svelte: path.resolve("node_modules", "svelte/src/runtime"),
       },
+      conditionNames: ["svelte"],
       mainFields: ["svelte", "browser", "module", "main"],
       extensions: [
         ".webpack.js",
@@ -63,13 +64,8 @@ module.exports = (env) => {
       packagePath: path.resolve(__dirname),
       corePath: path.resolve(
         __dirname,
-        "..",
-        ".venv",
-        "lib",
-        "python3.11",
-        "site-packages",
-        "jupyterlab",
-        "staging"
+        "src",
+        "jupyterlab-staging",
       ),
       mode,
       watchMode: watch,

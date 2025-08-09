@@ -2,7 +2,7 @@ import os
 import typing
 import eel
 import bottle
-import pkg_resources
+import importlib.resources
 from . import common, files
 
 
@@ -59,7 +59,9 @@ def start(jsonpath: str, targets: typing.List[str], batchSize: typing.Optional[i
         **eel.BOTTLE_ROUTES,
     }
     eel.init(
-        os.path.dirname(pkg_resources.resource_filename("qsl", "ui/eelapp/index.html")),
+        os.path.dirname(
+            importlib.resources.files("qsl").joinpath("ui/eelapp/index.html")
+        ),
         [".js", ".html"],
     )
     labeler = MediaLabeler(

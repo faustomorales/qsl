@@ -1,7 +1,7 @@
 # pylint: disable=too-many-ancestors,missing-function-docstring,unused-argument,too-many-return-statements
 import json
 
-import pkg_resources
+import importlib.resources
 import ipywidgets
 import traitlets as t
 from . import common
@@ -14,7 +14,7 @@ def module_version():
     back to a default value if it doesn't yet exist."""
     try:
         return json.loads(
-            pkg_resources.resource_string("qsl", "ui/labextension/package.json")
+            importlib.resources.files("qsl").joinpath("ui/labextension/package.json")
         )["version"]
     except FileNotFoundError:
         return "0.0.0"

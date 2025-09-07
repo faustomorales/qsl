@@ -247,11 +247,6 @@ class BaseMediaLabeler:
             jsondata = files.json_or_none(jsonpath)
             if jsondata is not None:
                 items = merge_items(exists=jsondata["items"], insert=items)
-                if basePath:
-                    items = [
-                        {**item, "target": os.path.join(basePath, item["target"])}
-                        for item in items
-                    ]
                 config = jsondata["config"]
                 mode = jsondata.get("mode", mode)
                 maxCanvasSize = jsondata.get("maxCanvasSize", maxCanvasSize)
@@ -261,6 +256,7 @@ class BaseMediaLabeler:
                 batchSize = batchSize or jsondata.get("batchSize")
         assert items, "There must be at least one labeling target."
         self.mode = mode
+        self.basePath = basePath
         self.maxCanvasSize = maxCanvasSize
         self.maxViewHeight = maxViewHeight
         self.advanceOnSave = advanceOnSave
@@ -660,6 +656,7 @@ class BaseMediaLabeler:
                     base=self.base,
                     allow_base64=False,
                     get_tempdir=self.get_temporary_directory,
+                    basePath=self.basePath,
                 )
                 if preloadUrl:
                     preload.append(preloadUrl)
@@ -714,6 +711,7 @@ class BaseMediaLabeler:
                                 target["video1"]["target"],
                                 base=self.base,
                                 get_tempdir=self.get_temporary_directory,
+                                basePath=self.basePath,
                             ),
                         },
                         "video2": {
@@ -722,6 +720,7 @@ class BaseMediaLabeler:
                                 target["video2"]["target"],
                                 base=self.base,
                                 get_tempdir=self.get_temporary_directory,
+                                basePath=self.basePath,
                             ),
                         },
                     }
@@ -739,6 +738,7 @@ class BaseMediaLabeler:
                                     image.get("target"),
                                     base=self.base,
                                     get_tempdir=self.get_temporary_directory,
+                                    basePath=self.basePath,
                                 ),
                             }
                             for image in target.get("images")
@@ -751,6 +751,7 @@ class BaseMediaLabeler:
                         target=t.get("target"),
                         base=self.base,
                         get_tempdir=self.get_temporary_directory,
+                        basePath=self.basePath,
                     )
                     for t in self.targets
                 ]

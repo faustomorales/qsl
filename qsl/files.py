@@ -167,6 +167,7 @@ def build_url(
     base: dict,
     get_tempdir: typing.Callable[[], str],
     allow_base64=True,
+    basePath: typing.Optional[str] = None,
 ) -> str:
     """Build a notebook file URL using notebook configuration and a filepath or URL."""
     if target is None:
@@ -206,6 +207,8 @@ def build_url(
         )
         if not os.path.isfile(tfilepath):
             s3.download_file(Bucket=bucket, Key=key, Filename=tfilepath)
+    if isinstance(target, str) and basePath:
+        target = os.path.join(basePath, target)
     if isinstance(target, str) and os.path.isfile(target):
         if missing_base:
             return file2str(target) if allow_base64 else None

@@ -37,6 +37,7 @@ class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
         - mode: The theme for the UI, one of "light" or "dark".
         - batchSize: The image labeling batch size.
         - jsonpath: The path to which we will save the configuration.
+        - basePath: The path where we will look for images.
     """
 
     _model_name = t.Unicode("MediaLabelerModel").tag(sync=True)
@@ -117,6 +118,7 @@ class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
         mode="light",
         batchSize=1,
         jsonpath=None,
+        basePath=None,
     ):
         super().__init__(
             items=items,
@@ -128,6 +130,7 @@ class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
             maxViewHeight=maxViewHeight,
             mode=mode,
             jsonpath=jsonpath,
+            basePath=basePath,
         )
         self.observe(self.handle_base_change, ["base"])
         self.observe(self.handle_action_change, ["action"])

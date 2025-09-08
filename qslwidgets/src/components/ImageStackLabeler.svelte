@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import { getStores } from "../library/instanceStores";
+  import { getStores } from "../library/instanceStores.js";
   import type {
     Config,
     Labels,
@@ -9,8 +9,8 @@
     ArbitraryMetadata,
     ImageStackTarget,
     StackContentState,
-  } from "../library/types";
-  import { createContentLoader, createDraftStore } from "../library/common";
+  } from "../library/types.js";
+  import { createContentLoader, createDraftStore } from "../library/common.js";
   import LabelPanelEntry from "./LabelPanelEntry.svelte";
   import LabelerLayout from "./LabelerLayout.svelte";
   import ControlMenu from "./ControlMenu.svelte";

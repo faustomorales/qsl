@@ -4,8 +4,8 @@
   import { onMount } from "svelte";
   import { create } from "nouislider";
   import type { API, target } from "nouislider";
-  import type { RangeSliderMark } from "../library/types";
-  import { focus } from "../library/common";
+  import type { RangeSliderMark } from "../library/types.js";
+  import { focus } from "../library/common.js";
   export let name: string,
     value: number,
     min: number,

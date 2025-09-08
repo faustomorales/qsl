@@ -8,9 +8,9 @@
     TimestampedLabel,
     TimestampInfoWithMatch,
     ArbitraryMetadata,
-  } from "../library/types";
+  } from "../library/types.js";
   import { createEventDispatcher } from "svelte";
-  import { createDraftStore } from "../library/common";
+  import { createDraftStore } from "../library/common.js";
   import Metadata from "./Metadata.svelte";
   import LabelPanelEntry from "./LabelPanelEntry.svelte";
   import ControlMenu from "./ControlMenu.svelte";

@@ -7,10 +7,14 @@
     Dimensions,
     StackContentLayer,
     Config,
-  } from "../library/types";
+  } from "../library/types.js";
   import { createEventDispatcher } from "svelte";
-  import { getDistance, convertCoordinates, snap } from "../library/geometry";
-  import { focus, computeDefaultRegionLabels } from "../library/common";
+  import {
+    getDistance,
+    convertCoordinates,
+    snap,
+  } from "../library/geometry.js";
+  import { focus, computeDefaultRegionLabels } from "../library/common.js";
   import { Mask, img2hsv, findMaskByPoint } from "../library/masking";
   import RegionBox from "./RegionBox.svelte";
   import RegionMask from "./RegionMask.svelte";
@@ -31,8 +35,33 @@
   const onContainerMouseMove = (event: MouseEvent) =>
     (cursor = convertCoordinates(
       { x: event.pageX, y: event.pageY },
-      container
+      container,
     ));
+  const getModifiedBoxPoints = (
+    pt1: Point,
+    click: Point,
+    pt2?: Point,
+  ): { pt1: Point; pt2: Point } => {
+    if (!pt2) {
+      return { pt1, pt2: click };
+    }
+    let pt3 = { x: pt1.x, y: pt2.y };
+    let pt4 = { x: pt2.x, y: pt1.y };
+    let [d1, d2, d3, d4] = [pt1, pt2, pt3, pt4].map((p) =>
+      getDistance(click, p),
+    );
+    let minimum = Math.min(d1, d2, d3, d4);
+    switch (minimum) {
+      case d1:
+        return { pt1: click, pt2 };
+      case d2:
+        return { pt1, pt2: click };
+      case d3:
+        return { pt1: { x: click.x, y: pt1.y }, pt2: { x: pt2.x, y: click.y } };
+      default:
+        return { pt1: { x: pt1.x, y: click.y }, pt2: { x: click.x, y: pt2.y } };
+    }
+  };
   const createOnRegionClick = (index: number) => (event: MouseEvent) => {
     event.stopPropagation();
     if (event.altKey) {
@@ -42,7 +71,7 @@
     const source = labels[drawing.mode];
     const target = source[index];
     const update = (source.slice(0, index) as any).concat(
-      source.slice(index + 1)
+      source.slice(index + 1),
     );
     labels = {
       ...labels,
@@ -65,7 +94,7 @@
     }
     const point = convertCoordinates(
       { x: event.pageX, y: event.pageY },
-      container
+      container,
     );
     if (drawing.active) {
       if (!drawing.active.editable) {
@@ -78,10 +107,6 @@
         if (drawing.mode === "boxes") {
           // Adding to a box.
           dispatcher("change");
-          const d1 = getDistance(point, drawing.active.region.pt1);
-          const d2 = drawing.active.region.pt2
-            ? getDistance(point, drawing.active.region.pt2)
-            : -1;
           drawing = {
             ...drawing,
             active: {
@@ -89,8 +114,11 @@
               region: {
                 ...drawing.active.region,
                 labels: drawing.active.region.labels,
-                pt1: d1 < d2 ? point : drawing.active.region.pt1,
-                pt2: d1 < d2 ? drawing.active.region.pt2 : point,
+                ...getModifiedBoxPoints(
+                  drawing.active.region.pt1,
+                  point,
+                  drawing.active.region.pt2,
+                ),
               },
             },
           };
@@ -107,7 +135,7 @@
                   snap(
                     point,
                     drawing.active.region,
-                    container.getBoundingClientRect()
+                    container.getBoundingClientRect(),
                   ),
                 ]),
               },
@@ -133,7 +161,7 @@
                       point.y,
                       drawing.radius / dimensions.width,
                       drawing.radius / dimensions.height,
-                      0
+                      0,
                     )
                   : drawing.active.region.map.flood(
                       image,
@@ -142,7 +170,7 @@
                       drawing.radius / dimensions.width,
                       drawing.radius / dimensions.height,
                       drawing.threshold,
-                      1_000_000
+                      1_000_000,
                     ),
               },
             },
@@ -201,7 +229,7 @@
               drawing.radius / dimensions.width,
               drawing.radius / dimensions.height,
               drawing.threshold,
-              1_000_000
+              1_000_000,
             ),
           },
         },
@@ -251,7 +279,7 @@
           ? snap(
               cursor,
               drawing.active.region,
-              container.getBoundingClientRect()
+              container.getBoundingClientRect(),
             )
           : undefined}
       />

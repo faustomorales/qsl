@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import type { Dimensions, Point, MediaLoadState } from "../library/types";
-  import { convertCoordinates } from "../library/geometry";
-  import { focus } from "../library/common";
+  import type { Dimensions, Point, MediaLoadState } from "../library/types.js";
+  import { convertCoordinates } from "../library/geometry.js";
+  import { focus } from "../library/common.js";
   import RangeSlider from "./RangeSlider.svelte";
   import ClickTarget from "./ClickTarget.svelte";
   import EnhancementControls from "./EnhancementControls.svelte";

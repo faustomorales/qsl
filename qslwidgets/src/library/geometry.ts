@@ -1,4 +1,4 @@
-import type { Point, Dimensions, PolygonLabel } from "./types";
+import type { Point, Dimensions, PolygonLabel } from "./types.js";
 
 export const getDistance = (
   pt1: Point,

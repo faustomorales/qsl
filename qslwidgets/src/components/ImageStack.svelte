@@ -1,8 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import type { ImageStackTarget, StackContentState } from "../library/types";
-  import { project, mat2str } from "../library/geometry";
-  import { createContentLoader } from "../library/common";
+  import type { ImageStackTarget, StackContentState } from "../library/types.js";
+  import { project, mat2str } from "../library/geometry.js";
+  import { createContentLoader } from "../library/common.js";
   export let stack: ImageStackTarget,
     selected = [0],
     element: HTMLImageElement | undefined = undefined;

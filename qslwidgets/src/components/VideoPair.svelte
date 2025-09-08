@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type { DraftState, VideoSegmentTarget } from "../library/types";
+  import type { DraftState, VideoSegmentTarget } from "../library/types.js";
   import { createEventDispatcher } from "svelte";
-  import Play from "./icons/Play.svelte";
-  import Pause from "./icons/Pause.svelte";
-  import Restart from "./icons/Restart.svelte";
+  import Play from "../icons/Play.svelte";
+  import Pause from "../icons/Pause.svelte";
+  import Restart from "../icons/Restart.svelte";
   import IconButton from "./IconButton.svelte";
   import VideoWithPlaybar from "./VideoWithPlaybar.svelte";
   export let target: VideoSegmentTarget,

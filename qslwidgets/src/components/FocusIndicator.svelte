@@ -1,10 +1,10 @@
 <script lang="ts">
   import { onDestroy, onMount } from "svelte";
-  import { focus } from "../library/common";
-  import Keyboard from "./icons/Keyboard.svelte";
-  import KeyboardDisabled from "./icons/KeyboardDisabled.svelte";
+  import { focus } from "../library/common.js";
+  import Keyboard from "../icons/Keyboard.svelte";
+  import KeyboardDisabled from "../icons/KeyboardDisabled.svelte";
 
-  import { elementIsFocused } from "../library/common";
+  import { elementIsFocused } from "../library/common.js";
   let element: HTMLElement;
   let destroy: number;
   let focused: boolean = false;

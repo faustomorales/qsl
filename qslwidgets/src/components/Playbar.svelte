@@ -3,13 +3,13 @@
   import { onMount, onDestroy, createEventDispatcher } from "svelte";
   import { create } from "nouislider";
   import type { API, target } from "nouislider";
-  import type { RangeSliderMark } from "../library/types";
-  import { focus } from "../library/common";
+  import type { RangeSliderMark } from "../library/types.js";
+  import { focus } from "../library/common.js";
   import IconButton from "./IconButton.svelte";
-  import Muted from "./icons/Muted.svelte";
-  import Unmuted from "./icons/Unmuted.svelte";
-  import Pause from "./icons/Pause.svelte";
-  import Play from "./icons/Play.svelte";
+  import Muted from "../icons/Muted.svelte";
+  import Unmuted from "../icons/Unmuted.svelte";
+  import Pause from "../icons/Pause.svelte";
+  import Play from "../icons/Play.svelte";
   export let mains: HTMLVideoElement[] = [],
     secondaries: HTMLVideoElement[] = [],
     disabled: boolean | undefined,

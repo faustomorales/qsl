@@ -1,9 +1,9 @@
 # You must change these to your own details.
 [package]
-name = "rust-webpack-template"
-description = "My super awesome Rust, WebAssembly, and Webpack project!"
+name = "qslwidgets-wasmtools"
+description = "Optimized operations for the QSL library."
 version = "0.1.0"
-authors = ["You <you@example.com>"]
+authors = ["Fasto Morales <faustomorales@gmail.com>"]
 categories = ["wasm"]
 readme = "README.md"
 edition = "2018"
@@ -15,11 +15,13 @@ crate-type = ["cdylib"]
 # This makes the compiled code faster and smaller, but it makes compiling slower,
 # so it's only enabled in release mode.
 lto = true
+opt-level = "z"
 
 [dependencies]
 js-sys = "0.3.22"
 itertools = "0.10.3"
 queues = "1.1.0"
+serde-wasm-bindgen = "0.5"
 
 # The `web-sys` crate allows you to interact with the various browser APIs,
 # like the DOM.
@@ -30,17 +32,10 @@ features = ["console"]
 # The `wasm-bindgen` crate provides the bare minimum functionality needed
 # to interact with JavaScript.
 [dependencies.wasm-bindgen]
-features= ["serde-serialize"]
-version = "0.2.88"
+features = ["serde-serialize"]
+version = "0.2.101"
 
 [dependencies.serde]
 version = "1.0.139"
-features =  ["std", "derive"]
-
-# The `console_error_panic_hook` crate provides better debugging of panics by
-# logging them with `console.error`. This is great for development, but requires
-# all the `std::fmt` and `std::panicking` infrastructure, so it's only enabled
-# in debug mode.
-[target."cfg(debug_assertions)".dependencies]
-console_error_panic_hook = "0.1.5"
+features = ["std", "derive"]
 

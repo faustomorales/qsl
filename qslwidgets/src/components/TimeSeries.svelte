@@ -6,9 +6,9 @@
     DraftLabels,
     Config,
     AxisDomainDefinition,
-  } from "../library/types";
-  import { processSelectionChange, focus } from "../library/common";
-  import Chart from "./icons/Chart.svelte";
+  } from "../library/types.js";
+  import { processSelectionChange, focus } from "../library/common.js";
+  import Chart from "../icons/Chart.svelte";
   export let target: TimeSeriesTarget | undefined,
     config: Config,
     labels: DraftLabels,

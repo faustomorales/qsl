@@ -2,6 +2,7 @@ use itertools::Itertools;
 use js_sys::Uint8ClampedArray;
 use queues::{queue, IsQueue, Queue};
 use serde::Serialize;
+use serde_wasm_bindgen;
 use wasm_bindgen::prelude::{wasm_bindgen, JsValue};
 use web_sys::console;
 
@@ -247,7 +248,8 @@ impl Mask {
     }
 
     pub fn dimensions(&self) -> JsValue {
-        JsValue::from_serde(&self.dimensions).expect("Failed to serialize dimensions.")
+
+        serde_wasm_bindgen::to_value(&self.dimensions).expect("Failed to serialize dimensions.")
     }
 
     #[wasm_bindgen]

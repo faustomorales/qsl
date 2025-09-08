@@ -1,1 +1,0 @@
-The image in the screenshot originated from [picsum](https://picsum.photos/id/1062/500/500).

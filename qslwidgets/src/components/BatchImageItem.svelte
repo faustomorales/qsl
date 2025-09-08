@@ -1,11 +1,11 @@
 <script lang="ts">
-  import type { ArbitraryMetadata } from "../library/types";
+  import type { ArbitraryMetadata } from "../library/types.js";
   import Metadata from "./Metadata.svelte";
   import IconButton from "./IconButton.svelte";
-  import Labeled from "./icons/Labeled.svelte";
-  import Ignored from "./icons/Ignored.svelte";
-  import Checked from "./icons/Checked.svelte";
-  import Unchecked from "./icons/Unchecked.svelte";
+  import Labeled from "../icons/Labeled.svelte";
+  import Ignored from "../icons/Ignored.svelte";
+  import Checked from "../icons/Checked.svelte";
+  import Unchecked from "../icons/Unchecked.svelte";
   export let src: string | undefined,
     size: number,
     rotation: number = 0,

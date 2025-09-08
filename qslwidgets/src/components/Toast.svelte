@@ -2,7 +2,7 @@
   import { fade, fly } from "svelte/transition";
   import { flip } from "svelte/animate";
   import ToastItem from "./ToastItem.svelte";
-  import { getStores } from "../library/instanceStores";
+  import { getStores } from "../library/instanceStores.js";
   const { toast } = getStores();
   const getCss = (theme: { [key: string]: string }) =>
     Object.keys(theme).reduce((a, c) => `${a}${c}:${theme[c]};`, "");

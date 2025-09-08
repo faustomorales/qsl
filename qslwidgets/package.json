@@ -1,123 +1,58 @@
 {
-  "name": "qslwidgets",
-  "version": "0.2.43",
-  "description": "Widgets for the QSL media labeling package.",
-  "keywords": [
-    "jupyter",
-    "jupyterlab",
-    "jupyterlab-extension",
-    "widgets"
-  ],
-  "files": [
-    "lib/**/*.js",
-    "lib/**/*.svelte",
-    "lib/**/*.d.ts",
-    "lib/**/*.wasm",
-    "dist/*.js",
-    "dist/*.wasm",
-    "css/*.css"
-  ],
-  "homepage": "https://github.com/faustomorales/qsl",
-  "bugs": {
-    "url": "https://github.com/faustomorales/qsl/issues"
-  },
-  "license": "MIT",
-  "author": {
-    "name": "Fausto Morales",
-    "email": "fausto@robinbay.com"
-  },
-  "main": "lib/index.js",
-  "types": "./lib/index.d.ts",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/faustomorales/qsl"
-  },
-  "scripts": {
-    "build": "npm run wasmp && tsc && npm run copy && webpack --env production",
-    "wasmp": "wasm-pack build --target web --out-dir ../src/library/wasmtools --out-name index wasmtools",
-    "watch": "tsc && npm-run-all -p watch:*",
-    "copy": "copyfiles --up 1 src/**/**/*.{css,svelte,js,wasm,d.ts} src/**/*.{css,svelte,js,wasm,d.ts} src/*.{css,svelte,js,wasm,d.ts} lib",
-    "watch:copy": "nodemon -e css,svelte,js,wasm --watch src --exec 'npm run copy'",
-    "watch:wasm": "nodemon -e rs --watch wasmtools --exec 'npm run wasmp'",
-    "watch:tscw": "tsc -w",
-    "watch:pack": "webpack --watch",
-    "clean": "rimraf ../qsl/ui/eelapp ../qsl/ui/nbextension/index.js* ../qsl/ui/labextension dist lib src/library/wasmtools",
-    "format": "prettier --write src",
-    "test": "jest",
-    "storybook": "sb dev -p 6006",
-    "build-storybook": "sb build"
-  },
-  "dependencies": {
-    "@jupyter-widgets/base": "^1.1.10 || ^2.0.0 || ^3.0.0 || ^4.0.0",
-    "file-saver": "^2.0.5",
-    "html2canvas": "^1.4.1",
-    "uuid": "^9.0.0"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.14.5",
-    "@babel/preset-env": "^7.14.5",
-    "@babel/preset-typescript": "^7.14.5",
-    "@jupyterlab/builder": "^4.0.0",
-    "@phosphor/application": "^1.6.0",
-    "@phosphor/widgets": "^1.6.0",
-    "@storybook/cli": "^7.6.10",
-    "@storybook/svelte-webpack5": "^7.6.10",
-    "@tsconfig/svelte": "^4.0.0",
-    "@types/file-saver": "^2.0.5",
-    "@types/jest": "^28.0.0",
-    "@types/node": "^18.0.0",
-    "@types/uuid": "^9.0.0",
-    "@types/webpack-env": "^1.13.6",
-    "@typescript-eslint/eslint-plugin": "^3.6.0",
-    "@typescript-eslint/parser": "^3.6.0",
-    "@use-gesture/vanilla": "^10.2.16",
-    "@wasm-tool/wasm-pack-plugin": "^1.7.0",
-    "babel-loader": "^8.2.2",
-    "copyfiles": "^2.4.1",
-    "crypto": "1.0.1",
-    "css-loader": "^6.7.1",
-    "eslint": "^7.4.0",
-    "eslint-config-prettier": "^6.11.0",
-    "eslint-plugin-prettier": "^3.1.4",
-    "fs-extra": "^7.0.0",
-    "html-webpack-plugin": "^5.5.0",
-    "identity-obj-proxy": "^3.0.0",
-    "jest": "^28.0.0",
-    "mkdirp": "^0.5.1",
-    "nodemon": "^2.0.16",
-    "nouislider": "^15.6.0",
-    "npm-run-all": "^4.1.3",
-    "prettier": "^2.0.5",
-    "react": "^16.8.0",
-    "react-dom": "^16.8.0",
-    "rimraf": "^2.6.2",
-    "source-map-loader": "^1.1.3",
-    "storybook": "^7.6.10",
-    "style-loader": "^4.0.0",
-    "svelte": "^4.0.0",
-    "svelte-loader": "^3.2.4",
-    "svelte-preprocess": "^6.0.3",
-    "ts-jest": "^28.0.0",
-    "ts-loader": "^8.0.0",
-    "typanion": "^3.9.0",
-    "typescript": "^5.0.0",
-    "webpack": "^5.0.0",
-    "webpack-cli": "^4.0.0"
-  },
-  "babel": {
-    "presets": [
-      "@babel/preset-env",
-      "@babel/preset-typescript"
-    ]
-  },
-  "jupyterlab": {
-    "extension": "lib/plugin",
-    "outputDir": "../qsl/ui/labextension/",
-    "sharedPackages": {
-      "@jupyter-widgets/base": {
-        "bundled": false,
-        "singleton": true
-      }
-    }
-  }
+	"name": "qslwidgets",
+	"version": "0.2.44",
+	"scripts": {
+		"build:browser": "rollup -c rollup.config.js src/browser.ts",
+		"build:eel": "rollup -c rollup.config.js src/eel.ts && cp src/eel.html dist/eel/index.html",
+		"build:anywidget": "rollup -c rollup.config.js src/anywidget.ts",
+		"build:svelte": "svelte-package -i src -o dist/svelte",
+		"build": "run-s build:*"
+	},
+	"files": [
+		"dist",
+		"!dist/**/*.test.*",
+		"!dist/**/*.spec.*"
+	],
+	"sideEffects": [
+		"**/*.css"
+	],
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./dist/lib/index.d.ts",
+			"svelte": "./dist/svelte/index.js"
+		}
+	},
+	"peerDependencies": {
+		"svelte": "^4.0.0"
+	},
+	"devDependencies": {
+		"@anywidget/types": "^0.2.0",
+		"@rollup/plugin-commonjs": "^28.0.6",
+		"@rollup/plugin-node-resolve": "^16.0.0",
+		"@rollup/plugin-replace": "^6.0.2",
+		"@rollup/plugin-typescript": "^12.0.0",
+		"@sveltejs/package": "^2.0.0",
+		"@tsconfig/svelte": "^5.0.0",
+		"@types/file-saver": "^2.0.7",
+		"@types/rollup-plugin-css-only": "^3.1.3",
+		"@types/uuid": "^10.0.0",
+		"@use-gesture/vanilla": "^10.0.0",
+		"@wasm-tool/rollup-plugin-rust": "^3.0.5",
+		"binaryen": "^121.0.0",
+		"file-saver": "^2.0.0",
+		"html2canvas": "^1.0.0",
+		"nouislider": "^15.0.0",
+		"npm-run-all": "^4.1.5",
+		"rollup": "^4.0.0",
+		"rollup-plugin-css-only": "^4.0.0",
+		"rollup-plugin-svelte": "^7.0.0",
+		"svelte": "^4.0.0",
+		"svelte-preprocess": "^6.0.0",
+		"typescript": "^5.0.0",
+		"uuid": "^7.0.0"
+	},
+	"keywords": [
+		"svelte"
+	]
 }

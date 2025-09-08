@@ -7,15 +7,15 @@
     Dimensions,
     ArbitraryMetadata,
     TimeSeriesTarget,
-  } from "../library/types";
+  } from "../library/types.js";
   import html2canvas from "html2canvas";
   import FileSaver from "file-saver";
-  import { createDraftStore } from "../library/common";
+  import { createDraftStore } from "../library/common.js";
   import ControlMenu from "./ControlMenu.svelte";
   import MediaViewer from "./MediaViewer.svelte";
   import TimeSeries from "./TimeSeries.svelte";
   import Metadata from "./Metadata.svelte";
-  import { getStores } from "../library/instanceStores";
+  import { getStores } from "../library/instanceStores.js";
   export let target: TimeSeriesTarget | undefined,
     config: Config,
     labels: Labels,
@@ -46,7 +46,7 @@
           png,
           target.filename.toLowerCase().endsWith(".png")
             ? target.filename
-            : target.filename + ".png"
+            : target.filename + ".png",
         );
       } else {
         toast.push("Failed to render figure.");
@@ -61,7 +61,7 @@
   size={chartSize}
   loadState={transitioning || !chartSize ? "loading" : "loaded"}
   enhancementControls={false}
-  fixedHeight={fixedHeight}
+  {fixedHeight}
 >
   <svelte:fragment slot="main"
     ><TimeSeries

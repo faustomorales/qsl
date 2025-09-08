@@ -5,14 +5,14 @@
     WidgetActions,
     ImageGroupTarget,
     ArbitraryMetadata,
-  } from "../library/types";
+  } from "../library/types.js";
   import { createEventDispatcher } from "svelte";
   import {
     createDraftStore,
     focus,
     elementIsFocused,
     processSelectionChange,
-  } from "../library/common";
+  } from "../library/common.js";
   import ClickTarget from "./ClickTarget.svelte";
   import EnhancementControls from "./EnhancementControls.svelte";
   import RangeSlider from "./RangeSlider.svelte";

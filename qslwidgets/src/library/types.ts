@@ -1,5 +1,5 @@
 import type { Writable, Readable } from "svelte/store";
-import type { Image, Mask } from "./wasmtools";
+import type { Image, Mask } from "./wasm-types/qslwidgets_wasmtools";
 
 export type ArbitraryMetadata = { [key: string]: string | number };
 export type Point = { x: number; y: number };
@@ -56,19 +56,19 @@ export type DrawingState = {
   radius: number;
   threshold: number;
 } & (
-  | {
+    | {
       mode: "polygons";
       active?: { editable: boolean; region: PolygonLabel };
     }
-  | {
+    | {
       mode: "masks";
       active?: { editable: boolean; region: MaskLabel<Bitmap> };
     }
-  | {
+    | {
       mode: "boxes";
       active?: { editable: boolean; region: AlignedBoxLabel };
     }
-);
+  );
 
 export interface Option {
   name: string;
@@ -233,31 +233,31 @@ export interface TimeSeriesTarget {
     size?: { width?: number; height?: number };
     areas?: (
       | {
-          x1: number;
-          x2: number;
-          activeColor?: string;
-          hoverColor?: string;
-          inactiveColor?: string;
-          stroke?: string;
-          strokeWidth?: string;
-          strokeDashArray?: string;
-          label: string | string[];
-          labelKey: string;
-          labelVal: string;
-        }
+        x1: number;
+        x2: number;
+        activeColor?: string;
+        hoverColor?: string;
+        inactiveColor?: string;
+        stroke?: string;
+        strokeWidth?: string;
+        strokeDashArray?: string;
+        label: string | string[];
+        labelKey: string;
+        labelVal: string;
+      }
       | {
-          x1: number;
-          x2: number;
-          activeColor?: string;
-          hoverColor?: string;
-          inactiveColor?: string;
-          stroke?: string;
-          strokeWidth?: string;
-          strokeDashArray?: string;
-          label: string | string[];
-          labelKey: undefined;
-          labelVal: undefined;
-        }
+        x1: number;
+        x2: number;
+        activeColor?: string;
+        hoverColor?: string;
+        inactiveColor?: string;
+        stroke?: string;
+        strokeWidth?: string;
+        strokeDashArray?: string;
+        label: string | string[];
+        labelKey: undefined;
+        labelVal: undefined;
+      }
     )[];
   }[];
 }

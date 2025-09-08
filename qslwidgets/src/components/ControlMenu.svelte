@@ -6,8 +6,8 @@
     LabelConfig,
     LabelData,
     ControlMenuActions,
-  } from "../library/types";
-  import { shortcutify, focus } from "../library/common";
+  } from "../library/types.js";
+  import { shortcutify, focus } from "../library/common.js";
   import LabelPanel from "./LabelPanel.svelte";
   import ButtonGroup from "./ButtonGroup.svelte";
   import ConfigEditor from "./ConfigEditor.svelte";

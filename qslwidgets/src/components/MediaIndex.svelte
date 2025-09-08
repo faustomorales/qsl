@@ -1,14 +1,14 @@
 <script lang="ts" generics="T extends number | string">
   import { createEventDispatcher } from "svelte";
-  import type { IndexState } from "../library/types";
+  import type { IndexState } from "../library/types.js";
   import ButtonGroup from "./ButtonGroup.svelte";
-  import Edit from "./icons/Edit.svelte";
+  import Edit from "../icons/Edit.svelte";
   import IconButton from "./IconButton.svelte";
-  import Filter from "./icons/Filter.svelte";
-  import RemoveFilter from "./icons/RemoveFilter.svelte";
-  import Sort from "./icons/Sort.svelte";
-  import SortUp from "./icons/SortUp.svelte";
-  import SortDown from "./icons/SortDown.svelte";
+  import Filter from "../icons/Filter.svelte";
+  import RemoveFilter from "../icons/RemoveFilter.svelte";
+  import Sort from "../icons/Sort.svelte";
+  import SortUp from "../icons/SortUp.svelte";
+  import SortDown from "../icons/SortDown.svelte";
   import ClickTarget from "./ClickTarget.svelte";
   import FocusIndicator from "./FocusIndicator.svelte";
 

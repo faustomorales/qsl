@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Extractor, ActionType } from "../library/types";
+  import type { Extractor, ActionType } from "../library/types.js";
   import ImageLabeler from "./ImageLabeler.svelte";
   import ImageStackLabeler from "./ImageStackLabeler.svelte";
   import BatchImageLabeler from "./BatchImageLabeler.svelte";
@@ -10,7 +10,7 @@
   import ImagePreloader from "./ImagePreloader.svelte";
   import ImageGroupLabeler from "./ImageGroupLabeler.svelte";
   import Labeler from "./Labeler.svelte";
-  import { createStores } from "../library/instanceStores";
+  import { createStores } from "../library/instanceStores.js";
   export let extract: Extractor;
   const stores = createStores();
   const viewState = extract("viewState");

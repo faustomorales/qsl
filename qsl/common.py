@@ -225,12 +225,12 @@ class BaseMediaLabeler:
         items = items or []
         jsonpath_item = [bool(item.get("jsonpath")) for item in items]
         if any(jsonpath_item):
-            assert all(jsonpath_item), (
-                "Either all items must have a jsonpath key or none of them can."
-            )
-            assert jsonpath is None, (
-                "You cannot supply both item- and labeler-level JSON paths."
-            )
+            assert all(
+                jsonpath_item
+            ), "Either all items must have a jsonpath key or none of them can."
+            assert (
+                jsonpath is None
+            ), "You cannot supply both item- and labeler-level JSON paths."
             items = [
                 merge_item(
                     exists=files.json_or_none(item["jsonpath"]) or item, insert=item
@@ -241,9 +241,7 @@ class BaseMediaLabeler:
             assert all(
                 isinstance(item.get("target"), (type(None), str, dict))
                 for item in items
-            ), (
-                "Using a jsonpath is incompatible with raw array targets. Please remove the jsonpath argument. You can access labels by looking at `labeler.items`."
-            )
+            ), "Using a jsonpath is incompatible with raw array targets. Please remove the jsonpath argument. You can access labels by looking at `labeler.items`."
             jsondata = files.json_or_none(jsonpath)
             if jsondata is not None:
                 items = merge_items(exists=jsondata["items"], insert=items)
@@ -287,8 +285,10 @@ class BaseMediaLabeler:
         if self.tempdir:
             return self.tempdir.name
         if self.base["serverRoot"] is not None:
-            self.tempdir = tempfile.TemporaryDirectory(  # pylint: disable=consider-using-with
-                prefix="qsl-temp", dir=os.path.expanduser(self.base["serverRoot"])
+            self.tempdir = (
+                tempfile.TemporaryDirectory(  # pylint: disable=consider-using-with
+                    prefix="qsl-temp", dir=os.path.expanduser(self.base["serverRoot"])
+                )
             )
             return self.tempdir.name
         return None
@@ -408,9 +408,9 @@ class BaseMediaLabeler:
         )
         reserved_keys = ["target", "labeled", "ignored", "labels"]
         used_reserved_keys = set(metadata_keys).intersection(reserved_keys)
-        assert not used_reserved_keys, (
-            f"The following metadata keys are not permitted, because they are reserved: {used_reserved_keys}"
-        )
+        assert (
+            not used_reserved_keys
+        ), f"The following metadata keys are not permitted, because they are reserved: {used_reserved_keys}"
         return {
             **self.indexState,
             "page": page,
@@ -688,9 +688,9 @@ class BaseMediaLabeler:
 
     def set_urls_and_type(self):
         if self.base:
-            assert len(set(c["type"] for c in self.targets)) <= 1, (
-                "Only one type of media is permitted in each batch."
-            )
+            assert (
+                len(set(c["type"] for c in self.targets)) <= 1
+            ), "Only one type of media is permitted in each batch."
             assert len(self.targets) <= 1 or all(
                 c["type"] == "image" for c in self.targets
             ), "Only images can be be batch labeled."

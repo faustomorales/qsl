@@ -60,11 +60,13 @@ def start(jsonpath: str, targets: typing.List[str], batchSize: typing.Optional[i
     }
     eel.init(
         os.path.dirname(
-            importlib.resources.files("qsl").joinpath("ui/eelapp/index.html")
+            importlib.resources.files("qsl").joinpath(
+                "../qslwidgets/dist/eel/index.html"
+            )
         ),
         [".js", ".html"],
     )
-    labeler = MediaLabeler(
+    labeler = MediaLabeler(  # noqa: F841
         items=[
             {"target": t, "type": files.guess_type(t)}
             for t in files.filepaths_from_patterns(targets)

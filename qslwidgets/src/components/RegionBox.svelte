@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { pct2css, labels2string, epsilon } from "../library/common";
-  import type { AlignedBoxLabel, Point } from "../library/types";
+  import { pct2css, labels2string, epsilon } from "../library/common.js";
+  import type { AlignedBoxLabel, Point } from "../library/types.js";
   export let box: AlignedBoxLabel,
     color: string,
     candidate: Point | undefined = undefined;

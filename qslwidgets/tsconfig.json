@@ -1,42 +1,8 @@
 {
-  "compilerOptions": {
-    "ignoreDeprecations": "5.0",
-    "declaration": true,
-    "esModuleInterop": true,
-    "lib": [
-      "es2019",
-      "dom",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "module": "esnext",
-    "moduleResolution": "node",
-    "jsx": "react",
-    "noEmitOnError": true,
-    "noUnusedLocals": true,
-    "outDir": "lib",
-    "resolveJsonModule": true,
-    "importsNotUsedAsValues": "remove",
-    "preserveValueImports": null,
-    "skipLibCheck": true,
-    "sourceMap": true,
-    "strict": true,
-    "strictPropertyInitialization": false,
-    "verbatimModuleSyntax": true,
-    "target": "es2015",
-    "types": [
-      "jest",
-      "svelte",
-      "node"
+    "extends": "@tsconfig/svelte/tsconfig.json",
+    "exclude": [
+        "**/__tests__",
+        "**/*.test.ts",
+        "**/*.spec.ts"
     ]
-  },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.d.ts"
-  ],
-  "exclude": [
-    "src/**/__tests__"
-  ],
-  "extends": "@tsconfig/svelte/tsconfig.json"
 }

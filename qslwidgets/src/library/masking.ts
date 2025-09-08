@@ -8,11 +8,8 @@ import type {
   StackContentLayer,
 } from "./types";
 
-import init, { Image, Mask } from "./wasmtools";
-
-init().then(() => {
-  console.log("WASM module initialized.");
-});
+// @ts-ignore
+import { Image, Mask } from "../../wasmtools/Cargo.toml"
 
 const matchedValue = 255;
 

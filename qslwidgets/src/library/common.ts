@@ -1,5 +1,5 @@
 import { readable, get } from "svelte/store";
-import { getStores } from "./instanceStores";
+import { getStores } from "./instanceStores.js";
 import type {
   Config,
   AlignedBoxLabel,
@@ -15,8 +15,8 @@ import type {
   TimestampInfoWithMatch,
   Dimensions,
   TimestampInfo,
-} from "./types";
-import { bmp2rle, rle2bmp } from "./masking";
+} from "./types.js";
+import { bmp2rle, rle2bmp } from "./masking.js";
 
 export const pct2css = (pct: number): string => `${100 * pct}%`;
 export const insertOrAppend = <T>(
@@ -106,10 +106,10 @@ export const shortcutify = (initial: LabelConfig[]): LabelConfig[] => {
     (memo, entry) =>
       entry.options
         ? memo.concat(
-            entry.options
-              .filter((o) => o.shortcut)
-              .map((o) => o.shortcut) as string[]
-          )
+          entry.options
+            .filter((o) => o.shortcut)
+            .map((o) => o.shortcut) as string[]
+        )
         : memo,
     [] as string[]
   );
@@ -118,17 +118,17 @@ export const shortcutify = (initial: LabelConfig[]): LabelConfig[] => {
       ...entry,
       options: entry.options
         ? entry.options.map((option) => {
-            let shortcut = option.shortcut;
-            if (!shortcut) {
-              shortcut = [...option.name.toLowerCase()].find(
-                (c) => taken.indexOf(c) == -1
-              );
-              if (shortcut) {
-                taken.push(shortcut);
-              }
+          let shortcut = option.shortcut;
+          if (!shortcut) {
+            shortcut = [...option.name.toLowerCase()].find(
+              (c) => taken.indexOf(c) == -1
+            );
+            if (shortcut) {
+              taken.push(shortcut);
             }
-            return { ...option, shortcut };
-          })
+          }
+          return { ...option, shortcut };
+        })
         : undefined,
     };
   });
@@ -159,11 +159,11 @@ export const renderBitmapToCanvas = (
       color === "red"
         ? [255, 0, 0, 127]
         : color === "blue"
-        ? [0, 0, 255, 127]
-        : [255, 255, 0, 127];
+          ? [0, 0, 255, 127]
+          : [255, 255, 0, 127];
     bitmap
       .contents()
-      .forEach((v, i) =>
+      .forEach((v: number, i: number) =>
         pixels.data.set(v === 255 ? colorValues : blankValues, i * 4)
       );
     context.putImageData(pixels, 0, 0);
@@ -175,30 +175,30 @@ export const renderBitmapToCanvas = (
 export const buildOptions = (
   selected: string[] | undefined,
   config: LabelConfig
-) =>
+): undefined | { name: string, shortcut: string, label: string, selected?: boolean }[] =>
   config.options || config.multiple
     ? (config.options || [])
-        .concat(
-          selected
-            ? selected
-                .filter(
-                  (s) =>
-                    (config.options || []).findIndex((o) => o.name === s) == -1
-                )
-                .map((s) => {
-                  return { name: s, shortcut: "" };
-                })
-            : []
-        )
-        .map((o) => {
-          return {
-            ...o,
-            selected: selected && selected.indexOf(o.name) > -1,
-            label: `${o.displayName || o.name} ${
-              o.shortcut ? `(${o.shortcut})` : ""
+      .concat(
+        selected
+          ? selected
+            .filter(
+              (s) =>
+                (config.options || []).findIndex((o) => o.name === s) == -1
+            )
+            .map((s) => {
+              return { name: s, shortcut: "" };
+            })
+          : []
+      )
+      .map((o) => {
+        return {
+          ...o,
+          selected: selected && selected.indexOf(o.name) > -1,
+          shortcut: o.shortcut || "",
+          label: `${o.displayName || o.name} ${o.shortcut ? `(${o.shortcut})` : ""
             }`,
-          };
-        })
+        };
+      })
     : undefined;
 
 export const delay = (amount: number) =>
@@ -215,9 +215,9 @@ export const simulateClick = (target: HTMLElement | null, offset?: Point) =>
       cancelable: true,
       ...(offset
         ? {
-            clientX: x + offset.x,
-            clientY: y + offset.y,
-          }
+          clientX: x + offset.x,
+          clientY: y + offset.y,
+        }
         : {}),
     };
     target.dispatchEvent(new MouseEvent("mousedown", args));
@@ -287,13 +287,13 @@ export const processSelectionChange = <T>(
     ? multiple
       ? selected.filter((v) => v != value)
       : required
-      ? selected
-      : options
-      ? []
-      : [value]
+        ? selected
+        : options
+          ? []
+          : [value]
     : multiple
-    ? (selected || []).concat([value])
-    : [value];
+      ? (selected || []).concat([value])
+      : [value];
 
 export const createContentLoader = <T, V>(options: {
   targets: (V | undefined)[];
@@ -307,8 +307,8 @@ export const createContentLoader = <T, V>(options: {
     mediaState: undefined as
       | undefined
       | {
-          states: T[];
-        },
+        states: T[];
+      },
   };
   let interim = options.targets.map(() => undefined as T | undefined);
   let apply: {
@@ -488,15 +488,15 @@ export const createDraftStore = () => {
         active: state.drawing.active
           ? state.drawing.mode === "masks"
             ? {
-                region: {
-                  ...structuredClone({
-                    ...state.drawing.active.region,
-                    map: undefined,
-                  }),
-                  map: state.drawing.active.region.map,
-                },
-                editable: state.drawing.active.editable,
-              }
+              region: {
+                ...structuredClone({
+                  ...state.drawing.active.region,
+                  map: undefined,
+                }),
+                map: state.drawing.active.region.map,
+              },
+              editable: state.drawing.active.editable,
+            }
             : structuredClone(state.drawing.active)
           : undefined,
       } as any,

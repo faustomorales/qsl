@@ -21,6 +21,7 @@ dependencies = [
     "click",
     "eel",
     "opencv-python-headless",
+    "anywidget>=0.9.18",
 ]
 
 [tool.hatch.version]
@@ -30,25 +31,19 @@ source = "uv-dynamic-versioning"
 requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build]
+packages = ["qsl"]
+
+[tool.hatch.build.force-include]
+"qslwidgets/dist" = "qslwidgets/dist"
+
 [tool.hatch.build.targets.wheel]
-artifacts = ["qsl/ui/labextension", "qsl/ui/eelapp"]
+artifacts = ["qslwidgets/dist"]
 exclude = ["docs"]
 
 
-[tool.hatch.build.targets.wheel.shared-data]
-"qsl/ui/assets/qsl.json" = "etc/jupyter/nbconfig/notebook.d/qsl.json"
-"qsl/ui/assets/install.json" = "share/jupyter/labextensions/qslwidgets/install.json"
-"qsl/ui/nbextension" = "share/jupyter/nbextensions/qslwidgets"
-"qsl/ui/labextension" = "share/jupyter/labextensions/qslwidgets"
-
 [project.optional-dependencies]
-app = ["eel<=0.14.0", "click"]
-
-[tool.setuptools.packages]
-find = {}
-
-[tool.uv]
-package = false
+app = ["eel>=0.18.2", "click"]
 
 [[tool.uv.index]]
 name = "pypi"
@@ -91,7 +86,7 @@ disable = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=mira --cov-report=term-missing"
+addopts = "--cov=qsl --cov-report=term-missing"
 
 [dependency-groups]
 dev = [
@@ -104,4 +99,8 @@ dev = [
     "pytest",
     "pytest-cov",
     "jupyterlab",
+    "twine>=6.1.0",
 ]
+
+[tool.coverage.run]
+omit = ["tests/*"]

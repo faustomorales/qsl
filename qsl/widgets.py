@@ -1,28 +1,11 @@
 # pylint: disable=too-many-ancestors,missing-function-docstring,unused-argument,too-many-return-statements
-import json
-
 import importlib.resources
-import ipywidgets
+import anywidget
 import traitlets as t
-from . import common
-
-module_name = "qslwidgets"
+from qsl import common
 
 
-def module_version():
-    """Load module version dynamically from package.json, falling
-    back to a default value if it doesn't yet exist."""
-    try:
-        return json.loads(
-            importlib.resources.files("qsl")
-            .joinpath("ui/labextension/package.json")
-            .read_text()
-        )["version"]
-    except FileNotFoundError:
-        return "0.0.0"
-
-
-class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
+class MediaLabeler(common.BaseMediaLabeler, anywidget.AnyWidget):
     """A widget for labeling a series of media files. Please see the documentation
     in the README to see more about the different ways to configure it.
 
@@ -40,13 +23,12 @@ class MediaLabeler(common.BaseMediaLabeler, ipywidgets.DOMWidget):
         - basePath: The path where we will look for images.
     """
 
-    _model_name = t.Unicode("MediaLabelerModel").tag(sync=True)
-    _model_module = t.Unicode(module_name).tag(sync=True)
-    _model_module_version = t.Unicode(module_version()).tag(sync=True)
-    _view_name = t.Unicode("MediaLabelerView").tag(sync=True)
-    _view_module = t.Unicode(module_name).tag(sync=True)
-    _view_module_version = t.Unicode(module_version()).tag(sync=True)
-
+    _esm = importlib.resources.files("qsl").joinpath(
+        "../qslwidgets/dist/anywidget/index.js"
+    )
+    _css = importlib.resources.files("qsl").joinpath(
+        "../qslwidgets/dist/anywidget/index.css"
+    )
     config = t.Dict(default_value={"image": [], "regions": []}, allow_none=True).tag(
         sync=True
     )

@@ -1,3 +1,27 @@
-src/library/wasmtools
-/*.tgz
-src/jupyterlab-staging
+node_modules
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+/dist
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Undo ignoring from QSL
+src/library/wasm-types

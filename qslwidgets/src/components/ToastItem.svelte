@@ -4,8 +4,8 @@
   // Jupyter.
   import { tweened } from "svelte/motion";
   import { linear } from "svelte/easing";
-  import type { ToastEntry } from "../library/types";
-  import { getStores } from "../library/instanceStores";
+  import type { ToastEntry } from "../library/types.js";
+  import { getStores } from "../library/instanceStores.js";
 
   export let item: ToastEntry;
   let { toast } = getStores();

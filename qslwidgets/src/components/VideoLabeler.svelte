@@ -6,19 +6,19 @@
     ArbitraryMetadata,
     WidgetActions,
     Point,
-  } from "../library/types";
+  } from "../library/types.js";
   import {
     insertOrAppendByTimestamp,
     createContentLoader,
     createDraftStore,
     labels4timestamp,
-  } from "../library/common";
+  } from "../library/common.js";
   import MediaViewer from "./MediaViewer.svelte";
   import RegionList from "./RegionList.svelte";
   import Metadata from "./Metadata.svelte";
   import Playbar from "./Playbar.svelte";
   import ControlMenu from "./ControlMenu.svelte";
-  import { getStores } from "../library/instanceStores";
+  import { getStores } from "../library/instanceStores.js";
   export let target: string | undefined,
     config: Config,
     labels: TimestampedLabel[],

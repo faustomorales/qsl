@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ArbitraryMetadata } from "../library/types";
+  import type { ArbitraryMetadata } from "../library/types.js";
   export let metadata: ArbitraryMetadata | undefined = {};
 </script>
 

@@ -1,8 +1,8 @@
 <script lang="ts">
   import Playbar from "./Playbar.svelte";
   import {createEventDispatcher } from "svelte"
-  import type { RangeSliderMark } from "../library/types";
-  import { createContentLoader } from "../library/common";
+  import type { RangeSliderMark } from "../library/types.js";
+  import { createContentLoader } from "../library/common.js";
   export let target: string,
     t1: number | undefined,
     t2: number | undefined,

@@ -243,7 +243,7 @@ def labels2json(labels, filepath):
     if dirname:
         os.makedirs(dirname, exist_ok=True)
     with open(filepath, "w", encoding="utf8") as f:
-        f.write(json.dumps(labels))
+        f.write(json.dumps(labels, indent=4))
 
 
 def guess_type(target: typing.Union[str, "np.ndarray"]):

@@ -31,8 +31,8 @@ Target = typing.TypedDict(
 
 
 # Taken from https://stackoverflow.com/questions/952914/how-to-make-a-flat-list-out-of-a-list-of-lists
-def flatten(l: typing.List[typing.Any]):
-    return [item for sublist in l for item in sublist]
+def flatten(items: typing.List[typing.Any]):
+    return [item for sublist in items for item in sublist]
 
 
 def items2rows(idxs, items):

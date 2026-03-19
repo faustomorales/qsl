@@ -5,6 +5,7 @@
 		"build:browser": "rollup -c rollup.config.js src/browser.ts",
 		"build:eel": "rollup -c rollup.config.js src/eel.ts && cp src/eel.html dist/eel/index.html",
 		"build:anywidget": "rollup -c rollup.config.js src/anywidget.ts",
+		"dev:anywidget": "rollup -w -c rollup.config.js src/anywidget.ts",
 		"build:svelte": "svelte-package -i src -o dist/svelte",
 		"build": "run-s build:*"
 	},

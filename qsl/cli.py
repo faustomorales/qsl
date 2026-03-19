@@ -1,5 +1,5 @@
 import click
-from . import app
+from . import app, files
 
 
 @click.group()
@@ -18,7 +18,14 @@ def label(project, targets, batchSize):
             f"The project path must end in *.json. Received {project}.", err=True
         )
         return
-    app.start(jsonpath=project, targets=targets, batchSize=batchSize)
+    app.start(
+        items=[
+            {"target": t, "type": files.guess_type(t)}
+            for t in files.filepaths_from_patterns(targets)
+        ],
+        jsonpath=project,
+        batchSize=batchSize,
+    )
 
 
 cli.add_command(label)

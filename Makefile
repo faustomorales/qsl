@@ -2,7 +2,7 @@ PYTHON_EXEC:=uv run
 TEST_SCOPE=tests/
 
 init: ## Build local development environment
-	npm run --prefix qslwidgets install
+	npm --prefix qslwidgets install
 	uv sync
 	make build
 check:  ## Check code for formatting, linting, etc.
@@ -11,7 +11,7 @@ check:  ## Check code for formatting, linting, etc.
 	@$(PYTHON_EXEC) pylint qsl
 	@$(PYTHON_EXEC) black --diff --check .
 lab:  ## Launch a jupyter lab instance 
-	@$(PYTHON_EXEC) jupyter lab
+	ANYWIDGET_HMR=1 $(PYTHON_EXEC) jupyter lab
 format:  ## Format all files.
 	@$(PYTHON_EXEC) black qsl
 build: ## Make a local build of the Python package and wheel
